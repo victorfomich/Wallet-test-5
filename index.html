@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DreamWallet</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="user-info">
+                <div class="avatar-container">
+                    <img id="userAvatar" src="" alt="Аватар пользователя" class="avatar">
+                </div>
+                <div class="user-details">
+                    <h1 id="userName">Загрузка...</h1>
+                    <p id="userUsername" class="username">@username</p>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="welcome-card">
+                <h2>Добро пожаловать в DreamWallet!</h2>
+                <p>Ваш личный кошелек в Telegram</p>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">💰</div>
+                    <h3>Баланс</h3>
+                    <p>Проверьте свой баланс</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📤</div>
+                    <h3>Отправить</h3>
+                    <p>Перевести средства</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📥</div>
+                    <h3>Получить</h3>
+                    <p>Получить перевод</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>История</h3>
+                    <p>История транзакций</p>
+                </div>
+            </div>
+
+            <div class="theme-toggle">
+                <button id="themeToggle" class="theme-btn">
+                    <span id="themeIcon">🌙</span>
+                    <span id="themeText">Темная тема</span>
+                </button>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>DreamWallet v2.0</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
