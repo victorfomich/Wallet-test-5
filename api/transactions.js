@@ -24,19 +24,11 @@ export default async function handler(req, res) {
                 });
             }
             
-            // Ищем по user_id или telegram_id (в зависимости от структуры вашей таблицы)
-            let transactions = await supabaseRequest('transactions', 'GET', null, {
-                user_id: `eq.${telegram_id}`,
-                order: 'created_at.desc'
+            // Получаем транзакции из новой таблицы wallet_transactions
+            const transactions = await supabaseRequest('wallet_transactions', 'GET', null, {
+                user_telegram_id: `eq.${telegram_id}`,
+                order: 'created_timestamp.desc'
             });
-            
-            // Если не найдено по user_id, попробуем по telegram_id
-            if (!transactions || transactions.length === 0) {
-                transactions = await supabaseRequest('transactions', 'GET', null, {
-                    telegram_id: `eq.${telegram_id}`,
-                    order: 'created_at.desc'
-                });
-            }
             
             return res.status(200).json({ 
                 success: true, 
@@ -89,21 +81,20 @@ export default async function handler(req, res) {
                 });
             }
             
-            // Создаем транзакцию (совместимо с вашей таблицей)
+            // Создаем транзакцию в новой таблице wallet_transactions
             const transactionData = {
-                user_id: parseInt(telegram_id), // основной ID в вашей таблице
-                telegram_id: parseInt(telegram_id), // дополнительно для совместимости
-                type,
-                currency: crypto.toUpperCase(), // ваше поле currency
-                network: network.toLowerCase(),
-                amount: parseFloat(amount),
-                fee: parseFloat(fee), // если поле добавлено
-                address: address.trim(), // если поле добавлено
-                comment: comment ? comment.trim() : null, // если поле добавлено
-                status: 'pending'
+                user_telegram_id: parseInt(telegram_id),
+                transaction_type: type,
+                crypto_currency: crypto.toUpperCase(),
+                blockchain_network: network.toLowerCase(),
+                withdraw_amount: parseFloat(amount),
+                network_fee: parseFloat(fee),
+                recipient_address: address.trim(),
+                user_comment: comment ? comment.trim() : null,
+                transaction_status: 'pending'
             };
             
-            const newTransaction = await supabaseRequest('transactions', 'POST', transactionData);
+            const newTransaction = await supabaseRequest('wallet_transactions', 'POST', transactionData);
             
             if (!newTransaction || newTransaction.length === 0) {
                 throw new Error('Ошибка создания транзакции');
@@ -142,13 +133,13 @@ export default async function handler(req, res) {
             }
             
             const updateData = {
-                updated_at: new Date().toISOString()
+                updated_timestamp: new Date().toISOString()
             };
             
-            if (status) updateData.status = status;
-            if (tx_hash) updateData.tx_hash = tx_hash;
+            if (status) updateData.transaction_status = status;
+            if (tx_hash) updateData.blockchain_hash = tx_hash;
             
-            const updatedTransaction = await supabaseRequest('transactions', 'PATCH', updateData, {
+            const updatedTransaction = await supabaseRequest('wallet_transactions', 'PATCH', updateData, {
                 id: `eq.${id}`
             });
             
