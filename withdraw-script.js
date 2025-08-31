@@ -3,6 +3,8 @@ let tg = window.Telegram.WebApp;
 
 // Инициализация приложения
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOMContentLoaded: withdraw-script.js загружен');
+    
     // Инициализируем Telegram Web App
     if (tg && tg.ready) {
         tg.ready();
@@ -42,22 +44,42 @@ function updateSearchIcons() {
 // Функция для обработки кликов по криптовалютам
 function initCryptoClicks() {
     const cryptoItems = document.querySelectorAll('.crypto-item');
+    console.log('Найдено crypto-item элементов:', cryptoItems.length);
     
-    cryptoItems.forEach(item => {
-        item.addEventListener('click', function() {
-            const cryptoTicker = this.querySelector('.crypto-ticker').textContent;
-            const cryptoName = this.querySelector('.crypto-name').textContent;
+    cryptoItems.forEach((item, index) => {
+        const cryptoTicker = item.querySelector('.crypto-ticker');
+        console.log(`Элемент ${index}:`, cryptoTicker ? cryptoTicker.textContent : 'ticker не найден');
+        
+        item.addEventListener('click', function(e) {
+            console.log('Клик по crypto-item!');
+            e.preventDefault();
+            e.stopPropagation();
             
-            console.log(`Выбрана криптовалюта: ${cryptoTicker} (${cryptoName})`);
+            const cryptoTickerElement = this.querySelector('.crypto-ticker');
+            const cryptoNameElement = this.querySelector('.crypto-name');
             
-            // Здесь можно добавить логику для перехода на страницу пополнения конкретной криптовалюты
-            // Например, показать модальное окно или перейти на другую страницу
+            if (!cryptoTickerElement || !cryptoNameElement) {
+                console.error('Не удалось найти элементы ticker или name');
+                return;
+            }
             
-            // Пока что просто показываем уведомление
+            const cryptoTicker = cryptoTickerElement.textContent;
+            const cryptoName = cryptoNameElement.textContent;
+            
+            console.log(`Выбрана криптовалюта для вывода: ${cryptoTicker} (${cryptoName})`);
+            
+            // Для USDT показываем выбор сети
+            if (cryptoTicker === 'USDT') {
+                console.log('Переходим на withdraw-usdt-chain.html');
+                window.location.href = 'withdraw-usdt-chain.html';
+                return;
+            }
+            
+            // Для других криптовалют пока что показываем уведомление
             if (tg && tg.showAlert) {
-                tg.showAlert(`Выбрана криптовалюта: ${cryptoTicker} (${cryptoName})`);
+                tg.showAlert(`Выбрана криптовалюта для вывода: ${cryptoTicker} (${cryptoName})`);
             } else {
-                alert(`Выбрана криптовалюта: ${cryptoTicker} (${cryptoName})`);
+                alert(`Выбрана криптовалюта для вывода: ${cryptoTicker} (${cryptoName})`);
             }
         });
     });
@@ -121,13 +143,4 @@ function initAppRestrictions() {
             event.preventDefault();
         }
     }, { passive: false });
-    
-    let lastTouchEnd = 0;
-    document.addEventListener('touchend', function(event) {
-        const now = (new Date()).getTime();
-        if (now - lastTouchEnd <= 300) {
-            event.preventDefault();
-        }
-        lastTouchEnd = now;
-    }, false);
 }

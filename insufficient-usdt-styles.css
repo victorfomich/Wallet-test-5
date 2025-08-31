@@ -1,0 +1,205 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background-color: #1a1a1a;
+    color: #ffffff;
+    overflow-x: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    padding: 40px 20px 20px;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+/* Иконка с ошибкой */
+.icon-container {
+    margin-bottom: 40px;
+}
+
+.usdt-icon-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.usdt-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: #26a17b;
+    padding: 15px;
+}
+
+.error-badge {
+    position: absolute;
+    bottom: -5px;
+    right: -5px;
+    width: 30px;
+    height: 30px;
+    background-color: #ff4757;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+    border: 3px solid #1a1a1a;
+}
+
+/* Заголовок */
+.title-container {
+    margin-bottom: 50px;
+}
+
+.error-title {
+    font-size: 28px;
+    font-weight: 600;
+    color: #ffffff;
+    line-height: 1.3;
+    max-width: 300px;
+}
+
+/* Детали баланса */
+.balance-details {
+    width: 100%;
+    max-width: 350px;
+    margin-bottom: 40px;
+}
+
+.balance-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.balance-row:last-child {
+    border-bottom: none;
+}
+
+.balance-label {
+    font-size: 16px;
+    color: #888;
+    font-weight: 400;
+}
+
+.balance-value {
+    font-size: 16px;
+    color: #ffffff;
+    font-weight: 500;
+}
+
+.balance-value.minimum {
+    color: #ffffff;
+}
+
+.balance-value.commission {
+    color: #ffffff;
+}
+
+.balance-value#currentBalance {
+    color: #ff4757;
+    font-weight: 600;
+}
+
+/* Информация */
+.info-text {
+    font-size: 14px;
+    color: #888;
+    line-height: 1.5;
+    max-width: 320px;
+    margin-bottom: 60px;
+    text-align: center;
+}
+
+/* Кнопка назад */
+.back-button-container {
+    width: 100%;
+    max-width: 350px;
+    margin-top: auto;
+}
+
+.back-button {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-height: 56px;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.back-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.back-button:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+/* Адаптивность */
+@media (max-height: 700px) {
+    .container {
+        padding: 20px;
+        justify-content: flex-start;
+    }
+    
+    .icon-container {
+        margin-bottom: 30px;
+    }
+    
+    .title-container {
+        margin-bottom: 30px;
+    }
+    
+    .balance-details {
+        margin-bottom: 30px;
+    }
+    
+    .info-text {
+        margin-bottom: 40px;
+    }
+}
+
+@media (max-width: 375px) {
+    .container {
+        padding: 20px 15px;
+    }
+    
+    .error-title {
+        font-size: 24px;
+    }
+    
+    .usdt-icon {
+        width: 70px;
+        height: 70px;
+    }
+    
+    .error-badge {
+        width: 25px;
+        height: 25px;
+        font-size: 16px;
+    }
+}

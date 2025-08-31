@@ -14,9 +14,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Инициализируем клики по сетям
     initNetworkClicks();
     
-    // ЗАГРУЖАЕМ БАЛАНС USDT ДЛЯ ПРОВЕРКИ
-    loadUsdtBalance();
-    
     // Инициализируем ограничения приложения
     initAppRestrictions();
 });
@@ -27,42 +24,25 @@ function initTheme() {
     document.documentElement.setAttribute('data-theme', 'dark');
 }
 
-// ПЕРЕМЕННАЯ ДЛЯ ХРАНЕНИЯ БАЛАНСА USDT
-let currentUsdtBalance = 0;
-
 // Функция для обработки кликов по сетям
 function initNetworkClicks() {
     const networkItems = document.querySelectorAll('.network-item');
     
     networkItems.forEach(item => {
         item.addEventListener('click', function() {
-            // ПРОВЕРЯЕМ БАЛАНС ПЕРЕД ПЕРЕХОДОМ
-            if (currentUsdtBalance < 1) {
-                console.log(`⚠️ НЕДОСТАТОЧНО USDT: ${currentUsdtBalance} < 1`);
-                window.location.href = 'insufficient-usdt.html';
-                return;
-            }
-            
             const networkName = this.querySelector('.network-name').textContent;
             const networkStandard = this.querySelector('.network-standard').textContent;
             
-            // Определяем сеть
-            let network = '';
-            if (networkName.includes('The Open Network')) {
-                network = 'ton';
-            } else if (networkName.includes('Tron')) {
-                network = 'tron';
-            } else if (networkName.includes('Solana')) {
-                network = 'sol';
-            } else if (networkName.includes('Ethereum')) {
-                network = 'eth';
-            } else if (networkName.includes('BNB')) {
-                network = 'bnb';
-            }
+            console.log(`Выбрана сеть для вывода USDT: ${networkName} (${networkStandard})`);
             
-            if (network) {
-                console.log(`✅ БАЛАНС ДОСТАТОЧЕН: ${currentUsdtBalance} >= 1, переходим к ${network}`);
-                window.location.href = `qr-usdt.html?network=${network}`;
+            // Здесь можно добавить логику для перехода на страницу вывода конкретной сети
+            // Например, показать модальное окно или перейти на другую страницу
+            
+            // Пока что просто показываем уведомление
+            if (tg && tg.showAlert) {
+                tg.showAlert(`Выбрана сеть для вывода USDT: ${networkName} (${networkStandard})`);
+            } else {
+                alert(`Выбрана сеть для вывода USDT: ${networkName} (${networkStandard})`);
             }
         });
     });
@@ -134,12 +114,12 @@ function initAppRestrictions() {
     }, { passive: false });
 }
 
-// Функция для возврата на страницу пополнения
+// Функция для возврата на страницу вывода
 function goBack() {
     if (tg && tg.BackButton) {
         tg.BackButton.show();
         tg.BackButton.onClick(() => {
-            window.location.href = 'topup.html';
+            window.location.href = 'withdraw.html';
         });
     } else {
         // Если Telegram Web App недоступен, добавляем кнопку назад
@@ -157,48 +137,10 @@ function goBack() {
             cursor: pointer;
             z-index: 1000;
         `;
-        backButton.onclick = () => window.location.href = 'topup.html';
+        backButton.onclick = () => window.location.href = 'withdraw.html';
         document.body.appendChild(backButton);
     }
 }
 
 // Показываем кнопку назад
 goBack();
-
-// ==================== ЗАГРУЗКА USDT БАЛАНСА ====================
-
-async function loadUsdtBalance() {
-    try {
-        console.log('💰 ЗАГРУЖАЕМ USDT БАЛАНС ДЛЯ ПРОВЕРКИ...');
-        
-        // Получаем Telegram ID пользователя
-        let telegramId = null;
-        if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
-            telegramId = tg.initDataUnsafe.user.id;
-        } else {
-            telegramId = 123456789; // Тестовый ID
-        }
-        
-        const response = await fetch(`/api/admin/balances?telegram_id=${telegramId}`);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log('📊 ПОЛУЧЕН БАЛАНС ДЛЯ ПРОВЕРКИ:', data);
-        
-        if (data.success && data.balance && data.balance.usdt_amount !== undefined) {
-            currentUsdtBalance = data.balance.usdt_amount;
-            console.log(`✅ USDT БАЛАНС ЗАГРУЖЕН: ${currentUsdtBalance}`);
-        } else {
-            console.log('⚠️ USDT баланс не найден, устанавливаем 0');
-            currentUsdtBalance = 0;
-        }
-        
-    } catch (error) {
-        console.error('💥 ОШИБКА ЗАГРУЗКИ БАЛАНСА:', error);
-        currentUsdtBalance = 0;
-    }
-}
-
