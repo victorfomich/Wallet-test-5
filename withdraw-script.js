@@ -52,8 +52,6 @@ function initCryptoClicks() {
         
         item.addEventListener('click', function(e) {
             console.log('Клик по crypto-item!');
-            e.preventDefault();
-            e.stopPropagation();
             
             const cryptoTickerElement = this.querySelector('.crypto-ticker');
             const cryptoNameElement = this.querySelector('.crypto-name');
@@ -105,11 +103,11 @@ function initAppRestrictions() {
         return false;
     });
     
-    // Отключаем двойной клик для выделения
-    document.addEventListener('dblclick', function(e) {
-        e.preventDefault();
-        return false;
-    });
+    // Отключаем двойной клик для выделения (временно отключено для отладки)
+    // document.addEventListener('dblclick', function(e) {
+    //     e.preventDefault();
+    //     return false;
+    // });
     
     // Отключаем масштабирование на мобильных устройствах
     document.addEventListener('gesturestart', function(e) {

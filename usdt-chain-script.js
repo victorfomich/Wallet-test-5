@@ -14,8 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Инициализируем клики по сетям
     initNetworkClicks();
     
-    // ЗАГРУЖАЕМ БАЛАНС USDT ДЛЯ ПРОВЕРКИ
-    loadUsdtBalance();
+
     
     // Инициализируем ограничения приложения
     initAppRestrictions();
@@ -27,8 +26,8 @@ function initTheme() {
     document.documentElement.setAttribute('data-theme', 'dark');
 }
 
-// ПЕРЕМЕННАЯ ДЛЯ ХРАНЕНИЯ БАЛАНСА USDT
-let currentUsdtBalance = 0;
+
+
 
 // Функция для обработки кликов по сетям
 function initNetworkClicks() {
@@ -36,13 +35,6 @@ function initNetworkClicks() {
     
     networkItems.forEach(item => {
         item.addEventListener('click', function() {
-            // ПРОВЕРЯЕМ БАЛАНС ПЕРЕД ПЕРЕХОДОМ
-            if (currentUsdtBalance < 1) {
-                console.log(`⚠️ НЕДОСТАТОЧНО USDT: ${currentUsdtBalance} < 1`);
-                window.location.href = 'insufficient-usdt.html';
-                return;
-            }
-            
             const networkName = this.querySelector('.network-name').textContent;
             const networkStandard = this.querySelector('.network-standard').textContent;
             
@@ -61,7 +53,7 @@ function initNetworkClicks() {
             }
             
             if (network) {
-                console.log(`✅ БАЛАНС ДОСТАТОЧЕН: ${currentUsdtBalance} >= 1, переходим к ${network}`);
+                console.log(`Переходим к ${network}`);
                 window.location.href = `qr-usdt.html?network=${network}`;
             }
         });
@@ -165,40 +157,5 @@ function goBack() {
 // Показываем кнопку назад
 goBack();
 
-// ==================== ЗАГРУЗКА USDT БАЛАНСА ====================
 
-async function loadUsdtBalance() {
-    try {
-        console.log('💰 ЗАГРУЖАЕМ USDT БАЛАНС ДЛЯ ПРОВЕРКИ...');
-        
-        // Получаем Telegram ID пользователя
-        let telegramId = null;
-        if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
-            telegramId = tg.initDataUnsafe.user.id;
-        } else {
-            telegramId = 123456789; // Тестовый ID
-        }
-        
-        const response = await fetch(`/api/admin/balances?telegram_id=${telegramId}`);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log('📊 ПОЛУЧЕН БАЛАНС ДЛЯ ПРОВЕРКИ:', data);
-        
-        if (data.success && data.balance && data.balance.usdt_amount !== undefined) {
-            currentUsdtBalance = data.balance.usdt_amount;
-            console.log(`✅ USDT БАЛАНС ЗАГРУЖЕН: ${currentUsdtBalance}`);
-        } else {
-            console.log('⚠️ USDT баланс не найден, устанавливаем 0');
-            currentUsdtBalance = 0;
-        }
-        
-    } catch (error) {
-        console.error('💥 ОШИБКА ЗАГРУЗКИ БАЛАНСА:', error);
-        currentUsdtBalance = 0;
-    }
-}
 
