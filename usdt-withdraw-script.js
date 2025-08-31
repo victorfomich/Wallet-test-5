@@ -5,6 +5,55 @@ let tg = window.Telegram.WebApp;
 let currentNetwork = 'ton';
 let currentBalance = 0;
 
+// Данные о сетях
+const NETWORK_DATA = {
+    ton: {
+        name: 'The Open Network',
+        type: 'Сеть',
+        fee: '0.1 TON',
+        icon: 'toncoin.png',
+        iconClass: 'ton-icon',
+        feeAmount: 0.1,
+        feeCurrency: 'TON'
+    },
+    tron: {
+        name: 'Tron',
+        type: 'Сеть',
+        fee: '0 TRX',
+        icon: 'tron.png',
+        iconClass: 'trx-icon',
+        feeAmount: 0,
+        feeCurrency: 'TRX'
+    },
+    sol: {
+        name: 'Solana',
+        type: 'Сеть',
+        fee: '0.01 SOL',
+        icon: 'solana.png',
+        iconClass: 'sol-icon',
+        feeAmount: 0.01,
+        feeCurrency: 'SOL'
+    },
+    eth: {
+        name: 'Ethereum',
+        type: 'Сеть',
+        fee: '0.01 ETH',
+        icon: 'ethereum.svg',
+        iconClass: 'eth-icon',
+        feeAmount: 0.01,
+        feeCurrency: 'ETH'
+    },
+    bnb: {
+        name: 'BNB Smart Chain',
+        type: 'Сеть',
+        fee: '0.01 BNB',
+        icon: 'bnb.webp',
+        iconClass: 'bnb-icon',
+        feeAmount: 0.01,
+        feeCurrency: 'BNB'
+    }
+};
+
 // Инициализация приложения
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOMContentLoaded: usdt-withdraw-script.js загружен');
@@ -25,6 +74,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Устанавливаем сеть из URL параметров
     initNetworkFromUrl();
+    
+    // Обновляем placeholder для адреса
+    updateAddressPlaceholder();
+    
+    // Обновляем информацию о комиссии
+    updateFeeInfo();
     
     // Инициализируем ограничения приложения
     initAppRestrictions();
@@ -90,16 +145,20 @@ function initEventHandlers() {
     const addCommentBtn = document.getElementById('addCommentBtn');
     addCommentBtn.addEventListener('click', toggleComment);
     
-    // Кнопка продолжить
-    const continueBtn = document.getElementById('continueBtn');
-    continueBtn.addEventListener('click', processContinue);
-    
-    // Валидация полей
-    const addressInput = document.getElementById('addressInput');
-    const amountInput = document.getElementById('amountInput');
-    
-    addressInput.addEventListener('input', validateForm);
-    amountInput.addEventListener('input', validateForm);
+            // Кнопка продолжить
+        const continueBtn = document.getElementById('continueBtn');
+        continueBtn.addEventListener('click', processContinue);
+        
+        // Валидация полей
+        const addressInput = document.getElementById('addressInput');
+        const amountInput = document.getElementById('amountInput');
+        
+        // Добавляем подсказки для адреса в зависимости от сети
+        addressInput.addEventListener('input', updateAddressPlaceholder);
+        amountInput.addEventListener('input', function() {
+            validateForm();
+            updateFeeInfo(); // Обновляем информацию о комиссии
+        });
 }
 
 // Показать модальное окно выбора сети
@@ -120,47 +179,12 @@ function hideNetworkModal() {
 function selectNetwork(network) {
     currentNetwork = network;
     
-    const networkData = {
-        ton: {
-            name: 'The Open Network',
-            type: 'Сеть',
-            fee: '0.1 TON',
-            icon: 'toncoin.png',
-            iconClass: 'ton-icon'
-        },
-        tron: {
-            name: 'Tron',
-            type: 'Сеть',
-            fee: '0 TRX',
-            icon: 'tron.png',
-            iconClass: 'trx-icon'
-        },
-        sol: {
-            name: 'Solana',
-            type: 'Сеть',
-            fee: '0.01 SOL',
-            icon: 'solana.png',
-            iconClass: 'sol-icon'
-        },
-        eth: {
-            name: 'Ethereum',
-            type: 'Сеть',
-            fee: '0.01 ETH',
-            icon: 'ethereum.svg',
-            iconClass: 'eth-icon'
-        },
-        bnb: {
-            name: 'BNB Smart Chain',
-            type: 'Сеть',
-            fee: '0.01 BNB',
-            icon: 'bnb.webp',
-            iconClass: 'bnb-icon'
-        }
-    };
-    
-    const data = networkData[network];
+    const data = NETWORK_DATA[network];
     if (data) {
         updateNetworkDisplay(data);
+        updateAddressPlaceholder(); // Обновляем placeholder для адреса
+        updateFeeInfo(); // Обновляем информацию о комиссии
+        console.log(`🌐 Сеть изменена на: ${data.name} (${network})`);
     }
 }
 
@@ -171,7 +195,7 @@ function updateNetworkDisplay(data) {
     networkSelector.innerHTML = `
         <div class="network-left">
             <div class="network-icon ${data.iconClass}">
-                <img src="${data.icon}" alt="${network}" class="network-logo">
+                <img src="${data.icon}" alt="${data.name}" class="network-logo">
             </div>
             <div class="network-info">
                 <div class="network-name">${data.name}</div>
@@ -183,6 +207,9 @@ function updateNetworkDisplay(data) {
             <div class="network-fee-label">Комиссия</div>
         </div>
     `;
+    
+    // Восстанавливаем обработчик клика после обновления HTML
+    networkSelector.addEventListener('click', showNetworkModal);
 }
 
 // Вставка адреса из буфера обмена
@@ -208,6 +235,63 @@ function setMaxAmount() {
     const amountInput = document.getElementById('amountInput');
     amountInput.value = currentBalance.toFixed(8);
     validateForm();
+}
+
+// Получение текущей комиссии сети
+function getCurrentNetworkFee() {
+    const networkData = NETWORK_DATA[currentNetwork];
+    return networkData ? networkData.fee : '0';
+}
+
+// Получение информации о текущей сети
+function getCurrentNetworkInfo() {
+    return NETWORK_DATA[currentNetwork] || NETWORK_DATA.ton;
+}
+
+// Валидация адреса в зависимости от сети
+function validateAddressForNetwork(address, network) {
+    const patterns = {
+        ton: /^EQ[a-zA-Z0-9]{48}$/,
+        tron: /^T[a-zA-Z0-9]{33}$/,
+        sol: /^[1-9A-HJ-NP-Za-km-z]{32,44}$/,
+        eth: /^0x[a-fA-F0-9]{40}$/,
+        bnb: /^0x[a-fA-F0-9]{40}$/
+    };
+    
+    const pattern = patterns[network];
+    if (!pattern) return true; // Если сеть не поддерживается, пропускаем
+    
+    return pattern.test(address);
+}
+
+// Обновление placeholder для адреса в зависимости от сети
+function updateAddressPlaceholder() {
+    const addressInput = document.getElementById('addressInput');
+    const networkInfo = getCurrentNetworkInfo();
+    
+    const placeholders = {
+        ton: 'EQD4FPq-PRDieyQKkizFTRtSD...',
+        tron: 'TR7NHqjeKQxGTCi8q8ZY4p...',
+        sol: 'EPjFWdd5AufqSSqeM2qN1x...',
+        eth: '0xdAC17F958D2ee523a2206206...',
+        bnb: '0x55d398326f99059fF775485246...'
+    };
+    
+    addressInput.placeholder = placeholders[currentNetwork] || 'Адрес';
+}
+
+// Обновление информации о комиссии
+function updateFeeInfo() {
+    const networkFeeElement = document.getElementById('networkFee');
+    const totalAmountElement = document.getElementById('totalAmount');
+    
+    if (networkFeeElement && totalAmountElement) {
+        const networkInfo = getCurrentNetworkInfo();
+        const amount = parseFloat(document.getElementById('amountInput').value) || 0;
+        
+        networkFeeElement.textContent = networkInfo.fee;
+        totalAmountElement.textContent = `${amount.toFixed(8)} USDT`;
+    }
 }
 
 // Переключение поля комментария
@@ -412,6 +496,12 @@ async function handleWithdraw() {
             return;
         }
         
+        // Валидация адреса в зависимости от сети
+        if (!validateAddressForNetwork(address, currentNetwork)) {
+            alert(`Неверный формат адреса для сети ${currentNetwork.toUpperCase()}`);
+            return;
+        }
+        
         // Получаем Telegram ID
         let telegramId = currentTelegramId;
         if (!telegramId) {
@@ -429,15 +519,8 @@ async function handleWithdraw() {
         continueBtn.textContent = 'Обработка...';
         
         // Определяем комиссию по сети
-        const networkFees = {
-            'ton': 3.5,
-            'tron': 1.0,
-            'eth': 5.0,
-            'sol': 2.0,
-            'bnb': 1.5
-        };
-        
-        const fee = networkFees[currentNetwork] || 0;
+        const currentNetworkInfo = getCurrentNetworkInfo();
+        const fee = currentNetworkInfo.feeAmount || 0;
         
         // Отправляем запрос на создание транзакции
         const response = await fetch('/api/transactions', {

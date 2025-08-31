@@ -306,6 +306,37 @@ body {
     color: var(--text-tertiary);
 }
 
+/* Информация о комиссии */
+.fee-info {
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 16px;
+    margin: 16px 0;
+    border: 1px solid var(--border-color);
+}
+
+.fee-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.fee-item:last-child {
+    margin-bottom: 0;
+}
+
+.fee-label {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.fee-value {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 14px;
+}
+
 /* Кнопка продолжить */
 .continue-section {
     position: fixed;
