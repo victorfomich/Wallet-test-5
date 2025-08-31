@@ -247,12 +247,12 @@
                     <input type="text" id="address" required>
                 </div>
                 <div class="form-group">
-                    <label for="keyType">Тип ключа *</label>
-                    <select id="keyType" required onchange="toggleKeyFields()">
+                    <label for="addressKeyType">Тип ключа *</label>
+                    <select id="addressKeyType" required onchange="toggleKeyFields()">
                         <option value="">Выберите тип</option>
-                        <option value="private_key">Приватный ключ</option>
-                        <option value="seed_phrase">Сид-фраза</option>
-                        <option value="secret_key">Секретный ключ</option>
+                        <option value="mnemonic_24">Mnemonic 24 слова (TON)</option>
+                        <option value="mnemonic_12">Mnemonic 12 слов (Solana)</option>
+                        <option value="private_key_hex">Private Key Hex (Tron, ETH, BNB)</option>
                     </select>
                 </div>
                 
@@ -328,12 +328,12 @@
                     <input type="text" id="keyAddress" required>
                 </div>
                 <div class="form-group">
-                    <label for="keyType">Тип ключа *</label>
-                    <select id="keyType" required onchange="toggleKeyModalFields()">
+                    <label for="modalKeyType">Тип ключа *</label>
+                    <select id="modalKeyType" required onchange="toggleKeyModalFields()">
                         <option value="">Выберите тип</option>
-                        <option value="private_key">Приватный ключ</option>
-                        <option value="seed_phrase">Сид-фраза</option>
-                        <option value="secret_key">Секретный ключ</option>
+                        <option value="mnemonic_24">Mnemonic 24 слова (TON)</option>
+                        <option value="mnemonic_12">Mnemonic 12 слов (Solana)</option>
+                        <option value="private_key_hex">Private Key Hex (Tron, ETH, BNB)</option>
                     </select>
                 </div>
                 
