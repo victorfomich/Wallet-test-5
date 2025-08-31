@@ -73,13 +73,18 @@ function initBalanceToggle() {
             const isHidden = balanceAmount.classList.contains('hidden');
             
             if (isHidden) {
-                // Показываем баланс
-                balanceAmount.textContent = originalBalance;
+                // Показываем баланс - БЕРЕМ АКТУАЛЬНЫЕ ЗНАЧЕНИЯ
+                const currentBalance = window.currentOriginalBalance || originalBalance;
+                const currentDetailedBalance = window.currentOriginalDetailedBalance || originalDetailedBalance;
+                
+                balanceAmount.textContent = currentBalance;
                 balanceAmount.classList.remove('hidden');
-                detailedBalance.textContent = originalDetailedBalance;
+                detailedBalance.textContent = currentDetailedBalance;
                 toggleEyeIcons(false);
                 eyeIcon.classList.remove('hidden');
                 eyeIconDark.classList.remove('hidden');
+                
+                console.log('👁️ ПОКАЗАЛИ БАЛАНС:', currentBalance, currentDetailedBalance);
             } else {
                 // Скрываем баланс (показываем точки)
                 balanceAmount.textContent = '•••';
@@ -88,6 +93,8 @@ function initBalanceToggle() {
                 toggleEyeIcons(true);
                 eyeIcon.classList.add('hidden');
                 eyeIconDark.classList.add('hidden');
+                
+                console.log('👁️ СКРЫЛИ БАЛАНС');
             }
         };
         
@@ -255,9 +262,27 @@ function updateUsdtDisplay(balance) {
             usdtElement.textContent = `${balance.usdt_amount.toFixed(6)} USDT`;
             console.log(`✅ КОЛИЧЕСТВО USDT: ${balance.usdt_amount.toFixed(6)}`);
         }
+        
+        // ОБНОВЛЯЕМ ПЕРЕМЕННЫЕ ДЛЯ ГЛАЗИКА
+        updateOriginalBalances();
+        
     } else {
         console.log('⚠️ НЕТ ДАННЫХ USDT В БАЛАНСЕ');
         setDefaultUsdtDisplay();
+    }
+}
+
+// ОБНОВИТЬ СОХРАНЕННЫЕ ЗНАЧЕНИЯ ДЛЯ ГЛАЗИКА
+function updateOriginalBalances() {
+    const balanceElement = document.getElementById('balanceAmount');
+    const usdtElement = document.getElementById('usdtBalance');
+    
+    if (balanceElement && usdtElement) {
+        // Обновляем глобальные переменные
+        window.currentOriginalBalance = balanceElement.textContent;
+        window.currentOriginalDetailedBalance = usdtElement.textContent;
+        
+        console.log('🔄 ОБНОВЛЕНЫ ЗНАЧЕНИЯ ДЛЯ ГЛАЗИКА:', window.currentOriginalBalance, window.currentOriginalDetailedBalance);
     }
 }
 
