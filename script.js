@@ -70,10 +70,10 @@ function initBalanceToggle() {
             }
         });
         
-        // По умолчанию баланс скрыт (показываем точки)
-        balanceAmount.textContent = '•••';
-        balanceAmount.classList.add('hidden');
-        eyeIcon.src = 'eye2.png';
-        eyeIcon.classList.add('hidden');
+        // По умолчанию баланс показан
+        balanceAmount.textContent = originalBalance;
+        balanceAmount.classList.remove('hidden');
+        eyeIcon.src = 'eye.png';
+        eyeIcon.classList.remove('hidden');
     }
 }

@@ -42,7 +42,7 @@
         
         <!-- Навигационные кнопки -->
         <div class="nav-buttons">
-            <div class="nav-button">
+            <div class="nav-button" onclick="window.location.href='topup.html'">
                 <div class="nav-icon">
                     <img src="left-arrow.png" alt="Left Arrow" class="arrow-icon">
                 </div>
@@ -65,6 +65,95 @@
                     <img src="reload.png" alt="Reload" class="reload-icon">
                 </div>
                 <span class="nav-text">Биржа</span>
+            </div>
+        </div>
+        
+        <!-- Текст под кнопками -->
+        <div class="bottom-text">
+            <span class="assets-text">АКТИВЫ</span>
+            <span class="hide-balances-text">СКРЫТЬ МЕЛКИЕ БАЛАНСЫ</span>
+        </div>
+        
+        <!-- Список активов -->
+        <div class="assets-list">
+            <div class="asset-item">
+                <div class="asset-left">
+                    <div class="asset-icon usdt-icon">
+                        <img src="usdt.png" alt="USDT" class="crypto-icon">
+                    </div>
+                    <div class="asset-info">
+                        <div class="asset-name">Tether</div>
+                        <div class="asset-price">$1 0.00%</div>
+                    </div>
+                </div>
+                <div class="asset-right">
+                    <div class="asset-balance">0.125691 USDT</div>
+                    <div class="asset-usd-value">$0.125</div>
+                </div>
+            </div>
+            
+            <div class="asset-item">
+                <div class="asset-left">
+                    <div class="asset-icon eth-icon">
+                        <img src="ethereum.svg" alt="ETH" class="crypto-icon eth-icon-img">
+                    </div>
+                    <div class="asset-info">
+                        <div class="asset-name">Ethereum</div>
+                        <div class="asset-price">$4,454.73 <span class="positive-change">+2.29%</span></div>
+                    </div>
+                </div>
+                <div class="asset-right">
+                    <div class="asset-balance">0 ETH</div>
+                    <div class="asset-usd-value">$0.00000642</div>
+                </div>
+            </div>
+            
+            <div class="asset-item">
+                <div class="asset-left">
+                    <div class="asset-icon ton-icon">
+                        <img src="toncoin.png" alt="TON" class="crypto-icon">
+                    </div>
+                    <div class="asset-info">
+                        <div class="asset-name">Toncoin</div>
+                        <div class="asset-price">$3.14 <span class="positive-change">+1.68%</span></div>
+                    </div>
+                </div>
+                <div class="asset-right">
+                    <div class="asset-balance">0 TON</div>
+                    <div class="asset-usd-value">$0</div>
+                </div>
+            </div>
+            
+            <div class="asset-item">
+                <div class="asset-left">
+                    <div class="asset-icon sol-icon">
+                        <img src="solana.png" alt="SOL" class="crypto-icon">
+                    </div>
+                    <div class="asset-info">
+                        <div class="asset-name">Solana</div>
+                        <div class="asset-price">$142.67 <span class="positive-change">+5.23%</span></div>
+                    </div>
+                </div>
+                <div class="asset-right">
+                    <div class="asset-balance">0 SOL</div>
+                    <div class="asset-usd-value">$0</div>
+                </div>
+            </div>
+            
+            <div class="asset-item">
+                <div class="asset-left">
+                    <div class="asset-icon trx-icon">
+                        <img src="tron.png" alt="TRX" class="crypto-icon">
+                    </div>
+                    <div class="asset-info">
+                        <div class="asset-name">Tron</div>
+                        <div class="asset-price">$0.12 <span class="positive-change">+2.15%</span></div>
+                    </div>
+                </div>
+                <div class="asset-right">
+                    <div class="asset-balance">0 TRX</div>
+                    <div class="asset-usd-value">$0</div>
+                </div>
             </div>
         </div>
     </div>
