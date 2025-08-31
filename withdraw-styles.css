@@ -10,11 +10,9 @@
     --accent-color: #2196f3;
     --accent-secondary: #2381cc;
     --border-color: #404040;
-    --shadow-color: rgba(0,0, 0, 0.3);
+    --shadow-color: rgba(0, 0, 0, 0.3);
     --overlay-color: rgba(0, 0, 0, 0.7);
 }
-
-
 
 /* Базовые стили */
 * {
@@ -68,14 +66,71 @@ h1.page-title {
     font-size: 15px !important;
 }
 
-/* Список сетей */
-.networks-list {
+/* Поиск */
+.search-container {
+    margin-bottom: 10px;
+}
+
+.search-bar {
+    display: flex;
+    align-items: center;
+    background-color: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 12px 16px;
+    border: 1px solid var(--border-color);
+}
+
+.search-icon {
+    margin-right: 12px;
+    display: flex;
+    align-items: center;
+}
+
+.search-icon-img {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    opacity: 0.5;
+}
+
+/* Переключение иконок поиска для разных тем */
+.search-light {
+    display: block;
+}
+
+.search-dark {
+    display: none;
+}
+
+[data-theme="dark"] .search-light {
+    display: none;
+}
+
+[data-theme="dark"] .search-dark {
+    display: block;
+}
+
+.search-input {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    font-size: 16px;
+    outline: none;
+}
+
+.search-input::placeholder {
+    color: var(--text-tertiary);
+}
+
+/* Список криптовалют */
+.crypto-list {
     display: flex;
     flex-direction: column;
     gap: 0;
 }
 
-.network-item {
+.crypto-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -88,11 +143,21 @@ h1.page-title {
     position: relative;
 }
 
-.network-item:last-child {
+.crypto-item:last-child {
     margin-bottom: 0;
 }
 
-.network-item:hover::before {
+.crypto-item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background-color: var(--border-color);
+}
+
+.crypto-item:hover::before {
     content: '';
     position: absolute;
     top: 0;
@@ -104,117 +169,71 @@ h1.page-title {
     z-index: -1;
 }
 
-.network-item:active {
+.crypto-item:active {
     background-color: var(--border-color);
     transform: scale(0.98);
 }
 
-.network-left {
+.crypto-left {
     display: flex;
     align-items: center;
     gap: 16px;
 }
 
-.network-icon {
-    width: 38px !important;
-    height: 38px !important;
+.crypto-icon {
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-.ton-icon {
-    background-color: #0098e9;
-}
-
-.trx-icon {
-    background-color: #FF0000;
-}
-
-.sol-icon {
-    background-color: #000000;
+.usdt-icon {
+    background-color: #26A17B;
 }
 
 .eth-icon {
     background-color: #627EEA;
 }
 
-.bnb-icon {
-    background-color: #F3BA2F;
+.ton-icon {
+    background-color: #0098e9;
 }
 
-.network-logo {
-    width: 32px !important;
-    height: 32px !important;
+.sol-icon {
+    background-color: #000000;
+}
+
+.trx-icon {
+    background-color: #FF0000;
+}
+
+.crypto-logo {
+    width: 32px;
+    height: 32px;
     object-fit: contain;
 }
 
-
-
-.network-info {
+.crypto-info {
     display: flex;
     flex-direction: column;
     gap: 4px;
 }
 
-.network-name {
+.crypto-ticker {
     font-size: 16px;
     font-weight: 600;
     color: var(--text-primary);
 }
 
-.network-standard {
+.crypto-name {
     font-size: 14px;
     color: var(--text-secondary);
 }
 
-.network-arrow {
+.crypto-arrow {
     font-size: 20px;
     color: var(--text-secondary);
     font-weight: 300;
-}
-
-/* Линии-разделители */
-.network-item:not(:last-child)::after {
-    content: '';
-    position: absolute;
-    bottom: -4px;
-    left: 0;
-    width: 100%;
-    height: 1px;
-    background-color: var(--border-color);
-}
-
-/* Адаптивность */
-@media (max-width: 480px) {
-    .container {
-        padding: 16px;
-    }
-    
-    .page-title {
-        font-size: 14px;
-    }
-    
-    .network-item {
-        padding: 14px 10px;
-    }
-    
-    .network-icon {
-        width: 35px;
-        height: 35px;
-    }
-    
-    .network-logo {
-        width: 20px;
-        height: 20px;
-    }
-    
-    .network-name {
-        font-size: 15px;
-    }
-    
-    .network-standard {
-        font-size: 13px;
-    }
 }

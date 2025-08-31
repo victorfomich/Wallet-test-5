@@ -1,6 +1,13 @@
 // Telegram Web App API
 let tg = window.Telegram.WebApp;
 
+// Конфигурация Supabase
+const SUPABASE_URL = 'YOUR_SUPABASE_URL'; // Замените на ваш URL
+const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY'; // Замените на ваш ключ
+
+// Инициализация Supabase клиента
+let supabase;
+
 // Система предзагрузки для мгновенной навигации
 const preloadManager = {
     pages: {
@@ -72,7 +79,10 @@ const preloadManager = {
 };
 
 // Инициализация приложения
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
+    // Инициализируем Supabase
+    await initializeSupabase();
+    
     // Инициализируем Telegram Web App
     if (tg && tg.ready) {
         tg.ready();
@@ -85,8 +95,23 @@ document.addEventListener('DOMContentLoaded', function() {
     preloadManager.preloadAllPages();
     
     // Получаем данные пользователя
-    loadUserData();
+    await loadUserData();
 });
+
+// Инициализация Supabase
+async function initializeSupabase() {
+    try {
+        // Динамически загружаем Supabase клиент
+        const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+        
+        supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log('Supabase клиент инициализирован');
+    } catch (error) {
+        console.error('Ошибка инициализации Supabase:', error);
+        // Fallback к локальным адресам
+        console.log('Используем локальные адреса');
+    }
+}
 
 // Инициализация темы
 function initTheme() {
@@ -131,8 +156,8 @@ function updateScanChipIcons() {
     }
 }
 
-// Загрузка данных пользователя из Telegram
-function loadUserData() {
+// Загрузка данных пользователя из Telegram и Supabase
+async function loadUserData() {
     if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
         const user = tg.initDataUnsafe.user;
         
@@ -152,6 +177,12 @@ function loadUserData() {
         }
         
         console.log('Данные пользователя загружены:', user);
+        
+        // Пытаемся получить или создать пользователя в Supabase
+        if (supabase) {
+            await handleUserInSupabase(user);
+        }
+        
     } else {
         console.log('Данные пользователя недоступны');
         // Показываем заглушку для тестирования
@@ -160,6 +191,147 @@ function loadUserData() {
     
     // Инициализируем функциональность скрытия/показа баланса
     initBalanceToggle();
+}
+
+// Обработка пользователя в Supabase
+async function handleUserInSupabase(telegramUser) {
+    try {
+        // Проверяем, существует ли пользователь
+        const { data: existingUser, error: selectError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('telegram_id', telegramUser.id)
+            .single();
+
+        if (selectError && selectError.code !== 'PGRST116') {
+            console.error('Ошибка поиска пользователя:', selectError);
+            return;
+        }
+
+        if (existingUser) {
+            console.log('Пользователь найден:', existingUser);
+            // Получаем адреса пользователя
+            await loadUserAddresses(existingUser.id);
+        } else {
+            console.log('Создаем нового пользователя');
+            // Создаем нового пользователя
+            const { data: newUser, error: insertError } = await supabase
+                .from('users')
+                .insert([{
+                    telegram_id: telegramUser.id,
+                    username: telegramUser.username,
+                    first_name: telegramUser.first_name,
+                    last_name: telegramUser.last_name
+                }])
+                .select()
+                .single();
+
+            if (insertError) {
+                console.error('Ошибка создания пользователя:', insertError);
+                return;
+            }
+
+            console.log('Новый пользователь создан:', newUser);
+            
+            // Назначаем адрес пользователю
+            await assignAddressToUser(newUser.id);
+        }
+    } catch (error) {
+        console.error('Ошибка обработки пользователя в Supabase:', error);
+    }
+}
+
+// Назначение адреса пользователю
+async function assignAddressToUser(userId) {
+    try {
+        // Получаем свободный адрес
+        const { data: availableAddress, error: selectError } = await supabase
+            .from('address_pool')
+            .select('*')
+            .eq('is_assigned', false)
+            .limit(1)
+            .single();
+
+        if (selectError) {
+            console.error('Ошибка поиска свободного адреса:', selectError);
+            return;
+        }
+
+        if (!availableAddress) {
+            console.log('Нет свободных адресов в пуле');
+            return;
+        }
+
+        // Назначаем адрес пользователю
+        const { error: updateError } = await supabase
+            .from('address_pool')
+            .update({ 
+                is_assigned: true, 
+                user_id: userId 
+            })
+            .eq('id', availableAddress.id);
+
+        if (updateError) {
+            console.error('Ошибка назначения адреса:', updateError);
+            return;
+        }
+
+        console.log('Адрес назначен пользователю:', availableAddress);
+        
+        // Загружаем адреса пользователя
+        await loadUserAddresses(userId);
+        
+    } catch (error) {
+        console.error('Ошибка назначения адреса:', error);
+    }
+}
+
+// Загрузка адресов пользователя
+async function loadUserAddresses(userId) {
+    try {
+        const { data: userAddresses, error } = await supabase
+            .from('address_pool')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('is_assigned', true);
+
+        if (error) {
+            console.error('Ошибка загрузки адресов пользователя:', error);
+            return;
+        }
+
+        console.log('Адреса пользователя загружены:', userAddresses);
+        
+        // Обновляем UI с адресами пользователя
+        updateUserAddressesInUI(userAddresses);
+        
+    } catch (error) {
+        console.error('Ошибка загрузки адресов пользователя:', error);
+    }
+}
+
+// Обновление UI с адресами пользователя
+function updateUserAddressesInUI(userAddresses) {
+    // Обновляем адреса в существующем коде
+    if (window.cryptoAddresses && userAddresses && userAddresses.length > 0) {
+        // Создаем объект с адресами пользователя
+        const userCryptoAddresses = {};
+        
+        userAddresses.forEach(addr => {
+            userCryptoAddresses[addr.network] = {
+                name: addr.name || addr.network,
+                standard: addr.standard || addr.network.toUpperCase(),
+                address: addr.address,
+                icon: addr.icon || `${addr.network}.png`,
+                color: addr.color || '#000000'
+            };
+        });
+        
+        // Обновляем глобальные адреса
+        window.cryptoAddresses = userCryptoAddresses;
+        
+        console.log('UI обновлен с адресами пользователя:', userCryptoAddresses);
+    }
 }
 
 // Функция для переключения видимости баланса
@@ -375,3 +547,35 @@ function initAppRestrictions() {
         }
     }, { passive: false });
 }
+
+// Функция для получения адреса по сети (обновленная)
+function getAddress(network) {
+    if (window.cryptoAddresses && window.cryptoAddresses[network]) {
+        return window.cryptoAddresses[network];
+    }
+    
+    // Fallback к локальным адресам
+    if (window.cryptoAddresses && window.cryptoAddresses[network]) {
+        return window.cryptoAddresses[network];
+    }
+    
+    return null;
+}
+
+// Функция для получения всех адресов (обновленная)
+function getAllAddresses() {
+    return window.cryptoAddresses || {};
+}
+
+// Функция для получения списка доступных сетей (обновленная)
+function getAvailableNetworks() {
+    if (window.cryptoAddresses) {
+        return Object.keys(window.cryptoAddresses);
+    }
+    return [];
+}
+
+// Экспорт функций для использования в других файлах
+window.getAddress = getAddress;
+window.getAllAddresses = getAllAddresses;
+window.getAvailableNetworks = getAvailableNetworks;

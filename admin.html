@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DreamWallet Admin Panel</title>
+    <link rel="stylesheet" href="admin-styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Header -->
+        <header class="admin-header">
+            <h1><i class="fas fa-wallet"></i> DreamWallet Admin</h1>
+            <div class="header-stats">
+                <div class="stat-item">
+                    <span class="stat-number" id="totalUsers">0</span>
+                    <span class="stat-label">Пользователей</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="totalAddresses">0</span>
+                    <span class="stat-label">Адресов</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="assignedAddresses">0</span>
+                    <span class="stat-label">Назначено</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="availableAddresses">0</span>
+                    <span class="stat-label">Доступно</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="admin-nav">
+            <button class="nav-tab active" data-tab="users">
+                <i class="fas fa-users"></i> Пользователи
+            </button>
+            <button class="nav-tab" data-tab="addresses">
+                <i class="fas fa-address-card"></i> Адреса
+            </button>
+            <button class="nav-tab" data-tab="keys">
+                <i class="fas fa-key"></i> Ключи
+            </button>
+            <button class="nav-tab" data-tab="import">
+                <i class="fas fa-upload"></i> Импорт
+            </button>
+        </nav>
+
+        <!-- Users Tab -->
+        <div class="tab-content active" id="users-tab">
+            <div class="tab-header">
+                <h2>Управление пользователями</h2>
+                <button class="btn btn-primary" onclick="showCreateUserModal()">
+                    <i class="fas fa-plus"></i> Добавить пользователя
+                </button>
+            </div>
+            
+            <div class="search-bar">
+                <input type="text" id="userSearch" placeholder="Поиск по Telegram ID или имени...">
+                <i class="fas fa-search"></i>
+            </div>
+
+            <div class="table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Telegram ID</th>
+                            <th>Имя пользователя</th>
+                            <th>Имя</th>
+                            <th>Фамилия</th>
+                            <th>Адреса</th>
+                            <th>Дата создания</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <!-- Users will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Addresses Tab -->
+        <div class="tab-content" id="addresses-tab">
+            <div class="tab-header">
+                <h2>Управление пулом адресов</h2>
+                <button class="btn btn-primary" onclick="showCreateAddressModal()">
+                    <i class="fas fa-plus"></i> Добавить адрес
+                </button>
+            </div>
+
+            <div class="search-bar">
+                <input type="text" id="addressSearch" placeholder="Поиск по сети или адресу...">
+                <i class="fas fa-search"></i>
+            </div>
+
+            <div class="table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Сеть</th>
+                            <th>Адрес</th>
+                            <th>Название</th>
+                            <th>Стандарт</th>
+                            <th>Тип ключа</th>
+                            <th>Статус</th>
+                            <th>Пользователь</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="addressesTableBody">
+                        <!-- Addresses will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Keys Tab -->
+        <div class="tab-content" id="keys-tab">
+            <div class="tab-header">
+                <h2>Управление приватными ключами</h2>
+                <button class="btn btn-primary" onclick="showCreateKeyModal()">
+                    <i class="fas fa-plus"></i> Добавить ключ
+                </button>
+            </div>
+
+            <div class="search-bar">
+                <input type="text" id="keySearch" placeholder="Поиск по сети или типу ключа...">
+                <i class="fas fa-search"></i>
+            </div>
+
+            <div class="table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Сеть</th>
+                            <th>Адрес</th>
+                            <th>Тип ключа</th>
+                            <th>Ключ/Фраза</th>
+                            <th>Длина сид-фразы</th>
+                            <th>Статус</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="keysTableBody">
+                        <!-- Keys will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Import Tab -->
+        <div class="tab-content" id="import-tab">
+            <div class="tab-header">
+                <h2>Импорт адресов с ключами</h2>
+            </div>
+            
+            <div class="import-section">
+                <div class="import-instructions">
+                    <h3>Инструкция по импорту:</h3>
+                    <p>Подготовьте CSV файл со следующими колонками:</p>
+                    <ul>
+                        <li><strong>network</strong> - название сети (ton, tron, sol, eth, bnb)</li>
+                        <li><strong>address</strong> - криптовалютный адрес</li>
+                        <li><strong>key_type</strong> - тип ключа (private_key, seed_phrase, secret_key)</li>
+                        <li><strong>private_key</strong> - приватный ключ (для private_key типа)</li>
+                        <li><strong>seed_phrase</strong> - сид-фраза (для seed_phrase типа)</li>
+                        <li><strong>secret_key</strong> - секретный ключ (для secret_key типа)</li>
+                        <li><strong>seed_length</strong> - длина сид-фразы (12 или 24, опционально)</li>
+                        <li><strong>name</strong> - название сети (опционально)</li>
+                        <li><strong>standard</strong> - стандарт (опционально)</li>
+                    </ul>
+                </div>
+
+                <div class="import-form">
+                    <input type="file" id="csvFile" accept=".csv" class="file-input">
+                    <button class="btn btn-primary" onclick="importAddresses()">
+                        <i class="fas fa-upload"></i> Импортировать
+                    </button>
+                </div>
+
+                <div class="import-preview" id="importPreview">
+                    <!-- Preview will be shown here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create User Modal -->
+    <div class="modal" id="createUserModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Создать пользователя</h3>
+                <button class="modal-close" onclick="closeModal('createUserModal')">&times;</button>
+            </div>
+            <form id="createUserForm">
+                <div class="form-group">
+                    <label for="telegramId">Telegram ID *</label>
+                    <input type="text" id="telegramId" required>
+                </div>
+                <div class="form-group">
+                    <label for="username">Имя пользователя</label>
+                    <input type="text" id="username">
+                </div>
+                <div class="form-group">
+                    <label for="firstName">Имя</label>
+                    <input type="text" id="firstName">
+                </div>
+                <div class="form-group">
+                    <label for="lastName">Фамилия</label>
+                    <input type="text" id="lastName">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('createUserModal')">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Создать</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Create Address Modal -->
+    <div class="modal" id="createAddressModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Добавить адрес с ключом</h3>
+                <button class="modal-close" onclick="closeModal('createAddressModal')">&times;</button>
+            </div>
+            <form id="createAddressForm">
+                <div class="form-group">
+                    <label for="network">Сеть *</label>
+                    <select id="network" required onchange="updateKeyTypeOptions()">
+                        <option value="">Выберите сеть</option>
+                        <option value="ton">TON</option>
+                        <option value="tron">TRON</option>
+                        <option value="sol">Solana</option>
+                        <option value="eth">Ethereum</option>
+                        <option value="bnb">BNB Smart Chain</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="address">Адрес *</label>
+                    <input type="text" id="address" required>
+                </div>
+                <div class="form-group">
+                    <label for="keyType">Тип ключа *</label>
+                    <select id="keyType" required onchange="toggleKeyFields()">
+                        <option value="">Выберите тип</option>
+                        <option value="private_key">Приватный ключ</option>
+                        <option value="seed_phrase">Сид-фраза</option>
+                        <option value="secret_key">Секретный ключ</option>
+                    </select>
+                </div>
+                
+                <!-- Private Key Field -->
+                <div class="form-group key-field" id="privateKeyField" style="display: none;">
+                    <label for="privateKey">Приватный ключ *</label>
+                    <input type="password" id="privateKey" placeholder="Введите приватный ключ">
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="togglePasswordVisibility('privateKey')">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                
+                <!-- Seed Phrase Field -->
+                <div class="form-group key-field" id="seedPhraseField" style="display: none;">
+                    <label for="seedPhrase">Сид-фраза *</label>
+                    <textarea id="seedPhrase" rows="3" placeholder="Введите сид-фразу (12 или 24 слова)"></textarea>
+                    <div class="seed-length-options">
+                        <label>
+                            <input type="radio" name="seedLength" value="12" checked> 12 слов
+                        </label>
+                        <label>
+                            <input type="radio" name="seedLength" value="24"> 24 слова
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Secret Key Field -->
+                <div class="form-group key-field" id="secretKeyField" style="display: none;">
+                    <label for="secretKey">Секретный ключ *</label>
+                    <input type="password" id="secretKey" placeholder="Введите секретный ключ">
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="togglePasswordVisibility('secretKey')">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                
+                <div class="form-group">
+                    <label for="addressName">Название</label>
+                    <input type="text" id="addressName">
+                </div>
+                <div class="form-group">
+                    <label for="standard">Стандарт</label>
+                    <input type="text" id="standard">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('createAddressModal')">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Добавить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Create Key Modal -->
+    <div class="modal" id="createKeyModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Добавить приватный ключ</h3>
+                <button class="modal-close" onclick="closeModal('createKeyModal')">&times;</button>
+            </div>
+            <form id="createKeyForm">
+                <div class="form-group">
+                    <label for="keyNetwork">Сеть *</label>
+                    <select id="keyNetwork" required>
+                        <option value="">Выберите сеть</option>
+                        <option value="ton">TON</option>
+                        <option value="tron">TRON</option>
+                        <option value="sol">Solana</option>
+                        <option value="eth">Ethereum</option>
+                        <option value="bnb">BNB Smart Chain</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="keyAddress">Адрес *</label>
+                    <input type="text" id="keyAddress" required>
+                </div>
+                <div class="form-group">
+                    <label for="keyType">Тип ключа *</label>
+                    <select id="keyType" required onchange="toggleKeyModalFields()">
+                        <option value="">Выберите тип</option>
+                        <option value="private_key">Приватный ключ</option>
+                        <option value="seed_phrase">Сид-фраза</option>
+                        <option value="secret_key">Секретный ключ</option>
+                    </select>
+                </div>
+                
+                <!-- Key Fields -->
+                <div class="form-group key-modal-field" id="keyPrivateKeyField" style="display: none;">
+                    <label for="keyPrivateKey">Приватный ключ *</label>
+                    <input type="password" id="keyPrivateKey" placeholder="Введите приватный ключ">
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="togglePasswordVisibility('keyPrivateKey')">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                
+                <div class="form-group key-modal-field" id="keySeedPhraseField" style="display: none;">
+                    <label for="keySeedPhrase">Сид-фраза *</label>
+                    <textarea id="keySeedPhrase" rows="3" placeholder="Введите сид-фразу"></textarea>
+                </div>
+                
+                <div class="form-group key-modal-field" id="keySecretKeyField" style="display: none;">
+                    <label for="keySecretKey">Секретный ключ *</label>
+                    <input type="password" id="keySecretKey" placeholder="Введите секретный ключ">
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="togglePasswordVisibility('keySecretKey')">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('createKeyModal')">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Добавить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div class="modal" id="editUserModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Редактировать пользователя</h3>
+                <button class="modal-close" onclick="closeModal('editUserModal')">&times;</button>
+            </div>
+            <form id="editUserForm">
+                <input type="hidden" id="editUserId">
+                <div class="form-group">
+                    <label for="editTelegramId">Telegram ID *</label>
+                    <input type="text" id="editTelegramId" required>
+                </div>
+                <div class="form-group">
+                    <label for="editUsername">Имя пользователя</label>
+                    <input type="text" id="editUsername">
+                </div>
+                <div class="form-group">
+                    <label for="editFirstName">Имя</label>
+                    <input type="text" id="editFirstName">
+                </div>
+                <div class="form-group">
+                    <label for="editLastName">Фамилия</label>
+                    <input type="text" id="editLastName">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('editUserModal')">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+    </div>
+
+    <script src="admin-script.js"></script>
+</body>
+</html>

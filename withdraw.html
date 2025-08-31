@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>Вывод - DreamWallet</title>
+    <link rel="stylesheet" href="withdraw-styles.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Заголовок -->
+        <div class="header">
+            <h1 class="page-title">ВЫВОД КРИПТОВАЛЮТЫ</h1>
+        </div>
+        
+        <!-- Поиск -->
+        <div class="search-container">
+            <div class="search-bar">
+                <div class="search-icon">
+                    <img src="search.png" alt="Search" class="search-icon-img search-light">
+                    <img src="search_white.png" alt="Search" class="search-icon-img search-dark" style="display: none;">
+                </div>
+                <input type="text" class="search-input" placeholder="Поиск криптовалюты...">
+            </div>
+        </div>
+        
+        <!-- Список криптовалют -->
+        <div class="crypto-list">
+            <div class="crypto-item">
+                <div class="crypto-left">
+                    <div class="crypto-icon usdt-icon">
+                        <img src="usdt.png" alt="USDT" class="crypto-logo">
+                    </div>
+                    <div class="crypto-info">
+                        <div class="crypto-ticker">USDT</div>
+                        <div class="crypto-name">Tether</div>
+                    </div>
+                </div>
+                <div class="crypto-arrow">›</div>
+            </div>
+            
+            <div class="crypto-item">
+                <div class="crypto-left">
+                    <div class="crypto-icon eth-icon">
+                        <img src="ethereum.svg" alt="ETH" class="crypto-logo">
+                    </div>
+                    <div class="crypto-info">
+                        <div class="crypto-ticker">ETH</div>
+                        <div class="crypto-name">Ethereum</div>
+                    </div>
+                </div>
+                <div class="crypto-arrow">›</div>
+            </div>
+            
+            <div class="crypto-item">
+                <div class="crypto-left">
+                    <div class="crypto-icon ton-icon">
+                        <img src="toncoin.png" alt="TON" class="crypto-logo">
+                    </div>
+                    <div class="crypto-info">
+                        <div class="crypto-ticker">TON</div>
+                        <div class="crypto-name">Toncoin</div>
+                    </div>
+                </div>
+                <div class="crypto-arrow">›</div>
+            </div>
+            
+            <div class="crypto-item">
+                <div class="crypto-left">
+                    <div class="crypto-icon sol-icon">
+                        <img src="solana.png" alt="SOL" class="crypto-logo">
+                    </div>
+                    <div class="crypto-info">
+                        <div class="crypto-ticker">SOL</div>
+                        <div class="crypto-name">Solana</div>
+                    </div>
+                </div>
+                <div class="crypto-arrow">›</div>
+            </div>
+            
+            <div class="crypto-item">
+                <div class="crypto-left">
+                    <div class="crypto-icon trx-icon">
+                        <img src="tron.png" alt="TRX" class="crypto-logo">
+                    </div>
+                    <div class="crypto-info">
+                        <div class="crypto-ticker">TRX</div>
+                        <div class="crypto-name">Tron</div>
+                    </div>
+                </div>
+                <div class="crypto-arrow">›</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="withdraw-script.js"></script>
+</body>
+</html>

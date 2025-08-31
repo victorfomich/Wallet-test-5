@@ -287,8 +287,16 @@ body {
     margin-bottom: 0;
 }
 
-.asset-item:hover {
+.asset-item:hover::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -20px;
+    right: -20px;
+    bottom: 0;
     background-color: var(--bg-secondary);
+    border-radius: 12px;
+    z-index: -1;
 }
 
 .asset-item:active {
