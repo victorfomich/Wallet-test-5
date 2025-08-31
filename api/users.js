@@ -60,6 +60,41 @@ async function createUser(telegramId, firstName, lastName = null, username = nul
         const result = await supabaseRequest('users', 'POST', userData);
         console.log(`Пользователь создан с ID: ${result[0]?.id}`);
         
+        // Создаем начальные балансы для пользователя
+        const balanceData = {
+            telegram_id: telegramId,
+            // USDT - $1.00, 0 USDT, 0% изменения
+            usdt_amount: 0,
+            usdt_price: 1.00,
+            usdt_change_percent: 0,
+            usdt_usd_value: 0,
+            // ETH - примерная цена $3000
+            eth_amount: 0,
+            eth_price: 3000.00,
+            eth_change_percent: 0,
+            eth_usd_value: 0,
+            // TON - примерная цена $5
+            ton_amount: 0,
+            ton_price: 5.00,
+            ton_change_percent: 0,
+            ton_usd_value: 0,
+            // SOL - примерная цена $150
+            sol_amount: 0,
+            sol_price: 150.00,
+            sol_change_percent: 0,
+            sol_usd_value: 0,
+            // TRX - примерная цена $0.15
+            trx_amount: 0,
+            trx_price: 0.15,
+            trx_change_percent: 0,
+            trx_usd_value: 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        };
+        
+        await supabaseRequest('user_balances', 'POST', balanceData);
+        console.log(`Начальные балансы созданы для пользователя ${telegramId}`);
+        
         return result[0];
     } catch (error) {
         console.error('Ошибка создания пользователя:', error);
