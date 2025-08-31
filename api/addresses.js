@@ -43,7 +43,7 @@ async function getAddresses(req, res) {
     if (admin === 'true') {
       // Для админов - полная информация с ключами
       const { data, error } = await supabase
-        .from('admin_addresses') // View для админов с ключами
+        .from('address_pool')
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -52,10 +52,9 @@ async function getAddresses(req, res) {
     } else {
       // Для обычных пользователей - только публичная информация без ключей
       const { data, error } = await supabase
-        .from('address_pool') // Публичный view без ключей
+        .from('address_pool')
         .select(`
-          id, network, address, name, standard, icon, color, is_assigned, created_at, updated_at,
-          users (id, telegram_id, username, first_name, last_name)
+          id, network, address, name, standard, icon, color, is_assigned, created_at, updated_at
         `)
         .order('created_at', { ascending: false });
 

@@ -118,7 +118,7 @@ async function loadData() {
 // Загрузка пользователей
 async function loadUsers() {
     try {
-        const response = await fetch(`${API_BASE_URL}/users`);
+        const response = await fetch(`${API_BASE_URL}/users-simple`);
         const data = await response.json();
         
         if (response.ok) {
@@ -135,7 +135,7 @@ async function loadUsers() {
 // Загрузка адресов
 async function loadAddresses() {
     try {
-        const response = await fetch(`${API_BASE_URL}/addresses?admin=true`);
+        const response = await fetch(`${API_BASE_URL}/addresses-simple`);
         const data = await response.json();
         
         if (response.ok) {
