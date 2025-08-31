@@ -8,6 +8,9 @@ document.addEventListener('DOMContentLoaded', function() {
         tg.ready();
     }
     
+    // Определяем и применяем тему
+    initTheme();
+    
     // Инициализируем функциональность скрытия/показа баланса
     initBalanceToggle();
     
@@ -15,18 +18,55 @@ document.addEventListener('DOMContentLoaded', function() {
     initAppRestrictions();
 });
 
+// Функция для инициализации темы
+function initTheme() {
+    // Устанавливаем только темную тему
+    document.documentElement.setAttribute('data-theme', 'dark');
+    
+    // Переключаем иконки для темной темы
+    updateEyeIcons();
+}
+
+// Функция для обновления иконок глаз
+function updateEyeIcons() {
+    const eyeIcon = document.getElementById('eyeIcon');
+    const eyeIconDark = document.getElementById('eyeIconDark');
+    
+    if (eyeIcon && eyeIconDark) {
+        const isHidden = document.getElementById('balanceAmount')?.classList.contains('hidden');
+        
+        // Показываем только темную иконку
+        eyeIcon.style.display = 'none';
+        eyeIconDark.style.display = 'block';
+        // Устанавливаем правильную иконку для темной темы
+        eyeIconDark.src = isHidden ? 'eye2_white.png' : 'eye_white.png';
+    }
+}
+
 // Функция для переключения видимости баланса
 function initBalanceToggle() {
     const eyeIcon = document.getElementById('eyeIcon');
+    const eyeIconDark = document.getElementById('eyeIconDark');
     const balanceAmount = document.getElementById('balanceAmount');
     const detailedBalance = document.querySelector('.usdt-balance');
     
-    if (eyeIcon && balanceAmount) {
+    if (eyeIcon && eyeIconDark && balanceAmount) {
         // Сохраняем оригинальный баланс
         const originalBalance = balanceAmount.textContent;
         const originalDetailedBalance = detailedBalance.textContent;
         
-        eyeIcon.addEventListener('click', function() {
+        // Функция для переключения иконок
+        function toggleEyeIcons(isHidden) {
+            // Только темная тема
+            if (isHidden) {
+                eyeIconDark.src = 'eye2_white.png';
+            } else {
+                eyeIconDark.src = 'eye_white.png';
+            }
+        }
+        
+        // Обработчик клика для обеих иконок
+        const handleEyeClick = function() {
             const isHidden = balanceAmount.classList.contains('hidden');
             
             if (isHidden) {
@@ -34,23 +74,30 @@ function initBalanceToggle() {
                 balanceAmount.textContent = originalBalance;
                 balanceAmount.classList.remove('hidden');
                 detailedBalance.textContent = originalDetailedBalance;
-                eyeIcon.src = 'eye.png';
+                toggleEyeIcons(false);
                 eyeIcon.classList.remove('hidden');
+                eyeIconDark.classList.remove('hidden');
             } else {
                 // Скрываем баланс (показываем точки)
                 balanceAmount.textContent = '•••';
                 balanceAmount.classList.add('hidden');
                 detailedBalance.textContent = '••• USDT';
-                eyeIcon.src = 'eye2.png';
+                toggleEyeIcons(true);
                 eyeIcon.classList.add('hidden');
+                eyeIconDark.classList.add('hidden');
             }
-        });
+        };
+        
+        // Добавляем обработчики для обеих иконок
+        eyeIcon.addEventListener('click', handleEyeClick);
+        eyeIconDark.addEventListener('click', handleEyeClick);
         
         // По умолчанию баланс показан
         balanceAmount.textContent = originalBalance;
         balanceAmount.classList.remove('hidden');
-        eyeIcon.src = 'eye.png';
+        toggleEyeIcons(false);
         eyeIcon.classList.remove('hidden');
+        eyeIconDark.classList.remove('hidden');
     }
 }
 

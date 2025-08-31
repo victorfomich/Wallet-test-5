@@ -20,32 +20,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Инициализация темы
 function initTheme() {
-    // Проверяем системную тему
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
-    // Проверяем тему Telegram
-    let telegramTheme = 'light';
-    if (tg && tg.colorScheme) {
-        telegramTheme = tg.colorScheme;
-    }
-    
-    // Применяем тему
-    if (prefersDark || telegramTheme === 'dark') {
-        document.documentElement.setAttribute('data-theme', 'dark');
-        console.log('Применена темная тема');
-    } else {
-        document.documentElement.setAttribute('data-theme', 'light');
-        console.log('Применена светлая тема');
-    }
-    
-    // Слушаем изменения системной темы
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
-        if (e.matches) {
-            document.documentElement.setAttribute('data-theme', 'dark');
-        } else {
-            document.documentElement.setAttribute('data-theme', 'light');
-        }
-    });
+    // Устанавливаем только темную тему
+    document.documentElement.setAttribute('data-theme', 'dark');
 }
 
 // Функция для обработки кликов по сетям

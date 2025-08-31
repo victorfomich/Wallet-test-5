@@ -87,39 +87,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Инициализация темы
 function initTheme() {
-    // Проверяем системную тему
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    // Устанавливаем только темную тему
+    document.documentElement.setAttribute('data-theme', 'dark');
+    console.log('Применена темная тема');
     
-    // Проверяем тему Telegram
-    let telegramTheme = 'light';
-    if (tg && tg.colorScheme) {
-        telegramTheme = tg.colorScheme;
-    }
-    
-    // Применяем тему
-    if (prefersDark || telegramTheme === 'dark') {
-        document.documentElement.setAttribute('data-theme', 'dark');
-        console.log('Применена темная тема');
-    } else {
-        document.documentElement.setAttribute('data-theme', 'light');
-        console.log('Применена светлая тема');
-    }
-    
-    // Слушаем изменения системной темы
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
-        if (e.matches) {
-            document.documentElement.setAttribute('data-theme', 'dark');
-        } else {
-            document.documentElement.setAttribute('data-theme', 'light');
-        }
-        updateEyeIcons();
-        updateScanChipIcons();
-    });
-    
-    // Переключаем иконки глаз при смене темы
+    // Переключаем иконки для темной темы
     updateEyeIcons();
-    
-    // Переключаем иконки scan и chip при смене темы
     updateScanChipIcons();
 }
 
@@ -129,20 +102,13 @@ function updateEyeIcons() {
     const eyeIconDark = document.getElementById('eyeIconDark');
     
     if (eyeIcon && eyeIconDark) {
-        const isDarkTheme = document.documentElement.getAttribute('data-theme') === 'dark';
         const isHidden = document.getElementById('balanceAmount')?.classList.contains('hidden');
         
-        if (isDarkTheme) {
-            eyeIcon.style.display = 'none';
-            eyeIconDark.style.display = 'block';
-            // Устанавливаем правильную иконку для темной темы
-            eyeIconDark.src = isHidden ? 'eye2_white.png' : 'eye_white.png';
-        } else {
-            eyeIcon.style.display = 'block';
-            eyeIconDark.style.display = 'none';
-            // Устанавливаем правильную иконку для светлой темы
-            eyeIcon.src = isHidden ? 'eye2.png' : 'eye.png';
-        }
+        // Показываем только темную иконку
+        eyeIcon.style.display = 'none';
+        eyeIconDark.style.display = 'block';
+        // Устанавливаем правильную иконку для темной темы
+        eyeIconDark.src = isHidden ? 'eye2_white.png' : 'eye_white.png';
     }
 }
 
@@ -154,19 +120,11 @@ function updateScanChipIcons() {
     const chipDark = document.querySelector('.chip-dark');
     
     if (scanLight && scanDark && chipLight && chipDark) {
-        const isDarkTheme = document.documentElement.getAttribute('data-theme') === 'dark';
-        
-        if (isDarkTheme) {
-            scanLight.style.display = 'none';
-            scanDark.style.display = 'block';
-            chipLight.style.display = 'none';
-            chipDark.style.display = 'block';
-        } else {
-            scanLight.style.display = 'block';
-            scanDark.style.display = 'none';
-            chipLight.style.display = 'block';
-            chipDark.style.display = 'none';
-        }
+        // Показываем только темные иконки
+        scanLight.style.display = 'none';
+        scanDark.style.display = 'block';
+        chipLight.style.display = 'none';
+        chipDark.style.display = 'block';
     }
 }
 

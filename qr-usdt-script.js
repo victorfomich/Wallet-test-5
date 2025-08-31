@@ -48,35 +48,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Инициализация темы
 function initTheme() {
-    // Проверяем системную тему
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    // Устанавливаем только темную тему
+    document.documentElement.setAttribute('data-theme', 'dark');
     
-    // Проверяем тему Telegram
-    let telegramTheme = 'light';
-    if (tg && tg.colorScheme) {
-        telegramTheme = tg.colorScheme;
-    }
-    
-    // Применяем тему
-    if (prefersDark || telegramTheme === 'dark') {
-        document.documentElement.setAttribute('data-theme', 'dark');
-        console.log('Применена темная тема');
-    } else {
-        document.documentElement.setAttribute('data-theme', 'light');
-        console.log('Применена светлая тема');
-    }
-    
-    // Слушаем изменения системной темы
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
-        if (e.matches) {
-            document.documentElement.setAttribute('data-theme', 'dark');
-        } else {
-            document.documentElement.setAttribute('data-theme', 'light');
-        }
-        updateCopyIcons();
-    });
-    
-    // Переключаем иконки копирования при смене темы
+    // Переключаем иконки для темной темы
     updateCopyIcons();
 }
 
@@ -86,19 +61,11 @@ function updateCopyIcons() {
     const copyDark = document.querySelector('.copy-dark');
     
     if (copyLight && copyDark) {
-        const isDarkTheme = document.documentElement.getAttribute('data-theme') === 'dark';
-        
-        if (isDarkTheme) {
-            copyLight.style.display = 'none';
-            copyDark.style.display = 'block';
-            // Сбрасываем opacity для плавного появления
-            copyDark.style.opacity = '0.3';
-        } else {
-            copyLight.style.display = 'block';
-            copyDark.style.display = 'none';
-            // Сбрасываем opacity для плавного появления
-            copyLight.style.opacity = '0.3';
-        }
+        // Показываем только темную иконку
+        copyLight.style.display = 'none';
+        copyDark.style.display = 'block';
+        // Сбрасываем opacity для плавного появления
+        copyDark.style.opacity = '0.3';
     }
 }
 

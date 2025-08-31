@@ -1,33 +1,20 @@
 /* CSS переменные для темной темы */
 :root {
-    /* Светлая тема */
-    --bg-primary: #f5f5f5;
-    --bg-secondary: #ffffff;
-    --bg-card: #f5f5f5;
-    --text-primary: #333333;
-    --text-secondary: #666666;
-    --text-tertiary: #808080;
-    --accent-color: #2196f3;
-    --accent-secondary: #2381cc;
-    --border-color: #f0f0f0;
-    --shadow-color: rgba(0, 0, 0, 0.1);
-    --overlay-color: rgba(0, 0, 0, 0.5);
-}
-
-/* Темная тема */
-[data-theme="dark"] {
+    /* Темная тема по умолчанию */
     --bg-primary: #1a1a1a;
-    --bg-secondary: #ffffff;
+    --bg-secondary: #2d2d2d;
     --bg-card: #2d2d2d;
     --text-primary: #ffffff;
-    --text-secondary: #cccccc;
-    --text-tertiary: #999999;
-    --accent-color: #64b5f6;
-    --accent-secondary: #42a5f5;
+    --text-secondary: #e0e0e0;
+    --text-tertiary: #b0b0b0;
+    --accent-color: #2196f3;
+    --accent-secondary: #2381cc;
     --border-color: #404040;
     --shadow-color: rgba(0, 0, 0, 0.3);
     --overlay-color: rgba(0, 0, 0, 0.7);
 }
+
+
 
 /* Базовые стили */
 * {
