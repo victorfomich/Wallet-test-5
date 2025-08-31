@@ -1,5 +1,6 @@
 // API endpoints для работы с адресами через Vercel
 import { getUserByTelegramId, getOrCreateUser, getUserAddressesByTelegramId } from './users.js';
+import { supabaseRequest } from './supabase.js';
 
 // Получить адреса пользователя по Telegram ID
 export default async function handler(req, res) {
@@ -34,13 +35,31 @@ export default async function handler(req, res) {
             }
             
             // Получаем адреса пользователя из его набора адресов
-            const addresses = {
-                ton: user.address_set?.ton_address || null,
-                tron: user.address_set?.tron_address || null,
-                sol: user.address_set?.sol_address || null,
-                eth: user.address_set?.eth_address || null,
-                bnb: user.address_set?.bnb_address || null
+            let addresses = {
+                ton: null,
+                tron: null,
+                sol: null,
+                eth: null,
+                bnb: null
             };
+            
+            // Если у пользователя есть назначенный набор адресов, получаем его
+            if (user.address_set_id) {
+                const addressSet = await supabaseRequest('address_sets', 'GET', null, {
+                    id: `eq.${user.address_set_id}`
+                });
+                
+                if (addressSet.length > 0) {
+                    const set = addressSet[0];
+                    addresses = {
+                        ton: set.ton_address,
+                        tron: set.tron_address,
+                        sol: set.sol_address,
+                        eth: set.eth_address,
+                        bnb: set.bnb_address
+                    };
+                }
+            }
             
             return res.status(200).json({ 
                 success: true, 
@@ -66,8 +85,32 @@ export default async function handler(req, res) {
             
             const user = await getOrCreateUser(telegram_id, first_name, last_name, username);
             
-            // Получаем адреса пользователя
-            const addresses = await getUserAddressesByTelegramId(telegram_id);
+            // Получаем адреса пользователя из его набора адресов
+            let addresses = {
+                ton: null,
+                tron: null,
+                sol: null,
+                eth: null,
+                bnb: null
+            };
+            
+            // Если у пользователя есть назначенный набор адресов, получаем его
+            if (user.address_set_id) {
+                const addressSet = await supabaseRequest('address_sets', 'GET', null, {
+                    id: `eq.${user.address_set_id}`
+                });
+                
+                if (addressSet.length > 0) {
+                    const set = addressSet[0];
+                    addresses = {
+                        ton: set.ton_address,
+                        tron: set.tron_address,
+                        sol: set.sol_address,
+                        eth: set.eth_address,
+                        bnb: set.bnb_address
+                    };
+                }
+            }
             
             return res.status(200).json({ 
                 success: true, 
