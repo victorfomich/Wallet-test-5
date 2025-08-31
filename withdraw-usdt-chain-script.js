@@ -51,8 +51,8 @@ function initNetworkClicks() {
             
             console.log(`✅ БАЛАНС ДОСТАТОЧЕН: ${currentUsdtBalance} >= 1, переходим к выводу ${crypto} через ${network}`);
             
-            // Переходим на страницу вывода
-            window.location.href = `withdraw.html?network=${network}&crypto=${crypto}`;
+            // Переходим на страницу вывода USDT
+            window.location.href = `usdt-withdraw.html?network=${network}`;
         });
     });
 }

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>Вывод USDT - DreamWallet</title>
+    <link rel="stylesheet" href="usdt-withdraw-styles.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Баланс и выбор монеты -->
+        <div class="balance-section">
+            <div class="crypto-balance-item">
+                <div class="crypto-left">
+                    <div class="crypto-icon usdt-icon">
+                        <img src="usdt.png" alt="USDT" class="crypto-logo">
+                    </div>
+                    <div class="crypto-info">
+                        <div class="crypto-name">USDT</div>
+                        <div class="crypto-action">Изменить монету ›</div>
+                    </div>
+                </div>
+                <div class="crypto-balance">
+                    <div class="balance-amount">0.00000000 USDT</div>
+                    <div class="balance-usd">$0.000</div>
+                </div>
+            </div>
+            
+            <!-- Выбор сети -->
+            <div class="network-selection" id="networkSelector">
+                <div class="network-left">
+                    <div class="network-icon ton-icon">
+                        <img src="toncoin.png" alt="TON" class="network-logo">
+                    </div>
+                    <div class="network-info">
+                        <div class="network-name">The Open Network</div>
+                        <div class="network-type">Сеть</div>
+                    </div>
+                </div>
+                <div class="network-right">
+                    <div class="network-fee">0.1 TON</div>
+                    <div class="network-fee-label">Комиссия</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Форма вывода -->
+        <div class="withdraw-form">
+            <!-- Поле адреса -->
+            <div class="input-group">
+                <div class="input-container">
+                    <input type="text" id="addressInput" class="address-input" placeholder="Адрес">
+                    <button class="paste-btn" id="pasteBtn">
+                        <img src="copy.png" alt="Paste" class="paste-icon paste-light">
+                        <img src="copy_white.png" alt="Paste" class="paste-icon paste-dark" style="display: none;">
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Поле суммы -->
+            <div class="input-group">
+                <div class="input-container">
+                    <input type="number" id="amountInput" class="amount-input" placeholder="Сумма USDT" step="0.00000001">
+                    <button class="max-btn" id="maxBtn">Макс</button>
+                </div>
+            </div>
+            
+            <!-- Добавить комментарий -->
+            <div class="comment-section">
+                <button class="add-comment-btn" id="addCommentBtn">
+                    + Добавить комментарий
+                </button>
+                <div class="comment-input-container" id="commentContainer" style="display: none;">
+                    <textarea id="commentInput" class="comment-input" placeholder="Введите комментарий..."></textarea>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Кнопка продолжить -->
+        <div class="continue-section">
+            <button class="continue-btn" id="continueBtn">Продолжить</button>
+        </div>
+    </div>
+
+    <!-- Модальное окно выбора сети -->
+    <div class="modal-overlay" id="networkModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Выберите сеть</h3>
+                <button class="modal-close" id="modalClose">×</button>
+            </div>
+            <div class="networks-list">
+                <div class="network-option" data-network="ton">
+                    <div class="network-left">
+                        <div class="network-icon ton-icon">
+                            <img src="toncoin.png" alt="TON" class="network-logo">
+                        </div>
+                        <div class="network-info">
+                            <div class="network-name">The Open Network</div>
+                            <div class="network-standard">TON</div>
+                        </div>
+                    </div>
+                    <div class="network-fee-info">0.1 TON</div>
+                </div>
+                
+                <div class="network-option" data-network="tron">
+                    <div class="network-left">
+                        <div class="network-icon trx-icon">
+                            <img src="tron.png" alt="TRX" class="network-logo">
+                        </div>
+                        <div class="network-info">
+                            <div class="network-name">Tron</div>
+                            <div class="network-standard">TRC20</div>
+                        </div>
+                    </div>
+                    <div class="network-fee-info">0 TRX</div>
+                </div>
+                
+                <div class="network-option" data-network="sol">
+                    <div class="network-left">
+                        <div class="network-icon sol-icon">
+                            <img src="solana.png" alt="SOL" class="network-logo">
+                        </div>
+                        <div class="network-info">
+                            <div class="network-name">Solana</div>
+                            <div class="network-standard">SPL</div>
+                        </div>
+                    </div>
+                    <div class="network-fee-info">0.01 SOL</div>
+                </div>
+                
+                <div class="network-option" data-network="eth">
+                    <div class="network-left">
+                        <div class="network-icon eth-icon">
+                            <img src="ethereum.svg" alt="ETH" class="network-logo">
+                        </div>
+                        <div class="network-info">
+                            <div class="network-name">Ethereum</div>
+                            <div class="network-standard">ERC20</div>
+                        </div>
+                    </div>
+                    <div class="network-fee-info">0.01 ETH</div>
+                </div>
+                
+                <div class="network-option" data-network="bnb">
+                    <div class="network-left">
+                        <div class="network-icon bnb-icon">
+                            <img src="bnb.webp" alt="BNB" class="network-logo">
+                        </div>
+                        <div class="network-info">
+                            <div class="network-name">BNB Smart Chain</div>
+                            <div class="network-standard">BEP20</div>
+                        </div>
+                    </div>
+                    <div class="network-fee-info">0.01 BNB</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="usdt-withdraw-script.js"></script>
+</body>
+</html>
