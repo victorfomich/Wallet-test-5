@@ -559,6 +559,14 @@ body {
     font-size: 0.85em;
 }
 
+.secret-preview {
+    color: #666;
+    font-size: 0.75em;
+    font-style: italic;
+    margin-top: 2px;
+    cursor: help;
+}
+
 .mt-20 {
     margin-top: 20px;
 }

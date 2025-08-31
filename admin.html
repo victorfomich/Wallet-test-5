@@ -84,11 +84,11 @@
                             <tr>
                                 <th>ID</th>
                                 <th>Имя</th>
-                                <th>TON</th>
-                                <th>TRON</th>
-                                <th>SOL</th>
-                                <th>ETH</th>
-                                <th>BNB</th>
+                                <th>TON<br><small>адрес + секрет</small></th>
+                                <th>TRON<br><small>адрес + секрет</small></th>
+                                <th>SOL<br><small>адрес + секрет</small></th>
+                                <th>ETH<br><small>адрес + секрет</small></th>
+                                <th>BNB<br><small>адрес + секрет</small></th>
                                 <th>Статус</th>
                                 <th>Назначен</th>
                                 <th>Действия</th>
@@ -148,20 +148,40 @@
                         <input type="text" id="tonAddress" name="tonAddress" placeholder="EQD4FPq-PRDieyQKkizFTRtSD...">
                     </div>
                     <div class="form-group">
+                        <label for="tonSecret">TON секрет (приватный ключ/мнемоника):</label>
+                        <input type="text" id="tonSecret" name="tonSecret" placeholder="abandon abandon abandon... или 0x123...">
+                    </div>
+                    <div class="form-group">
                         <label for="tronAddress">TRON адрес:</label>
                         <input type="text" id="tronAddress" name="tronAddress" placeholder="TR7NHqjeKQxGTCi8q8ZY4p...">
+                    </div>
+                    <div class="form-group">
+                        <label for="tronSecret">TRON секрет (приватный ключ/мнемоника):</label>
+                        <input type="text" id="tronSecret" name="tronSecret" placeholder="abandon abandon abandon... или 0x123...">
                     </div>
                     <div class="form-group">
                         <label for="solAddress">SOL адрес:</label>
                         <input type="text" id="solAddress" name="solAddress" placeholder="EPjFWdd5AufqSSqeM2qN1x...">
                     </div>
                     <div class="form-group">
+                        <label for="solSecret">SOL секрет (приватный ключ/мнемоника):</label>
+                        <input type="text" id="solSecret" name="solSecret" placeholder="abandon abandon abandon... или base58 ключ">
+                    </div>
+                    <div class="form-group">
                         <label for="ethAddress">ETH адрес:</label>
                         <input type="text" id="ethAddress" name="ethAddress" placeholder="0xdAC17F958D2ee523a2206206...">
                     </div>
                     <div class="form-group">
+                        <label for="ethSecret">ETH секрет (приватный ключ/мнемоника):</label>
+                        <input type="text" id="ethSecret" name="ethSecret" placeholder="abandon abandon abandon... или 0x123...">
+                    </div>
+                    <div class="form-group">
                         <label for="bnbAddress">BNB адрес:</label>
                         <input type="text" id="bnbAddress" name="bnbAddress" placeholder="0x55d398326f99059fF775485246...">
+                    </div>
+                    <div class="form-group">
+                        <label for="bnbSecret">BNB секрет (приватный ключ/мнемоника):</label>
+                        <input type="text" id="bnbSecret" name="bnbSecret" placeholder="abandon abandon abandon... или 0x123...">
                     </div>
                 </form>
             </div>

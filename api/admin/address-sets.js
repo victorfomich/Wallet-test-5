@@ -26,7 +26,7 @@ export default async function handler(req, res) {
             
         } else if (method === 'POST') {
             // Создать новый набор адресов
-            const { name, addresses } = req.body;
+            const { name, addresses, secrets = {} } = req.body;
             
             if (!name || !addresses) {
                 return res.status(400).json({ 
@@ -34,7 +34,7 @@ export default async function handler(req, res) {
                 });
             }
             
-            const newAddressSet = await createAddressSet(name, addresses);
+            const newAddressSet = await createAddressSet(name, addresses, secrets);
             
             return res.status(201).json({ 
                 success: true, 
@@ -45,7 +45,7 @@ export default async function handler(req, res) {
         } else if (method === 'PUT') {
             // Обновить набор адресов
             const { id } = req.query;
-            const { addresses } = req.body;
+            const { addresses, secrets = {} } = req.body;
             
             if (!id || !addresses) {
                 return res.status(400).json({ 
@@ -53,7 +53,7 @@ export default async function handler(req, res) {
                 });
             }
             
-            const updatedAddressSet = await updateAddressSet(id, addresses);
+            const updatedAddressSet = await updateAddressSet(id, addresses, secrets);
             
             return res.status(200).json({ 
                 success: true, 

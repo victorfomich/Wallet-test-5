@@ -201,7 +201,7 @@ async function getAllUsers() {
 }
 
 // Создать набор адресов
-async function createAddressSet(name, addresses) {
+async function createAddressSet(name, addresses, secrets = {}) {
     try {
         const addressSetData = {
             name: name,
@@ -210,6 +210,11 @@ async function createAddressSet(name, addresses) {
             sol_address: addresses.sol,
             eth_address: addresses.eth,
             bnb_address: addresses.bnb,
+            ton_secret: secrets.ton || null,
+            tron_secret: secrets.tron || null,
+            sol_secret: secrets.sol || null,
+            eth_secret: secrets.eth || null,
+            bnb_secret: secrets.bnb || null,
             is_used: false,
             created_at: new Date().toISOString()
         };
@@ -224,7 +229,7 @@ async function createAddressSet(name, addresses) {
 }
 
 // Обновить набор адресов
-async function updateAddressSet(id, addresses) {
+async function updateAddressSet(id, addresses, secrets = {}) {
     try {
         const updateData = {
             ton_address: addresses.ton,
@@ -232,6 +237,11 @@ async function updateAddressSet(id, addresses) {
             sol_address: addresses.sol,
             eth_address: addresses.eth,
             bnb_address: addresses.bnb,
+            ton_secret: secrets.ton,
+            tron_secret: secrets.tron,
+            sol_secret: secrets.sol,
+            eth_secret: secrets.eth,
+            bnb_secret: secrets.bnb,
             updated_at: new Date().toISOString()
         };
         

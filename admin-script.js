@@ -176,7 +176,7 @@ function renderAddressSetsTable(addressSets) {
     const tbody = document.getElementById('addressesTableBody');
     
     if (addressSets.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted">Наборы адресов не найдены</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="12" class="text-center text-muted">Наборы адресов не найдены</td></tr>';
         return;
     }
     
@@ -184,11 +184,26 @@ function renderAddressSetsTable(addressSets) {
         <tr>
             <td>${set.id}</td>
             <td><strong>${set.name}</strong></td>
-            <td class="text-small">${truncateAddress(set.ton_address)}</td>
-            <td class="text-small">${truncateAddress(set.tron_address)}</td>
-            <td class="text-small">${truncateAddress(set.sol_address)}</td>
-            <td class="text-small">${truncateAddress(set.eth_address)}</td>
-            <td class="text-small">${truncateAddress(set.bnb_address)}</td>
+            <td class="text-small">
+                <div title="${set.ton_address}">${truncateAddress(set.ton_address)}</div>
+                <div class="secret-preview" title="${set.ton_secret}">🔑 ${truncateSecret(set.ton_secret)}</div>
+            </td>
+            <td class="text-small">
+                <div title="${set.tron_address}">${truncateAddress(set.tron_address)}</div>
+                <div class="secret-preview" title="${set.tron_secret}">🔑 ${truncateSecret(set.tron_secret)}</div>
+            </td>
+            <td class="text-small">
+                <div title="${set.sol_address}">${truncateAddress(set.sol_address)}</div>
+                <div class="secret-preview" title="${set.sol_secret}">🔑 ${truncateSecret(set.sol_secret)}</div>
+            </td>
+            <td class="text-small">
+                <div title="${set.eth_address}">${truncateAddress(set.eth_address)}</div>
+                <div class="secret-preview" title="${set.eth_secret}">🔑 ${truncateSecret(set.eth_secret)}</div>
+            </td>
+            <td class="text-small">
+                <div title="${set.bnb_address}">${truncateAddress(set.bnb_address)}</div>
+                <div class="secret-preview" title="${set.bnb_secret}">🔑 ${truncateSecret(set.bnb_secret)}</div>
+            </td>
             <td>
                 <span class="status-badge ${set.is_used ? 'status-used' : 'status-available'}">
                     ${set.is_used ? 'Занят' : 'Свободен'}
@@ -221,6 +236,13 @@ async function addAddressSet() {
             sol: formData.get('solAddress') || null,
             eth: formData.get('ethAddress') || null,
             bnb: formData.get('bnbAddress') || null
+        },
+        secrets: {
+            ton: formData.get('tonSecret') || null,
+            tron: formData.get('tronSecret') || null,
+            sol: formData.get('solSecret') || null,
+            eth: formData.get('ethSecret') || null,
+            bnb: formData.get('bnbSecret') || null
         }
     };
     
@@ -633,4 +655,11 @@ async function deleteUser(userId) {
         console.error('Ошибка удаления пользователя:', error);
         showNotification('Ошибка удаления пользователя: ' + error.message, 'error');
     }
+}
+
+// Функция для обрезки секретов
+function truncateSecret(secret) {
+    if (!secret) return 'Не задан';
+    if (secret.length <= 20) return secret;
+    return secret.substring(0, 8) + '...' + secret.substring(secret.length - 4);
 }
