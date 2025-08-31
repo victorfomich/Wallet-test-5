@@ -249,6 +249,11 @@ body {
     background-color: rgba(0, 0, 0, 0.1);
 }
 
+/* Дополнительное место после последнего элемента */
+.assets-list {
+    margin-bottom: 200px;
+}
+
 .asset-left {
     display: flex;
     align-items: center;
