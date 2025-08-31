@@ -1,6 +1,6 @@
 // API для админки - управление наборами адресов
-const { getAllAddressSets, createAddressSet, updateAddressSet, deleteAddressSet } = require('../users.js');
-const { supabaseRequest } = require('../supabase.js');
+import { getAllAddressSets, createAddressSet, updateAddressSet, deleteAddressSet } from '../users.js';
+import { supabaseRequest } from '../supabase.js';
 
 export default async function handler(req, res) {
     // Разрешаем CORS

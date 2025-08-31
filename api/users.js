@@ -1,5 +1,5 @@
 // API для работы с пользователями и их адресами
-const { supabaseRequest } = require('./supabase.js');
+import { supabaseRequest } from './supabase.js';
 
 // Получить пользователя по Telegram ID
 async function getUserByTelegramId(telegramId) {
@@ -234,7 +234,7 @@ async function deleteAddressSet(id) {
     }
 }
 
-module.exports = {
+export {
     getUserByTelegramId,
     createUser,
     getOrCreateUser,

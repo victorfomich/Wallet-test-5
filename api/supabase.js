@@ -1,7 +1,7 @@
 // Конфигурация Supabase
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
+export const SUPABASE_URL = process.env.SUPABASE_URL;
+export const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+export const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
 // Проверяем наличие переменных окружения
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
@@ -9,7 +9,7 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
 }
 
 // Создаем клиент Supabase (для браузера используем анонимный ключ)
-function createSupabaseClient() {
+export function createSupabaseClient() {
     if (typeof window !== 'undefined') {
         // Клиентская сторона - используем анонимный ключ
         return {
@@ -26,7 +26,7 @@ function createSupabaseClient() {
 }
 
 // Функция для выполнения запросов к Supabase
-async function supabaseRequest(table, method = 'GET', data = null, params = {}) {
+export async function supabaseRequest(table, method = 'GET', data = null, params = {}) {
     const client = createSupabaseClient();
     
     let url = `${client.url}/rest/v1/${table}`;
@@ -72,16 +72,8 @@ async function supabaseRequest(table, method = 'GET', data = null, params = {}) 
     }
 }
 
-// Экспорт функций
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        createSupabaseClient,
-        supabaseRequest,
-        SUPABASE_URL,
-        SUPABASE_ANON_KEY
-    };
-} else {
-    // Для использования в браузере
+// Для использования в браузере
+if (typeof window !== 'undefined') {
     window.createSupabaseClient = createSupabaseClient;
     window.supabaseRequest = supabaseRequest;
     window.SUPABASE_URL = SUPABASE_URL;

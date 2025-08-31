@@ -1,5 +1,5 @@
 // API endpoints для работы с адресами через Vercel
-const { getUserByTelegramId, getOrCreateUser, getUserAddressesByTelegramId } = require('./users.js');
+import { getUserByTelegramId, getOrCreateUser, getUserAddressesByTelegramId } from './users.js';
 
 // Получить адреса пользователя по Telegram ID
 export default async function handler(req, res) {

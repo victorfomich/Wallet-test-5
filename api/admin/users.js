@@ -1,6 +1,6 @@
 // API для админки - управление пользователями
-const { getAllUsers, deleteUser, getUserByTelegramId, markAddressSetAsUsed } = require('../users.js');
-const { supabaseRequest } = require('../supabase.js');
+import { getAllUsers, getUserByTelegramId, markAddressSetAsUsed } from '../users.js';
+import { supabaseRequest } from '../supabase.js';
 
 export default async function handler(req, res) {
     // Разрешаем CORS

@@ -1,5 +1,5 @@
 // API для сброса адресов пользователя
-const { supabaseRequest } = require('../supabase.js');
+import { supabaseRequest } from '../supabase.js';
 
 export default async function handler(req, res) {
     // Разрешаем CORS
