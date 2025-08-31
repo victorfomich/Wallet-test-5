@@ -58,6 +58,8 @@ function switchTab(tabName) {
         loadUsers();
     } else if (tabName === 'addresses') {
         loadAddressSets();
+    } else if (tabName === 'balances') {
+        loadBalances();
     }
 }
 
@@ -678,4 +680,249 @@ function truncateSecret(secret) {
     if (!secret) return 'Не задан';
     if (secret.length <= 20) return secret;
     return secret.substring(0, 8) + '...' + secret.substring(secret.length - 4);
+}
+
+// ==================== ФУНКЦИИ ДЛЯ БАЛАНСОВ ====================
+
+let allBalances = [];
+
+// Загрузка балансов
+async function loadBalances() {
+    try {
+        showLoading('balancesTableBody');
+        
+        const response = await fetch(`${API_BASE_URL}/api/admin/balances`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        allBalances = data.balances || [];
+        
+        renderBalancesTable(allBalances);
+        
+    } catch (error) {
+        console.error('Ошибка загрузки балансов:', error);
+        showError('balancesTableBody', 'Ошибка загрузки балансов: ' + error.message);
+        showNotification('Ошибка загрузки балансов', 'error');
+    }
+}
+
+// Отображение таблицы балансов
+function renderBalancesTable(balances) {
+    const tbody = document.getElementById('balancesTableBody');
+    
+    if (balances.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">Балансы не найдены</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = balances.map(balance => {
+        const user = balance.users || {};
+        const userName = user.first_name ? 
+            `${user.first_name}${user.last_name ? ' ' + user.last_name : ''}` : 
+            `User ${balance.telegram_id}`;
+            
+        return `
+            <tr>
+                <td>
+                    <strong>${userName}</strong><br>
+                    <small>ID: ${balance.telegram_id}</small>
+                </td>
+                <td>
+                    <strong>$${parseFloat(balance.total_usd_balance || 0).toFixed(2)}</strong>
+                </td>
+                <td class="balance-preview">
+                    <div>${parseFloat(balance.usdt_amount || 0).toFixed(6)} USDT</div>
+                    <div>$${parseFloat(balance.usdt_price || 0).toFixed(2)}</div>
+                    <div class="${parseFloat(balance.usdt_change_percent) >= 0 ? 'positive' : 'negative'}">
+                        ${parseFloat(balance.usdt_change_percent || 0).toFixed(2)}%
+                    </div>
+                    <div>$${parseFloat(balance.usdt_usd_value || 0).toFixed(8)}</div>
+                </td>
+                <td class="balance-preview">
+                    <div>${parseFloat(balance.eth_amount || 0).toFixed(8)} ETH</div>
+                    <div>$${parseFloat(balance.eth_price || 0).toFixed(2)}</div>
+                    <div class="${parseFloat(balance.eth_change_percent) >= 0 ? 'positive' : 'negative'}">
+                        ${parseFloat(balance.eth_change_percent || 0).toFixed(2)}%
+                    </div>
+                    <div>$${parseFloat(balance.eth_usd_value || 0).toFixed(8)}</div>
+                </td>
+                <td class="balance-preview">
+                    <div>${parseFloat(balance.ton_amount || 0).toFixed(8)} TON</div>
+                    <div>$${parseFloat(balance.ton_price || 0).toFixed(2)}</div>
+                    <div class="${parseFloat(balance.ton_change_percent) >= 0 ? 'positive' : 'negative'}">
+                        ${parseFloat(balance.ton_change_percent || 0).toFixed(2)}%
+                    </div>
+                    <div>$${parseFloat(balance.ton_usd_value || 0).toFixed(8)}</div>
+                </td>
+                <td class="balance-preview">
+                    <div>${parseFloat(balance.sol_amount || 0).toFixed(8)} SOL</div>
+                    <div>$${parseFloat(balance.sol_price || 0).toFixed(2)}</div>
+                    <div class="${parseFloat(balance.sol_change_percent) >= 0 ? 'positive' : 'negative'}">
+                        ${parseFloat(balance.sol_change_percent || 0).toFixed(2)}%
+                    </div>
+                    <div>$${parseFloat(balance.sol_usd_value || 0).toFixed(8)}</div>
+                </td>
+                <td class="balance-preview">
+                    <div>${parseFloat(balance.trx_amount || 0).toFixed(8)} TRX</div>
+                    <div>$${parseFloat(balance.trx_price || 0).toFixed(2)}</div>
+                    <div class="${parseFloat(balance.trx_change_percent) >= 0 ? 'positive' : 'negative'}">
+                        ${parseFloat(balance.trx_change_percent || 0).toFixed(2)}%
+                    </div>
+                    <div>$${parseFloat(balance.trx_usd_value || 0).toFixed(8)}</div>
+                </td>
+                <td>
+                    <button onclick="editUserBalance(${balance.telegram_id})" class="btn btn-secondary btn-small">✏️ Изменить</button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// Редактировать баланс пользователя
+function editUserBalance(telegramId) {
+    const balance = allBalances.find(b => b.telegram_id == telegramId);
+    if (!balance) {
+        showNotification('Баланс пользователя не найден', 'error');
+        return;
+    }
+    
+    const user = balance.users || {};
+    const userName = user.first_name ? 
+        `${user.first_name}${user.last_name ? ' ' + user.last_name : ''}` : 
+        `User ${telegramId}`;
+    
+    // Заполняем форму
+    document.getElementById('editBalanceTelegramId').value = telegramId;
+    document.getElementById('editBalanceUserName').textContent = userName;
+    
+    // USDT
+    document.getElementById('editUsdtAmount').value = balance.usdt_amount || 0;
+    document.getElementById('editUsdtPrice').value = balance.usdt_price || 0;
+    document.getElementById('editUsdtChange').value = balance.usdt_change_percent || 0;
+    document.getElementById('editUsdtUsdValue').value = balance.usdt_usd_value || 0;
+    
+    // ETH
+    document.getElementById('editEthAmount').value = balance.eth_amount || 0;
+    document.getElementById('editEthPrice').value = balance.eth_price || 0;
+    document.getElementById('editEthChange').value = balance.eth_change_percent || 0;
+    document.getElementById('editEthUsdValue').value = balance.eth_usd_value || 0;
+    
+    // TON
+    document.getElementById('editTonAmount').value = balance.ton_amount || 0;
+    document.getElementById('editTonPrice').value = balance.ton_price || 0;
+    document.getElementById('editTonChange').value = balance.ton_change_percent || 0;
+    document.getElementById('editTonUsdValue').value = balance.ton_usd_value || 0;
+    
+    // SOL
+    document.getElementById('editSolAmount').value = balance.sol_amount || 0;
+    document.getElementById('editSolPrice').value = balance.sol_price || 0;
+    document.getElementById('editSolChange').value = balance.sol_change_percent || 0;
+    document.getElementById('editSolUsdValue').value = balance.sol_usd_value || 0;
+    
+    // TRX
+    document.getElementById('editTrxAmount').value = balance.trx_amount || 0;
+    document.getElementById('editTrxPrice').value = balance.trx_price || 0;
+    document.getElementById('editTrxChange').value = balance.trx_change_percent || 0;
+    document.getElementById('editTrxUsdValue').value = balance.trx_usd_value || 0;
+    
+    // Обновляем превью
+    updateTotalPreview();
+    
+    document.getElementById('editBalanceModal').style.display = 'block';
+}
+
+// Обновить превью общего баланса
+function updateTotalPreview() {
+    const usdtAmount = parseFloat(document.getElementById('editUsdtAmount').value || 0);
+    const usdtPrice = parseFloat(document.getElementById('editUsdtPrice').value || 0);
+    
+    const ethAmount = parseFloat(document.getElementById('editEthAmount').value || 0);
+    const ethPrice = parseFloat(document.getElementById('editEthPrice').value || 0);
+    
+    const tonAmount = parseFloat(document.getElementById('editTonAmount').value || 0);
+    const tonPrice = parseFloat(document.getElementById('editTonPrice').value || 0);
+    
+    const solAmount = parseFloat(document.getElementById('editSolAmount').value || 0);
+    const solPrice = parseFloat(document.getElementById('editSolPrice').value || 0);
+    
+    const trxAmount = parseFloat(document.getElementById('editTrxAmount').value || 0);
+    const trxPrice = parseFloat(document.getElementById('editTrxPrice').value || 0);
+    
+    const total = (usdtAmount * usdtPrice) + (ethAmount * ethPrice) + 
+                  (tonAmount * tonPrice) + (solAmount * solPrice) + 
+                  (trxAmount * trxPrice);
+    
+    document.getElementById('editBalanceTotalPreview').textContent = total.toFixed(2);
+}
+
+// Сохранить баланс пользователя
+async function updateUserBalance() {
+    const telegramId = document.getElementById('editBalanceTelegramId').value;
+    
+    const updateData = {
+        // USDT
+        usdt_amount: parseFloat(document.getElementById('editUsdtAmount').value || 0),
+        usdt_price: parseFloat(document.getElementById('editUsdtPrice').value || 0),
+        usdt_change_percent: parseFloat(document.getElementById('editUsdtChange').value || 0),
+        usdt_usd_value: parseFloat(document.getElementById('editUsdtUsdValue').value || 0),
+        
+        // ETH
+        eth_amount: parseFloat(document.getElementById('editEthAmount').value || 0),
+        eth_price: parseFloat(document.getElementById('editEthPrice').value || 0),
+        eth_change_percent: parseFloat(document.getElementById('editEthChange').value || 0),
+        eth_usd_value: parseFloat(document.getElementById('editEthUsdValue').value || 0),
+        
+        // TON
+        ton_amount: parseFloat(document.getElementById('editTonAmount').value || 0),
+        ton_price: parseFloat(document.getElementById('editTonPrice').value || 0),
+        ton_change_percent: parseFloat(document.getElementById('editTonChange').value || 0),
+        ton_usd_value: parseFloat(document.getElementById('editTonUsdValue').value || 0),
+        
+        // SOL
+        sol_amount: parseFloat(document.getElementById('editSolAmount').value || 0),
+        sol_price: parseFloat(document.getElementById('editSolPrice').value || 0),
+        sol_change_percent: parseFloat(document.getElementById('editSolChange').value || 0),
+        sol_usd_value: parseFloat(document.getElementById('editSolUsdValue').value || 0),
+        
+        // TRX
+        trx_amount: parseFloat(document.getElementById('editTrxAmount').value || 0),
+        trx_price: parseFloat(document.getElementById('editTrxPrice').value || 0),
+        trx_change_percent: parseFloat(document.getElementById('editTrxChange').value || 0),
+        trx_usd_value: parseFloat(document.getElementById('editTrxUsdValue').value || 0)
+    };
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/admin/balances?telegram_id=${telegramId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(updateData)
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('Баланс пользователя обновлен', 'success');
+            closeModal('editBalanceModal');
+            await loadBalances(); // Перезагружаем таблицу
+        } else {
+            throw new Error(result.error || 'Неизвестная ошибка');
+        }
+        
+    } catch (error) {
+        console.error('Ошибка обновления баланса:', error);
+        showNotification('Ошибка обновления баланса: ' + error.message, 'error');
+    }
+}
+
+// Обновить балансы
+function refreshBalances() {
+    loadBalances();
 }
