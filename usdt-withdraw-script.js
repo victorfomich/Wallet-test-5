@@ -249,26 +249,8 @@ function validateForm() {
 
 // Обработка нажатия "Продолжить"
 function processContinue() {
-    const addressInput = document.getElementById('addressInput');
-    const amountInput = document.getElementById('amountInput');
-    const commentInput = document.getElementById('commentInput');
-    
-    const withdrawData = {
-        network: currentNetwork,
-        address: addressInput.value.trim(),
-        amount: parseFloat(amountInput.value),
-        comment: commentInput.value.trim(),
-        currency: 'USDT'
-    };
-    
-    console.log('Данные для вывода:', withdrawData);
-    
-    // Здесь можно добавить логику отправки запроса на вывод
-    if (tg && tg.showAlert) {
-        tg.showAlert(`Вывод ${withdrawData.amount} USDT на ${withdrawData.network} сеть`);
-    } else {
-        alert(`Вывод ${withdrawData.amount} USDT на ${withdrawData.network} сеть`);
-    }
+    // Вызываем новую функцию обработки вывода
+    handleWithdraw();
 }
 
 // Загрузка баланса пользователя
@@ -396,3 +378,122 @@ function initAppRestrictions() {
         }
     }, { passive: false });
 }
+
+// ==================== ОБРАБОТКА ВЫВОДА USDT ====================
+
+// Функция для обработки нажатия кнопки "Продолжить"
+async function handleWithdraw() {
+    try {
+        console.log('💸 Начинаем процесс вывода USDT...');
+        
+        // Получаем данные формы
+        const address = document.getElementById('addressInput').value.trim();
+        const amount = parseFloat(document.getElementById('amountInput').value);
+        const comment = document.getElementById('commentInput').value.trim();
+        
+        // Валидация
+        if (!address) {
+            alert('Введите адрес получателя');
+            return;
+        }
+        
+        if (!amount || amount <= 0) {
+            alert('Введите корректную сумму');
+            return;
+        }
+        
+        if (amount > currentBalance) {
+            alert(`Недостаточно средств. Ваш баланс: ${currentBalance} USDT`);
+            return;
+        }
+        
+        if (amount < 1) {
+            alert('Минимальная сумма для вывода: 1 USDT');
+            return;
+        }
+        
+        // Получаем Telegram ID
+        let telegramId = currentTelegramId;
+        if (!telegramId) {
+            if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                telegramId = tg.initDataUnsafe.user.id;
+            } else {
+                telegramId = 123456789; // Тестовый ID
+            }
+        }
+        
+        // Блокируем кнопку
+        const continueBtn = document.getElementById('continueBtn');
+        const originalText = continueBtn.textContent;
+        continueBtn.disabled = true;
+        continueBtn.textContent = 'Обработка...';
+        
+        // Определяем комиссию по сети
+        const networkFees = {
+            'ton': 3.5,
+            'tron': 1.0,
+            'eth': 5.0,
+            'sol': 2.0,
+            'bnb': 1.5
+        };
+        
+        const fee = networkFees[currentNetwork] || 0;
+        
+        // Отправляем запрос на создание транзакции
+        const response = await fetch('/api/transactions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                telegram_id: telegramId,
+                type: 'withdraw',
+                crypto: 'USDT',
+                network: currentNetwork,
+                amount: amount,
+                fee: fee,
+                address: address,
+                comment: comment || null
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            console.log('✅ ТРАНЗАКЦИЯ СОЗДАНА:', result);
+            
+            // Обновляем баланс в интерфейсе
+            currentBalance = result.new_balance;
+            updateBalanceDisplay();
+            
+            // Показываем успешное сообщение
+            alert(`Транзакция на вывод ${amount} USDT создана!\nНовый баланс: ${result.new_balance} USDT\nСтатус: В обработке`);
+            
+            // Очищаем форму
+            document.getElementById('addressInput').value = '';
+            document.getElementById('amountInput').value = '';
+            document.getElementById('commentInput').value = '';
+            
+            // Возвращаемся на предыдущую страницу
+            setTimeout(() => {
+                window.location.href = 'withdraw-usdt-chain.html';
+            }, 2000);
+            
+        } else {
+            console.error('❌ ОШИБКА СОЗДАНИЯ ТРАНЗАКЦИИ:', result);
+            alert(`Ошибка: ${result.error || 'Неизвестная ошибка'}`);
+        }
+        
+    } catch (error) {
+        console.error('💥 КРИТИЧЕСКАЯ ОШИБКА ВЫВОДА:', error);
+        alert('Произошла ошибка при создании транзакции');
+    } finally {
+        // Разблокируем кнопку
+        const continueBtn = document.getElementById('continueBtn');
+        continueBtn.disabled = false;
+        continueBtn.textContent = 'Продолжить';
+    }
+}
+
+// Добавляем глобальную переменную для telegram ID
+let currentTelegramId = null;
