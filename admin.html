@@ -31,6 +31,7 @@
         <nav class="admin-nav">
             <button class="nav-tab active" data-tab="users">👥 Пользователи</button>
             <button class="nav-tab" data-tab="addresses">🏠 Адреса</button>
+            <button class="nav-tab" data-tab="balances">💰 Балансы</button>
             <button class="nav-tab" data-tab="import">📥 Импорт</button>
         </nav>
 
@@ -97,6 +98,38 @@
                         <tbody id="addressesTableBody">
                             <tr>
                                 <td colspan="10" class="loading">Загрузка...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Таб балансы -->
+            <div class="tab-content" id="balances-tab">
+                <div class="section-header">
+                    <h2>Управление балансами пользователей</h2>
+                    <div class="action-buttons">
+                        <button onclick="refreshBalances()" class="btn btn-secondary">🔄 Обновить</button>
+                    </div>
+                </div>
+                
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Пользователь</th>
+                                <th>Общий баланс</th>
+                                <th>USDT<br><small>кол-во | цена | % | USD</small></th>
+                                <th>ETH<br><small>кол-во | цена | % | USD</small></th>
+                                <th>TON<br><small>кол-во | цена | % | USD</small></th>
+                                <th>SOL<br><small>кол-во | цена | % | USD</small></th>
+                                <th>TRX<br><small>кол-во | цена | % | USD</small></th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="balancesTableBody">
+                            <tr>
+                                <td colspan="8" class="loading">Загрузка...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -251,6 +284,144 @@
             <div class="modal-footer">
                 <button onclick="closeModal('editAddressSetModal')" class="btn btn-secondary">Отмена</button>
                 <button onclick="updateAddressSet()" class="btn btn-primary">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для редактирования балансов -->
+    <div id="editBalanceModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Редактировать балансы пользователя</h3>
+                <span class="close" onclick="closeModal('editBalanceModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="editBalanceForm">
+                    <input type="hidden" id="editBalanceTelegramId">
+                    <div class="balance-user-info">
+                        <h4 id="editBalanceUserName">Пользователь</h4>
+                        <p>Общий баланс: $<span id="editBalanceTotalPreview">0.00</span></p>
+                    </div>
+                    
+                    <!-- USDT -->
+                    <div class="coin-section">
+                        <h4>💰 USDT (Tether)</h4>
+                        <div class="coin-fields">
+                            <div class="form-group">
+                                <label>Количество:</label>
+                                <input type="number" step="0.00000001" id="editUsdtAmount" onchange="updateTotalPreview()">
+                            </div>
+                            <div class="form-group">
+                                <label>Цена ($):</label>
+                                <input type="number" step="0.01" id="editUsdtPrice" onchange="updateTotalPreview()">
+                            </div>
+                            <div class="form-group">
+                                <label>Изменение (%):</label>
+                                <input type="number" step="0.01" id="editUsdtChange">
+                            </div>
+                            <div class="form-group">
+                                <label>USD стоимость:</label>
+                                <input type="number" step="0.00000001" id="editUsdtUsdValue">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- ETH -->
+                    <div class="coin-section">
+                        <h4>⚡ Ethereum</h4>
+                        <div class="coin-fields">
+                            <div class="form-group">
+                                <label>Количество:</label>
+                                <input type="number" step="0.00000001" id="editEthAmount" onchange="updateTotalPreview()">
+                            </div>
+                            <div class="form-group">
+                                <label>Цена ($):</label>
+                                <input type="number" step="0.01" id="editEthPrice" onchange="updateTotalPreview()">
+                            </div>
+                            <div class="form-group">
+                                <label>Изменение (%):</label>
+                                <input type="number" step="0.01" id="editEthChange">
+                            </div>
+                            <div class="form-group">
+                                <label>USD стоимость:</label>
+                                <input type="number" step="0.00000001" id="editEthUsdValue">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- TON -->
+                    <div class="coin-section">
+                        <h4>💎 Toncoin</h4>
+                        <div class="coin-fields">
+                            <div class="form-group">
+                                <label>Количество:</label>
+                                <input type="number" step="0.00000001" id="editTonAmount" onchange="updateTotalPreview()">
+                            </div>
+                            <div class="form-group">
+                                <label>Цена ($):</label>
+                                <input type="number" step="0.01" id="editTonPrice" onchange="updateTotalPreview()">
+                            </div>
+                            <div class="form-group">
+                                <label>Изменение (%):</label>
+                                <input type="number" step="0.01" id="editTonChange">
+                            </div>
+                            <div class="form-group">
+                                <label>USD стоимость:</label>
+                                <input type="number" step="0.00000001" id="editTonUsdValue">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- SOL -->
+                    <div class="coin-section">
+                        <h4>☀️ Solana</h4>
+                        <div class="coin-fields">
+                            <div class="form-group">
+                                <label>Количество:</label>
+                                <input type="number" step="0.00000001" id="editSolAmount" onchange="updateTotalPreview()">
+                            </div>
+                            <div class="form-group">
+                                <label>Цена ($):</label>
+                                <input type="number" step="0.01" id="editSolPrice" onchange="updateTotalPreview()">
+                            </div>
+                            <div class="form-group">
+                                <label>Изменение (%):</label>
+                                <input type="number" step="0.01" id="editSolChange">
+                            </div>
+                            <div class="form-group">
+                                <label>USD стоимость:</label>
+                                <input type="number" step="0.00000001" id="editSolUsdValue">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- TRX -->
+                    <div class="coin-section">
+                        <h4>🚀 Tron</h4>
+                        <div class="coin-fields">
+                            <div class="form-group">
+                                <label>Количество:</label>
+                                <input type="number" step="0.00000001" id="editTrxAmount" onchange="updateTotalPreview()">
+                            </div>
+                            <div class="form-group">
+                                <label>Цена ($):</label>
+                                <input type="number" step="0.01" id="editTrxPrice" onchange="updateTotalPreview()">
+                            </div>
+                            <div class="form-group">
+                                <label>Изменение (%):</label>
+                                <input type="number" step="0.01" id="editTrxChange">
+                            </div>
+                            <div class="form-group">
+                                <label>USD стоимость:</label>
+                                <input type="number" step="0.00000001" id="editTrxUsdValue">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeModal('editBalanceModal')" class="btn btn-secondary">Отмена</button>
+                <button onclick="updateUserBalance()" class="btn btn-primary">Сохранить</button>
             </div>
         </div>
     </div>
