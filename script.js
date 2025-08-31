@@ -545,84 +545,103 @@ async function createDefaultUserBalance(telegramId) {
     }
 }
 
-// Обновить отображение общего баланса
+// ОБЩИЙ БАЛАНС ТОЛЬКО ИЗ РЕАЛЬНЫХ ДАННЫХ БАЗЫ
 function updateBalanceDisplay(balance) {
     const balanceElement = document.getElementById('balanceAmount');
     if (balanceElement) {
-        // Рассчитываем общий баланс
-        const totalBalance = (
-            (balance.usdt_amount || 0) * (balance.usdt_price || 1) +
-            (balance.eth_amount || 0) * (balance.eth_price || 3000) +
-            (balance.ton_amount || 0) * (balance.ton_price || 5) +
-            (balance.sol_amount || 0) * (balance.sol_price || 150) +
-            (balance.trx_amount || 0) * (balance.trx_price || 0.15)
-        );
+        // СЧИТАЕМ ТОЛЬКО ТО ЧТО ЕСТЬ В БАЗЕ
+        let totalBalance = 0;
+        
+        if (balance.usdt_amount && balance.usdt_price) {
+            totalBalance += balance.usdt_amount * balance.usdt_price;
+        }
+        if (balance.eth_amount && balance.eth_price) {
+            totalBalance += balance.eth_amount * balance.eth_price;
+        }
+        if (balance.ton_amount && balance.ton_price) {
+            totalBalance += balance.ton_amount * balance.ton_price;
+        }
+        if (balance.sol_amount && balance.sol_price) {
+            totalBalance += balance.sol_amount * balance.sol_price;
+        }
+        if (balance.trx_amount && balance.trx_price) {
+            totalBalance += balance.trx_amount * balance.trx_price;
+        }
         
         balanceElement.textContent = `$${totalBalance.toFixed(2)}`;
-        console.log(`💵 Общий баланс обновлен: $${totalBalance.toFixed(2)}`);
+        console.log(`💵 ОБЩИЙ БАЛАНС ИЗ БАЗЫ: $${totalBalance.toFixed(2)}`);
     }
 }
 
-// ОБНОВЛЯЕМ АКТИВЫ С РЕАЛЬНЫМИ ДАННЫМИ
+// ОБНОВЛЯЕМ АКТИВЫ ТОЛЬКО С ДАННЫМИ ИЗ БАЗЫ! БЕЗ ДЕФОЛТОВ!
 function updateAssetsList(balance) {
-    console.log('🔥 БЛЯТЬ ОБНОВЛЯЕМ ВСЕ АКТИВЫ!', balance);
+    console.log('🔥 ОБНОВЛЯЕМ ТОЛЬКО ИЗ БАЗЫ!', balance);
     
-    // USDT - добавляем тестовые данные если их нет
+    // USDT - ТОЛЬКО ИЗ БАЗЫ
     updateAssetRow('usdt', {
-        amount: balance.usdt_amount || 125.691,
+        amount: balance.usdt_amount,
         symbol: 'USDT',
-        price: balance.usdt_price || 1.00,
-        change: balance.usdt_change_percent || 0.05,
-        usdValue: (balance.usdt_amount || 125.691) * (balance.usdt_price || 1)
+        price: balance.usdt_price,
+        change: balance.usdt_change_percent,
+        usdValue: balance.usdt_amount * balance.usdt_price
     });
     
-    // Ethereum - добавляем тестовые данные
+    // Ethereum - ТОЛЬКО ИЗ БАЗЫ
     updateAssetRow('eth', {
-        amount: balance.eth_amount || 0.000642,
+        amount: balance.eth_amount,
         symbol: 'ETH',
-        price: balance.eth_price || 4454.73,
-        change: balance.eth_change_percent || 2.29,
-        usdValue: (balance.eth_amount || 0.000642) * (balance.eth_price || 4454.73)
+        price: balance.eth_price,
+        change: balance.eth_change_percent,
+        usdValue: balance.eth_amount * balance.eth_price
     });
     
-    // Toncoin - добавляем тестовые данные
+    // Toncoin - ТОЛЬКО ИЗ БАЗЫ
     updateAssetRow('ton', {
-        amount: balance.ton_amount || 15.5,
+        amount: balance.ton_amount,
         symbol: 'TON',
-        price: balance.ton_price || 3.14,
-        change: balance.ton_change_percent || 1.68,
-        usdValue: (balance.ton_amount || 15.5) * (balance.ton_price || 3.14)
+        price: balance.ton_price,
+        change: balance.ton_change_percent,
+        usdValue: balance.ton_amount * balance.ton_price
     });
     
-    // Solana - добавляем тестовые данные
+    // Solana - ТОЛЬКО ИЗ БАЗЫ
     updateAssetRow('sol', {
-        amount: balance.sol_amount || 2.15,
+        amount: balance.sol_amount,
         symbol: 'SOL',
-        price: balance.sol_price || 142.67,
-        change: balance.sol_change_percent || 5.23,
-        usdValue: (balance.sol_amount || 2.15) * (balance.sol_price || 142.67)
+        price: balance.sol_price,
+        change: balance.sol_change_percent,
+        usdValue: balance.sol_amount * balance.sol_price
     });
     
-    // Tron - добавляем тестовые данные
+    // Tron - ТОЛЬКО ИЗ БАЗЫ
     updateAssetRow('trx', {
-        amount: balance.trx_amount || 850.25,
+        amount: balance.trx_amount,
         symbol: 'TRX',
-        price: balance.trx_price || 0.12,
-        change: balance.trx_change_percent || 2.15,
-        usdValue: (balance.trx_amount || 850.25) * (balance.trx_price || 0.12)
+        price: balance.trx_price,
+        change: balance.trx_change_percent,
+        usdValue: balance.trx_amount * balance.trx_price
     });
     
-    console.log('✅ ВСЕ АКТИВЫ ОБНОВЛЕНЫ БЛЯТЬ!');
+    console.log('✅ ОБНОВЛЕНО ТОЛЬКО ИЗ БАЗЫ БЕЗ ДЕФОЛТОВ!');
 }
 
-// ПРЯМОЕ ОБНОВЛЕНИЕ ЭЛЕМЕНТОВ ПО КЛАССАМ
+// ОБНОВЛЕНИЕ ТОЛЬКО С РЕАЛЬНЫМИ ДАННЫМИ ИЗ БАЗЫ
 function updateAssetRow(assetId, data) {
-    console.log(`🔧 БЛЯТЬ ОБНОВЛЯЕМ ${assetId.toUpperCase()}:`, data);
+    console.log(`🔧 ОБНОВЛЯЕМ ${assetId.toUpperCase()}:`, data);
+    
+    // ПРОВЕРЯЕМ ЕСТЬ ЛИ ДАННЫЕ
+    if (!data.amount && data.amount !== 0) {
+        console.log(`⚠️ НЕТ AMOUNT ДЛЯ ${assetId} - ПРОПУСКАЕМ`);
+        return;
+    }
+    if (!data.price && data.price !== 0) {
+        console.log(`⚠️ НЕТ PRICE ДЛЯ ${assetId} - ПРОПУСКАЕМ`);
+        return;
+    }
     
     const assetItems = document.querySelectorAll('.asset-item');
-    console.log(`Найдено ${assetItems.length} элементов активов`);
-    
     let targetIndex = -1;
+    
     switch(assetId) {
         case 'usdt': targetIndex = 0; break;
         case 'eth': targetIndex = 1; break;
@@ -632,51 +651,37 @@ function updateAssetRow(assetId, data) {
     }
     
     if (targetIndex < 0 || targetIndex >= assetItems.length) {
-        console.error(`❌ БЛЯТЬ НЕ НАЙДЕН АКТИВ ${assetId} с индексом ${targetIndex}`);
+        console.error(`❌ НЕ НАЙДЕН ЭЛЕМЕНТ ${assetId}`);
         return;
     }
     
     const element = assetItems[targetIndex];
-    console.log(`🎯 Работаем с элементом ${targetIndex} для ${assetId}`);
     
-    // КОЛИЧЕСТВО - ПРЯМОЙ ПОИСК
+    // ОБНОВЛЯЕМ КОЛИЧЕСТВО
     const balanceEl = element.querySelector('.asset-balance');
-    if (balanceEl) {
-        const newBalance = `${data.amount.toFixed(6)} ${data.symbol}`;
-        balanceEl.textContent = newBalance;
-        console.log(`✅ БАЛАНС ${assetId}: ${balanceEl.textContent}`);
-    } else {
-        console.error(`❌ НЕ НАЙДЕН .asset-balance для ${assetId}`);
+    if (balanceEl && (data.amount || data.amount === 0)) {
+        balanceEl.textContent = `${data.amount.toFixed(6)} ${data.symbol}`;
+        console.log(`✅ БАЛАНС ${assetId}: ${data.amount.toFixed(6)} ${data.symbol}`);
     }
     
-    // ЦЕНА - ПРЯМОЙ ПОИСК
+    // ОБНОВЛЯЕМ ЦЕНУ И ПРОЦЕНТ
     const priceEl = element.querySelector('.asset-price');
-    if (priceEl) {
-        const changeClass = data.change >= 0 ? 'positive-change' : 'negative-change';
-        const changeText = `${data.change >= 0 ? '+' : ''}${data.change.toFixed(2)}%`;
-        const newPrice = `$${data.price.toFixed(2)} <span class="${changeClass}">${changeText}</span>`;
-        priceEl.innerHTML = newPrice;
-        console.log(`✅ ЦЕНА ${assetId}: обновлена на $${data.price.toFixed(2)}`);
-    } else {
-        console.error(`❌ НЕ НАЙДЕН .asset-price для ${assetId}`);
+    if (priceEl && (data.price || data.price === 0)) {
+        const change = data.change || 0;
+        const changeClass = change >= 0 ? 'positive-change' : 'negative-change';
+        const changeText = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
+        priceEl.innerHTML = `$${data.price.toFixed(2)} <span class="${changeClass}">${changeText}</span>`;
+        console.log(`✅ ЦЕНА ${assetId}: $${data.price.toFixed(2)} (${changeText})`);
     }
     
-    // USD СТОИМОСТЬ - ПРЯМОЙ ПОИСК  
+    // ОБНОВЛЯЕМ USD СТОИМОСТЬ
     const usdEl = element.querySelector('.asset-usd-value');
-    if (usdEl) {
-        const newUsd = `$${data.usdValue.toFixed(6)}`;
-        usdEl.textContent = newUsd;
-        console.log(`✅ USD ${assetId}: ${usdEl.textContent}`);
-    } else {
-        console.error(`❌ НЕ НАЙДЕН .asset-usd-value для ${assetId}`);
+    if (usdEl && (data.usdValue || data.usdValue === 0)) {
+        usdEl.textContent = `$${data.usdValue.toFixed(6)}`;
+        console.log(`✅ USD ${assetId}: $${data.usdValue.toFixed(6)}`);
     }
     
-    // ПРИНУДИТЕЛЬНАЯ ПЕРЕРИСОВКА
-    element.style.display = 'none';
-    element.offsetHeight; // trigger reflow
-    element.style.display = '';
-    
-    console.log(`🚀 АКТИВ ${assetId.toUpperCase()} ОБНОВЛЕН БЛЯТЬ!`);
+    console.log(`🚀 АКТИВ ${assetId.toUpperCase()} ОБНОВЛЕН!`);
 }
 
 // Установить дефолтные балансы
