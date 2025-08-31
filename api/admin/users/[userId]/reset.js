@@ -1,5 +1,5 @@
-// API для сброса адресов пользователя
-import { supabaseRequest } from '../supabase.js';
+// API для сброса адресов пользователя по userId
+import { supabaseRequest } from '../../../supabase.js';
 
 export default async function handler(req, res) {
     // Разрешаем CORS
@@ -18,29 +18,17 @@ export default async function handler(req, res) {
     }
     
     try {
-        // Получаем user_id из URL или query параметров
-        let user_id = req.query.user_id;
+        const { userId } = req.query;
         
-        // Если user_id в URL (например: /api/admin/users/123/reset)
-        if (!user_id && req.url) {
-            const urlParts = req.url.split('/');
-            const userIndex = urlParts.findIndex(part => part === 'users');
-            if (userIndex !== -1 && urlParts[userIndex + 1]) {
-                user_id = urlParts[userIndex + 1];
-                // Убираем возможный query string из user_id
-                user_id = user_id.split('?')[0];
-            }
-        }
-        
-        if (!user_id) {
+        if (!userId) {
             return res.status(400).json({ 
-                error: 'Отсутствует user_id' 
+                error: 'Отсутствует userId' 
             });
         }
         
         // Получаем информацию о пользователе
         const users = await supabaseRequest('users', 'GET', null, {
-            id: `eq.${user_id}`
+            id: `eq.${userId}`
         });
         
         if (users.length === 0) {
@@ -67,7 +55,7 @@ export default async function handler(req, res) {
             address_set_id: null,
             updated_at: new Date().toISOString()
         }, {
-            id: `eq.${user_id}`
+            id: `eq.${userId}`
         });
         
         return res.status(200).json({ 
