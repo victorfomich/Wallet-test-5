@@ -131,8 +131,8 @@ function updateScanChipIcons() {
     }
 }
 
-// Загрузка данных пользователя из Telegram
-function loadUserData() {
+// Загрузка данных пользователя из Telegram и инициализация через UserManager
+async function loadUserData() {
     if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
         const user = tg.initDataUnsafe.user;
         
@@ -152,14 +152,79 @@ function loadUserData() {
         }
         
         console.log('Данные пользователя загружены:', user);
+        
+        // Инициализируем пользователя через UserManager
+        try {
+            const success = await window.userManager.initializeUser(user);
+            if (success) {
+                console.log('Пользователь успешно инициализирован через UserManager');
+                // Обновляем интерфейс с учетом пользовательских адресов
+                updateUIWithUserData();
+            } else {
+                console.error('Ошибка инициализации пользователя через UserManager');
+                showUserInitializationError();
+            }
+        } catch (error) {
+            console.error('Ошибка при инициализации пользователя:', error);
+            showUserInitializationError();
+        }
     } else {
         console.log('Данные пользователя недоступны');
         // Показываем заглушку для тестирования
         document.getElementById('userName').textContent = 'user';
+        
+        // Пытаемся загрузить из localStorage
+        const loaded = window.userManager.loadFromLocalStorage();
+        if (loaded) {
+            console.log('Данные пользователя загружены из localStorage');
+            updateUIWithUserData();
+        }
     }
     
     // Инициализируем функциональность скрытия/показа баланса
     initBalanceToggle();
+}
+
+// Обновление интерфейса с данными пользователя
+function updateUIWithUserData() {
+    const userStats = window.userManager.getUserStats();
+    if (userStats) {
+        console.log('Статистика пользователя:', userStats);
+        
+        // Можно добавить индикатор готовности адресов
+        const completionPercentage = userStats.completionPercentage;
+        if (completionPercentage < 100) {
+            console.warn(`Не все адреса назначены: ${completionPercentage}%`);
+        }
+    }
+}
+
+// Показать ошибку инициализации пользователя
+function showUserInitializationError() {
+    const container = document.querySelector('.container');
+    const errorMessage = document.createElement('div');
+    errorMessage.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        right: 20px;
+        background: rgba(220, 53, 69, 0.9);
+        color: white;
+        padding: 15px;
+        border-radius: 8px;
+        text-align: center;
+        z-index: 1000;
+        font-size: 14px;
+    `;
+    errorMessage.textContent = 'Ошибка загрузки данных пользователя. Попробуйте перезагрузить страницу.';
+    container.appendChild(errorMessage);
+    
+    // Убираем сообщение через 5 секунд
+    setTimeout(() => {
+        if (errorMessage.parentNode) {
+            errorMessage.parentNode.removeChild(errorMessage);
+        }
+    }, 5000);
 }
 
 // Функция для переключения видимости баланса

@@ -1,845 +1,636 @@
-// Конфигурация API
-const API_BASE_URL = window.location.origin + '/api';
+// Админка для управления DreamWallet
+const API_BASE_URL = window.location.origin;
 
 // Глобальные переменные
-let users = [];
-let addresses = [];
+let allUsers = [];
+let allAddressSets = [];
 let currentTab = 'users';
 
-// Инициализация при загрузке страницы
+// Инициализация
 document.addEventListener('DOMContentLoaded', function() {
-    initializeTabs();
-    initializeSearch();
-    initializeForms();
-    loadData();
-    updateStats();
+    initializeAdmin();
+    setupEventListeners();
+    loadInitialData();
 });
 
-// Инициализация табов
-function initializeTabs() {
-    const navTabs = document.querySelectorAll('.nav-tab');
-    const tabContents = document.querySelectorAll('.tab-content');
-
-    navTabs.forEach(tab => {
+// Настройка обработчиков событий
+function setupEventListeners() {
+    // Навигация по табам
+    document.querySelectorAll('.nav-tab').forEach(tab => {
         tab.addEventListener('click', function() {
-            const targetTab = this.getAttribute('data-tab');
-            
-            // Убираем активный класс со всех табов
-            navTabs.forEach(t => t.classList.remove('active'));
-            tabContents.forEach(t => t.classList.remove('active'));
-            
-            // Добавляем активный класс к выбранному табу
-            this.classList.add('active');
-            document.getElementById(`${targetTab}-tab`).classList.add('active');
-            
-            currentTab = targetTab;
-            
-            // Загружаем данные для выбранного таба
-            if (targetTab === 'users') {
-                renderUsersTable();
-            } else if (targetTab === 'addresses') {
-                renderAddressesTable();
-            }
+            switchTab(this.dataset.tab);
         });
+    });
+    
+    // Поиск пользователей
+    document.getElementById('userSearch').addEventListener('input', function() {
+        filterUsers(this.value);
+    });
+    
+    // Закрытие модальных окон при клике вне их
+    window.addEventListener('click', function(event) {
+        if (event.target.classList.contains('modal')) {
+            event.target.style.display = 'none';
+        }
     });
 }
 
-// Инициализация поиска
-function initializeSearch() {
-    const userSearch = document.getElementById('userSearch');
-    const addressSearch = document.getElementById('addressSearch');
-
-    if (userSearch) {
-        userSearch.addEventListener('input', function() {
-            filterUsers(this.value);
-        });
-    }
-
-    if (addressSearch) {
-        addressSearch.addEventListener('input', function() {
-            filterAddresses(this.value);
-        });
-    }
+// Инициализация админки
+function initializeAdmin() {
+    console.log('Инициализация админ панели DreamWallet');
+    showNotification('Добро пожаловать в админ панель DreamWallet!', 'success');
 }
 
-// Инициализация форм
-function initializeForms() {
-    // Форма создания пользователя
-    const createUserForm = document.getElementById('createUserForm');
-    if (createUserForm) {
-        createUserForm.addEventListener('submit', handleCreateUser);
-    }
-
-    // Форма создания адреса
-    const createAddressForm = document.getElementById('createAddressForm');
-    if (createAddressForm) {
-        createAddressForm.addEventListener('submit', handleCreateAddress);
-    }
-
-    // Форма редактирования пользователя
-    const editUserForm = document.getElementById('editUserForm');
-    if (editUserForm) {
-        editUserForm.addEventListener('submit', handleEditUser);
-    }
-}
-
-// Загрузка данных
-async function loadData() {
-    showLoading(true);
+// Переключение табов
+function switchTab(tabName) {
+    currentTab = tabName;
     
-    try {
-        await Promise.all([
-            loadUsers(),
-            loadAddresses()
-        ]);
-        
-        renderUsersTable();
-        renderAddressesTable();
-        updateStats();
-    } catch (error) {
-        console.error('Error loading data:', error);
-        showNotification('Ошибка загрузки данных', 'error');
-    } finally {
-        showLoading(false);
+    // Убираем активный класс со всех табов и контента
+    document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    
+    // Добавляем активный класс
+    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+    document.getElementById(`${tabName}-tab`).classList.add('active');
+    
+    // Загружаем данные для таба
+    if (tabName === 'users') {
+        loadUsers();
+    } else if (tabName === 'addresses') {
+        loadAddressSets();
     }
+}
+
+// Загрузка начальных данных
+async function loadInitialData() {
+    await Promise.all([
+        loadUsers(),
+        loadAddressSets()
+    ]);
+    
+    updateStats();
+}
+
+// Обновление статистики
+function updateStats() {
+    const totalUsers = allUsers.length;
+    const usedAddresses = allAddressSets.filter(set => set.is_used).length;
+    const availableAddresses = allAddressSets.filter(set => !set.is_used).length;
+    
+    document.getElementById('totalUsers').textContent = totalUsers;
+    document.getElementById('usedAddresses').textContent = usedAddresses;
+    document.getElementById('availableAddresses').textContent = availableAddresses;
 }
 
 // Загрузка пользователей
 async function loadUsers() {
     try {
-        const response = await fetch(`${API_BASE_URL}/users`);
-        const data = await response.json();
+        showLoading('usersTableBody');
         
-        if (response.ok) {
-            users = data.users || [];
-        } else {
-            throw new Error(data.error || 'Failed to load users');
+        const response = await fetch(`${API_BASE_URL}/api/admin/users`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
+        
+        const data = await response.json();
+        allUsers = data.users || [];
+        
+        renderUsersTable(allUsers);
+        updateStats();
+        
     } catch (error) {
-        console.error('Error loading users:', error);
-        throw error;
+        console.error('Ошибка загрузки пользователей:', error);
+        showError('usersTableBody', 'Ошибка загрузки пользователей: ' + error.message);
+        showNotification('Ошибка загрузки пользователей', 'error');
     }
 }
 
-// Загрузка адресов
-async function loadAddresses() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/addresses`);
-        const data = await response.json();
-        
-        if (response.ok) {
-            addresses = data.addresses || [];
-        } else {
-            throw new Error(data.error || 'Failed to load addresses');
-        }
-    } catch (error) {
-        console.error('Error loading addresses:', error);
-        throw error;
-    }
-}
-
-// Обновление статистики
-function updateStats() {
-    const totalUsers = users.length;
-    const totalAddresses = addresses.length;
-    const assignedAddresses = addresses.filter(addr => addr.is_assigned).length;
-
-    document.getElementById('totalUsers').textContent = totalUsers;
-    document.getElementById('totalAddresses').textContent = totalAddresses;
-    document.getElementById('assignedAddresses').textContent = assignedAddresses;
-}
-
-// Рендеринг таблицы пользователей
-function renderUsersTable() {
+// Отображение таблицы пользователей
+function renderUsersTable(users) {
     const tbody = document.getElementById('usersTableBody');
-    if (!tbody) return;
-
-    tbody.innerHTML = '';
-
-    users.forEach(user => {
-        const row = document.createElement('tr');
-        
-        // Получаем адреса пользователя
-        const userAddresses = addresses.filter(addr => addr.user_id === user.id);
-        const addressInfo = userAddresses.map(addr => 
-            `<div class="address-item">
-                <strong>${addr.network.toUpperCase()}:</strong> 
-                <span class="address-text">${addr.address.substring(0, 20)}...</span>
-            </div>`
-        ).join('');
-
-        row.innerHTML = `
+    
+    if (users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Пользователи не найдены</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = users.map(user => `
+        <tr>
             <td>${user.id}</td>
-            <td>${user.telegram_id}</td>
-            <td>${user.username || '-'}</td>
-            <td>${user.first_name || '-'}</td>
-            <td>${user.last_name || '-'}</td>
-            <td>${addressInfo || 'Нет адресов'}</td>
-            <td>${new Date(user.created_at).toLocaleDateString('ru-RU')}</td>
+            <td><strong>${user.telegram_id}</strong></td>
+            <td>${user.first_name}${user.last_name ? ' ' + user.last_name : ''}</td>
+            <td>${user.username ? '@' + user.username : '-'}</td>
+            <td>${user.address_set_id ? `Набор #${user.address_set_id}` : '-'}</td>
+            <td>${formatDate(user.created_at)}</td>
             <td>
-                <div class="action-buttons">
-                    <button class="btn btn-sm btn-primary" onclick="editUser(${user.id})">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteUser(${user.id})">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
+                <button onclick="viewUserDetails(${user.id})" class="btn btn-secondary btn-small">👁️ Просмотр</button>
+                <button onclick="resetUserAddresses(${user.id})" class="btn btn-warning btn-small">🔄 Сброс</button>
+                <button onclick="deleteUser(${user.id})" class="btn btn-danger btn-small">🗑️ Удалить</button>
             </td>
-        `;
-        
-        tbody.appendChild(row);
-    });
-}
-
-// Рендеринг таблицы адресов
-function renderAddressesTable() {
-    const tbody = document.getElementById('addressesTableBody');
-    if (!tbody) return;
-
-    tbody.innerHTML = '';
-
-    addresses.forEach(address => {
-        const row = document.createElement('tr');
-        
-        const statusClass = address.is_assigned ? 'status-assigned' : 'status-available';
-        const statusText = address.is_assigned ? 'Назначен' : 'Доступен';
-        
-        const userInfo = address.users ? 
-            `${address.users.first_name || ''} ${address.users.last_name || ''}`.trim() || 
-            address.users.username || 
-            `ID: ${address.users.telegram_id}` : '-';
-
-        row.innerHTML = `
-            <td>${address.id}</td>
-            <td>
-                <div class="network-info">
-                    <span class="network-name">${address.network.toUpperCase()}</span>
-                    <span class="network-standard">${address.standard}</span>
-                </div>
-            </td>
-            <td>
-                <div class="address-cell">
-                    <span class="address-text">${address.address}</span>
-                    <button class="btn-copy" onclick="copyToClipboard('${address.address}')">
-                        <i class="fas fa-copy"></i>
-                    </button>
-                </div>
-            </td>
-            <td>${address.name}</td>
-            <td>${address.standard}</td>
-            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-            <td>${userInfo}</td>
-            <td>
-                <div class="action-buttons">
-                    <button class="btn btn-sm btn-primary" onclick="editAddress(${address.id})">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteAddress(${address.id})">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </td>
-        `;
-        
-        tbody.appendChild(row);
-    });
+        </tr>
+    `).join('');
 }
 
 // Фильтрация пользователей
 function filterUsers(searchTerm) {
-    const filteredUsers = users.filter(user => {
-        const searchLower = searchTerm.toLowerCase();
-        return (
-            user.telegram_id.toString().includes(searchLower) ||
-            (user.username && user.username.toLowerCase().includes(searchLower)) ||
-            (user.first_name && user.first_name.toLowerCase().includes(searchTerm)) ||
-            (user.last_name && user.last_name.toLowerCase().includes(searchTerm))
-        );
-    });
-
-    renderFilteredUsers(filteredUsers);
+    if (!searchTerm.trim()) {
+        renderUsersTable(allUsers);
+        return;
+    }
+    
+    const filtered = allUsers.filter(user => 
+        user.telegram_id.toString().includes(searchTerm) ||
+        user.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (user.last_name && user.last_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+    
+    renderUsersTable(filtered);
 }
 
-// Фильтрация адресов
-function filterAddresses(searchTerm) {
-    const filteredAddresses = addresses.filter(address => {
-        const searchLower = searchTerm.toLowerCase();
-        return (
-            address.network.toLowerCase().includes(searchLower) ||
-            address.address.toLowerCase().includes(searchLower) ||
-            address.name.toLowerCase().includes(searchLower)
-        );
-    });
-
-    renderFilteredAddresses(filteredAddresses);
-}
-
-// Рендеринг отфильтрованных пользователей
-function renderFilteredUsers(filteredUsers) {
-    const tbody = document.getElementById('usersTableBody');
-    if (!tbody) return;
-
-    tbody.innerHTML = '';
-
-    filteredUsers.forEach(user => {
-        // Аналогично renderUsersTable, но для отфильтрованных данных
-        const row = document.createElement('tr');
+// Загрузка наборов адресов
+async function loadAddressSets() {
+    try {
+        showLoading('addressesTableBody');
         
-        // Получаем адреса пользователя
-        const userAddresses = addresses.filter(addr => addr.user_id === user.id);
-        const addressInfo = userAddresses.map(addr => 
-            `<div class="address-item">
-                <strong>${addr.network.toUpperCase()}:</strong> 
-                <span class="address-text">${addr.address.substring(0, 20)}...</span>
-            </div>`
-        ).join('');
-
-        row.innerHTML = `
-            <td>${user.id}</td>
-            <td>${user.telegram_id}</td>
-            <td>${user.username || '-'}</td>
-            <td>${user.first_name || '-'}</td>
-            <td>${user.last_name || '-'}</td>
-            <td>${addressInfo || 'Нет адресов'}</td>
-            <td>${new Date(user.created_at).toLocaleDateString('ru-RU')}</td>
-            <td>
-                <div class="action-buttons">
-                    <button class="btn btn-sm btn-primary" onclick="editUser(${user.id})">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteUser(${user.id})">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </td>
-        `;
+        const response = await fetch(`${API_BASE_URL}/api/admin/address-sets`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         
-        tbody.appendChild(row);
-    });
+        const data = await response.json();
+        allAddressSets = data.address_sets || [];
+        
+        renderAddressSetsTable(allAddressSets);
+        updateStats();
+        
+    } catch (error) {
+        console.error('Ошибка загрузки наборов адресов:', error);
+        showError('addressesTableBody', 'Ошибка загрузки наборов адресов: ' + error.message);
+        showNotification('Ошибка загрузки наборов адресов', 'error');
+    }
 }
 
-// Рендеринг отфильтрованных адресов
-function renderFilteredAddresses(filteredAddresses) {
+// Отображение таблицы наборов адресов
+function renderAddressSetsTable(addressSets) {
     const tbody = document.getElementById('addressesTableBody');
-    if (!tbody) return;
-
-    tbody.innerHTML = '';
-
-    filteredAddresses.forEach(address => {
-        // Аналогично renderAddressesTable, но для отфильтрованных данных
-        const row = document.createElement('tr');
-        
-        const statusClass = address.is_assigned ? 'status-assigned' : 'status-available';
-        const statusText = address.is_assigned ? 'Назначен' : 'Доступен';
-        
-        const userInfo = address.users ? 
-            `${address.users.first_name || ''} ${address.users.last_name || ''}`.trim() || 
-            address.users.username || 
-            `ID: ${address.users.telegram_id}` : '-';
-
-        row.innerHTML = `
-            <td>${address.id}</td>
+    
+    if (addressSets.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted">Наборы адресов не найдены</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = addressSets.map(set => `
+        <tr>
+            <td>${set.id}</td>
+            <td><strong>${set.name}</strong></td>
+            <td class="text-small">${truncateAddress(set.ton_address)}</td>
+            <td class="text-small">${truncateAddress(set.tron_address)}</td>
+            <td class="text-small">${truncateAddress(set.sol_address)}</td>
+            <td class="text-small">${truncateAddress(set.eth_address)}</td>
+            <td class="text-small">${truncateAddress(set.bnb_address)}</td>
             <td>
-                <div class="network-info">
-                    <span class="network-name">${address.network.toUpperCase()}</span>
-                    <span class="network-standard">${address.standard}</span>
-                </div>
+                <span class="status-badge ${set.is_used ? 'status-used' : 'status-available'}">
+                    ${set.is_used ? 'Занят' : 'Свободен'}
+                </span>
             </td>
+            <td>${set.assigned_to_telegram_id || '-'}</td>
             <td>
-                <div class="address-cell">
-                    <span class="address-text">${address.address}</span>
-                    <button class="btn-copy" onclick="copyToClipboard('${address.address}')">
-                        <i class="fas fa-copy"></i>
-                    </button>
-                </div>
+                <button onclick="editAddressSet(${set.id})" class="btn btn-secondary btn-small">✏️ Изменить</button>
+                <button onclick="deleteAddressSet(${set.id})" class="btn btn-danger btn-small">🗑️ Удалить</button>
             </td>
-            <td>${address.name}</td>
-            <td>${address.standard}</td>
-            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-            <td>${userInfo}</td>
-            <td>
-                <div class="action-buttons">
-                    <button class="btn btn-sm btn-primary" onclick="editAddress(${address.id})">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteAddress(${address.id})">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </td>
-        `;
-        
-        tbody.appendChild(row);
-    });
+        </tr>
+    `).join('');
 }
 
-// Обработка создания пользователя
-async function handleCreateUser(event) {
-    event.preventDefault();
-    
-    const formData = {
-        telegram_id: document.getElementById('telegramId').value,
-        username: document.getElementById('username').value,
-        first_name: document.getElementById('firstName').value,
-        last_name: document.getElementById('lastName').value
-    };
+// Показать модальное окно добавления набора адресов
+function showAddAddressSetModal() {
+    document.getElementById('addAddressSetModal').style.display = 'block';
+}
 
+// Добавить новый набор адресов
+async function addAddressSet() {
+    const form = document.getElementById('addAddressSetForm');
+    const formData = new FormData(form);
+    
+    const addressSetData = {
+        name: formData.get('setName'),
+        addresses: {
+            ton: formData.get('tonAddress') || null,
+            tron: formData.get('tronAddress') || null,
+            sol: formData.get('solAddress') || null,
+            eth: formData.get('ethAddress') || null,
+            bnb: formData.get('bnbAddress') || null
+        }
+    };
+    
+    if (!addressSetData.name.trim()) {
+        showNotification('Укажите имя набора адресов', 'error');
+        return;
+    }
+    
     try {
-        showLoading(true);
-        
-        const response = await fetch(`${API_BASE_URL}/users`, {
+        const response = await fetch(`${API_BASE_URL}/api/admin/address-sets`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(formData)
+            body: JSON.stringify(addressSetData)
         });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            showNotification('Пользователь создан успешно', 'success');
-            closeModal('createUserModal');
-            document.getElementById('createUserForm').reset();
-            await loadData();
-        } else {
-            throw new Error(data.error || 'Failed to create user');
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('Набор адресов успешно добавлен', 'success');
+            closeModal('addAddressSetModal');
+            form.reset();
+            await loadAddressSets();
+        } else {
+            throw new Error(result.error || 'Неизвестная ошибка');
+        }
+        
     } catch (error) {
-        console.error('Error creating user:', error);
-        showNotification(`Ошибка создания пользователя: ${error.message}`, 'error');
-    } finally {
-        showLoading(false);
+        console.error('Ошибка добавления набора адресов:', error);
+        showNotification('Ошибка добавления набора адресов: ' + error.message, 'error');
     }
 }
 
-// Обработка создания адреса
-async function handleCreateAddress(event) {
-    event.preventDefault();
-    
-    const formData = {
-        network: document.getElementById('network').value,
-        address: document.getElementById('address').value,
-        name: document.getElementById('addressName').value,
-        standard: document.getElementById('standard').value
-    };
-
-    try {
-        showLoading(true);
-        
-        const response = await fetch(`${API_BASE_URL}/addresses`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(formData)
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            showNotification('Адрес добавлен успешно', 'success');
-            closeModal('createAddressModal');
-            document.getElementById('createAddressForm').reset();
-            await loadData();
-        } else {
-            throw new Error(data.error || 'Failed to create address');
-        }
-    } catch (error) {
-        console.error('Error creating address:', error);
-        showNotification(`Ошибка добавления адреса: ${error.message}`, 'error');
-    } finally {
-        showLoading(false);
+// Редактировать набор адресов
+function editAddressSet(id) {
+    const addressSet = allAddressSets.find(set => set.id === id);
+    if (!addressSet) {
+        showNotification('Набор адресов не найден', 'error');
+        return;
     }
+    
+    // Заполняем форму
+    document.getElementById('editSetId').value = addressSet.id;
+    document.getElementById('editSetName').value = addressSet.name;
+    document.getElementById('editTonAddress').value = addressSet.ton_address || '';
+    document.getElementById('editTronAddress').value = addressSet.tron_address || '';
+    document.getElementById('editSolAddress').value = addressSet.sol_address || '';
+    document.getElementById('editEthAddress').value = addressSet.eth_address || '';
+    document.getElementById('editBnbAddress').value = addressSet.bnb_address || '';
+    
+    document.getElementById('editAddressSetModal').style.display = 'block';
 }
 
-// Обработка редактирования пользователя
-async function handleEditUser(event) {
-    event.preventDefault();
+// Обновить набор адресов
+async function updateAddressSet() {
+    const id = document.getElementById('editSetId').value;
+    const form = document.getElementById('editAddressSetForm');
+    const formData = new FormData(form);
     
-    const userId = document.getElementById('editUserId').value;
-    const formData = {
-        telegram_id: document.getElementById('editTelegramId').value,
-        username: document.getElementById('editUsername').value,
-        first_name: document.getElementById('editFirstName').value,
-        last_name: document.getElementById('editLastName').value
+    const updateData = {
+        addresses: {
+            ton: formData.get('editTonAddress') || null,
+            tron: formData.get('editTronAddress') || null,
+            sol: formData.get('editSolAddress') || null,
+            eth: formData.get('editEthAddress') || null,
+            bnb: formData.get('editBnbAddress') || null
+        }
     };
-
+    
     try {
-        showLoading(true);
-        
-        const response = await fetch(`${API_BASE_URL}/users?id=${userId}`, {
+        const response = await fetch(`${API_BASE_URL}/api/admin/address-sets/${id}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(formData)
+            body: JSON.stringify(updateData)
         });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            showNotification('Пользователь обновлен успешно', 'success');
-            closeModal('editUserModal');
-            await loadData();
-        } else {
-            throw new Error(data.error || 'Failed to update user');
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('Набор адресов успешно обновлен', 'success');
+            closeModal('editAddressSetModal');
+            await loadAddressSets();
+        } else {
+            throw new Error(result.error || 'Неизвестная ошибка');
+        }
+        
     } catch (error) {
-        console.error('Error updating user:', error);
-        showNotification(`Ошибка обновления пользователя: ${error.message}`, 'error');
-    } finally {
-        showLoading(false);
+        console.error('Ошибка обновления набора адресов:', error);
+        showNotification('Ошибка обновления набора адресов: ' + error.message, 'error');
     }
 }
 
-// Редактирование пользователя
-function editUser(userId) {
-    const user = users.find(u => u.id === userId);
-    if (!user) return;
-
-    document.getElementById('editUserId').value = user.id;
-    document.getElementById('editTelegramId').value = user.telegram_id;
-    document.getElementById('editUsername').value = user.username || '';
-    document.getElementById('editFirstName').value = user.first_name || '';
-    document.getElementById('editLastName').value = user.last_name || '';
-
-    showModal('editUserModal');
-}
-
-// Удаление пользователя
-async function deleteUser(userId) {
-    if (!confirm('Вы уверены, что хотите удалить этого пользователя?')) {
+// Удалить набор адресов
+async function deleteAddressSet(id) {
+    if (!confirm('Вы уверены, что хотите удалить этот набор адресов?')) {
         return;
     }
-
-    try {
-        showLoading(true);
-        
-        const response = await fetch(`${API_BASE_URL}/users?id=${userId}`, {
-            method: 'DELETE'
-        });
-
-        if (response.ok) {
-            showNotification('Пользователь удален успешно', 'success');
-            await loadData();
-        } else {
-            const data = await response.json();
-            throw new Error(data.error || 'Failed to delete user');
-        }
-    } catch (error) {
-        console.error('Error deleting user:', error);
-        showNotification(`Ошибка удаления пользователя: ${error.message}`, 'error');
-    } finally {
-        showLoading(false);
-    }
-}
-
-// Удаление адреса
-async function deleteAddress(addressId) {
-    if (!confirm('Вы уверены, что хотите удалить этот адрес?')) {
-        return;
-    }
-
-    try {
-        showLoading(true);
-        
-        const response = await fetch(`${API_BASE_URL}/addresses?id=${addressId}`, {
-            method: 'DELETE'
-        });
-
-        if (response.ok) {
-            showNotification('Адрес удален успешно', 'success');
-            await loadData();
-        } else {
-            const data = await response.json();
-            throw new Error(data.error || 'Failed to delete address');
-        }
-    } catch (error) {
-        console.error('Error deleting address:', error);
-        showNotification(`Ошибка удаления адреса: ${error.message}`, 'error');
-    } finally {
-        showLoading(false);
-    }
-}
-
-// Импорт адресов из CSV
-async function importAddresses() {
-    const fileInput = document.getElementById('csvFile');
-    const file = fileInput.files[0];
     
-    if (!file) {
-        showNotification('Выберите CSV файл', 'error');
-        return;
-    }
-
     try {
-        showLoading(true);
+        const response = await fetch(`${API_BASE_URL}/api/admin/address-sets/${id}`, {
+            method: 'DELETE'
+        });
         
-        const text = await file.text();
-        const lines = text.split('\n');
-        const headers = lines[0].split(',').map(h => h.trim());
-        
-        // Парсим CSV
-        const addressesToImport = [];
-        for (let i = 1; i < lines.length; i++) {
-            if (lines[i].trim()) {
-                const values = lines[i].split(',').map(v => v.trim());
-                const address = {};
-                
-                headers.forEach((header, index) => {
-                    address[header] = values[index] || '';
-                });
-                
-                if (address.network && address.address) {
-                    addressesToImport.push(address);
-                }
-            }
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
-
-        // Показываем превью
-        const preview = document.getElementById('importPreview');
-        preview.innerHTML = `
-            <h4>Найдено адресов для импорта: ${addressesToImport.length}</h4>
-            <div class="preview-list">
-                ${addressesToImport.slice(0, 10).map(addr => 
-                    `<div class="preview-item">
-                        <strong>${addr.network.toUpperCase()}:</strong> ${addr.address}
-                    </div>`
-                ).join('')}
-                ${addressesToImport.length > 10 ? `<div>... и еще ${addressesToImport.length - 10}</div>` : ''}
-            </div>
-            <button class="btn btn-primary" onclick="confirmImport(${JSON.stringify(addressesToImport).replace(/"/g, '&quot;')})">
-                Подтвердить импорт
-            </button>
-        `;
-
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('Набор адресов успешно удален', 'success');
+            await loadAddressSets();
+        } else {
+            throw new Error(result.error || 'Неизвестная ошибка');
+        }
+        
     } catch (error) {
-        console.error('Error parsing CSV:', error);
-        showNotification('Ошибка чтения CSV файла', 'error');
-    } finally {
-        showLoading(false);
+        console.error('Ошибка удаления набора адресов:', error);
+        showNotification('Ошибка удаления набора адресов: ' + error.message, 'error');
     }
 }
 
-// Подтверждение импорта
-async function confirmImport(addressesToImport) {
-    try {
-        showLoading(true);
-        
-        let successCount = 0;
-        let errorCount = 0;
+// Предпросмотр импорта
+function previewImport() {
+    const importData = document.getElementById('importData').value.trim();
+    const previewDiv = document.getElementById('importPreview');
+    const contentDiv = document.getElementById('importPreviewContent');
+    
+    if (!importData) {
+        showNotification('Введите данные для импорта', 'warning');
+        return;
+    }
+    
+    const lines = importData.split('\n').filter(line => line.trim());
+    const parsedData = [];
+    const errors = [];
+    
+    lines.forEach((line, index) => {
+        try {
+            const parsed = parseImportLine(line);
+            if (parsed) {
+                parsedData.push(parsed);
+            }
+        } catch (error) {
+            errors.push(`Строка ${index + 1}: ${error.message}`);
+        }
+    });
+    
+    let html = `<p><strong>Будет импортировано:</strong> ${parsedData.length} наборов адресов</p>`;
+    
+    if (errors.length > 0) {
+        html += `<div style="color: red; margin: 10px 0;"><strong>Ошибки:</strong><ul>`;
+        errors.forEach(error => {
+            html += `<li>${error}</li>`;
+        });
+        html += `</ul></div>`;
+    }
+    
+    if (parsedData.length > 0) {
+        html += `<div style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; margin-top: 10px;">`;
+        parsedData.forEach(item => {
+            html += `<div style="margin-bottom: 5px;"><strong>${item.name}</strong> - TON: ${item.addresses.ton ? '✓' : '✗'}, TRON: ${item.addresses.tron ? '✓' : '✗'}, SOL: ${item.addresses.sol ? '✓' : '✗'}, ETH: ${item.addresses.eth ? '✓' : '✗'}, BNB: ${item.addresses.bnb ? '✓' : '✗'}</div>`;
+        });
+        html += `</div>`;
+    }
+    
+    contentDiv.innerHTML = html;
+    previewDiv.style.display = 'block';
+}
 
-        for (const address of addressesToImport) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/addresses`, {
+// Выполнить импорт
+async function executeImport() {
+    const importData = document.getElementById('importData').value.trim();
+    
+    if (!importData) {
+        showNotification('Введите данные для импорта', 'warning');
+        return;
+    }
+    
+    if (!confirm('Вы уверены, что хотите выполнить импорт?')) {
+        return;
+    }
+    
+    const lines = importData.split('\n').filter(line => line.trim());
+    const successCount = [];
+    const errorCount = [];
+    
+    for (let i = 0; i < lines.length; i++) {
+        try {
+            const parsed = parseImportLine(lines[i]);
+            if (parsed) {
+                const response = await fetch(`${API_BASE_URL}/api/admin/address-sets`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(address)
+                    body: JSON.stringify(parsed)
                 });
-
+                
                 if (response.ok) {
-                    successCount++;
+                    successCount.push(parsed.name);
                 } else {
-                    errorCount++;
+                    errorCount.push(`${parsed.name}: HTTP ${response.status}`);
                 }
-            } catch (error) {
-                errorCount++;
+            }
+        } catch (error) {
+            errorCount.push(`Строка ${i + 1}: ${error.message}`);
+        }
+    }
+    
+    const message = `Импорт завершен. Успешно: ${successCount.length}, Ошибок: ${errorCount.length}`;
+    showNotification(message, errorCount.length === 0 ? 'success' : 'warning');
+    
+    if (errorCount.length > 0) {
+        console.error('Ошибки импорта:', errorCount);
+    }
+    
+    // Очищаем форму и обновляем данные
+    document.getElementById('importData').value = '';
+    document.getElementById('importPreview').style.display = 'none';
+    await loadAddressSets();
+}
+
+// Парсинг строки импорта
+function parseImportLine(line) {
+    const parts = line.split(',').map(part => part.trim());
+    
+    if (parts.length < 2) {
+        throw new Error('Недостаточно данных в строке');
+    }
+    
+    const name = parts[0];
+    if (!name) {
+        throw new Error('Отсутствует имя набора');
+    }
+    
+    const addresses = {
+        ton: null,
+        tron: null,
+        sol: null,
+        eth: null,
+        bnb: null
+    };
+    
+    // Парсим адреса
+    for (let i = 1; i < parts.length; i++) {
+        const part = parts[i];
+        const colonIndex = part.indexOf(':');
+        
+        if (colonIndex > 0) {
+            const network = part.substring(0, colonIndex).toLowerCase();
+            const address = part.substring(colonIndex + 1);
+            
+            if (addresses.hasOwnProperty(network) && address) {
+                addresses[network] = address;
             }
         }
-
-        showNotification(`Импорт завершен: ${successCount} успешно, ${errorCount} с ошибками`, 
-                       errorCount === 0 ? 'success' : 'warning');
-        
-        // Очищаем файл и превью
-        document.getElementById('csvFile').value = '';
-        document.getElementById('importPreview').innerHTML = '';
-        
-        // Перезагружаем данные
-        await loadData();
-        
-    } catch (error) {
-        console.error('Error during import:', error);
-        showNotification('Ошибка импорта', 'error');
-    } finally {
-        showLoading(false);
     }
+    
+    return { name, addresses };
 }
 
-// Показ модального окна
-function showModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.classList.add('active');
-    }
+// Обновить данные пользователей
+async function refreshUsers() {
+    await loadUsers();
+    showNotification('Данные пользователей обновлены', 'success');
 }
 
-// Закрытие модального окна
+// Обновить данные наборов адресов
+async function refreshAddresses() {
+    await loadAddressSets();
+    showNotification('Данные наборов адресов обновлены', 'success');
+}
+
+// Закрыть модальное окно
 function closeModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.classList.remove('active');
-    }
+    document.getElementById(modalId).style.display = 'none';
 }
 
-// Показ модального окна создания пользователя
-function showCreateUserModal() {
-    showModal('createUserModal');
+// Вспомогательные функции
+function truncateAddress(address) {
+    if (!address) return '-';
+    if (address.length <= 16) return address;
+    return address.substring(0, 8) + '...' + address.substring(address.length - 8);
 }
 
-// Показ модального окна создания адреса
-function showCreateAddressModal() {
-    showModal('createAddressModal');
+function formatDate(dateString) {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ru-RU') + ' ' + date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 }
 
-// Показ/скрытие загрузки
-function showLoading(show) {
-    const overlay = document.getElementById('loadingOverlay');
-    if (overlay) {
-        overlay.classList.toggle('active', show);
-    }
+function showLoading(elementId) {
+    document.getElementById(elementId).innerHTML = '<tr><td colspan="10" class="loading"><div class="loading-spinner"></div>Загрузка...</td></tr>';
 }
 
-// Показ уведомлений
+function showError(elementId, message) {
+    document.getElementById(elementId).innerHTML = `<tr><td colspan="10" class="text-center" style="color: red; padding: 40px;">${message}</td></tr>`;
+}
+
+// Система уведомлений
 function showNotification(message, type = 'info') {
-    // Создаем уведомление
     const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
-    notification.innerHTML = `
-        <div class="notification-content">
-            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
-            <span>${message}</span>
-        </div>
-        <button class="notification-close" onclick="this.parentElement.remove()">&times;</button>
-    `;
-
-    // Добавляем стили
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: ${type === 'success' ? '#27ae60' : type === 'error' ? '#e74c3c' : '#3498db'};
-        color: white;
-        padding: 15px 20px;
-        border-radius: 8px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        z-index: 3000;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        max-width: 400px;
-        animation: slideIn 0.3s ease;
-    `;
-
-    // Добавляем в DOM
-    document.body.appendChild(notification);
-
-    // Автоматически убираем через 5 секунд
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    
+    document.getElementById('notifications').appendChild(notification);
+    
+    // Автоматически удаляем уведомление через 5 секунд
     setTimeout(() => {
         if (notification.parentNode) {
-            notification.remove();
+            notification.parentNode.removeChild(notification);
         }
     }, 5000);
-}
-
-// Копирование в буфер обмена
-function copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(() => {
-        showNotification('Адрес скопирован в буфер обмена', 'success');
-    }).catch(() => {
-        showNotification('Ошибка копирования', 'error');
+    
+    // Добавляем возможность закрытия по клику
+    notification.addEventListener('click', function() {
+        if (this.parentNode) {
+            this.parentNode.removeChild(this);
+        }
     });
 }
 
-// Добавляем CSS для уведомлений
-const notificationStyles = document.createElement('style');
-notificationStyles.textContent = `
-    @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
+// Дополнительные функции для управления пользователями
+async function viewUserDetails(userId) {
+    const user = allUsers.find(u => u.id === userId);
+    if (!user) {
+        showNotification('Пользователь не найден', 'error');
+        return;
     }
     
-    .notification-close {
-        background: none;
-        border: none;
-        color: white;
-        font-size: 1.2rem;
-        cursor: pointer;
-        padding: 0;
-        width: 20px;
-        height: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 50%;
-        transition: background 0.3s ease;
-    }
+    const details = `
+        ID: ${user.id}
+        Telegram ID: ${user.telegram_id}
+        Имя: ${user.first_name} ${user.last_name || ''}
+        Username: ${user.username ? '@' + user.username : 'Не указан'}
+        Набор адресов: ${user.address_set_id ? '#' + user.address_set_id : 'Не назначен'}
+        Дата регистрации: ${formatDate(user.created_at)}
+    `;
     
-    .notification-close:hover {
-        background: rgba(255, 255, 255, 0.2);
-    }
-    
-    .address-cell {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-    
-    .btn-copy {
-        background: none;
-        border: none;
-        color: #667eea;
-        cursor: pointer;
-        padding: 5px;
-        border-radius: 4px;
-        transition: background 0.3s ease;
-    }
-    
-    .btn-copy:hover {
-        background: rgba(102, 126, 234, 0.1);
-    }
-    
-    .network-info {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-    }
-    
-    .network-name {
-        font-weight: bold;
-        color: #ffd700;
-    }
-    
-    .network-standard {
-        font-size: 0.8rem;
-        opacity: 0.7;
-    }
-    
-    .address-item {
-        margin-bottom: 5px;
-        padding: 5px;
-        background: rgba(102, 126, 234, 0.1);
-        border-radius: 4px;
-    }
-    
-    .address-text {
-        font-family: monospace;
-        font-size: 0.9rem;
-    }
-    
-    .preview-list {
-        margin: 15px 0;
-    }
-    
-    .preview-item {
-        padding: 8px;
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 4px;
-        margin-bottom: 5px;
-    }
-`;
+    alert(details);
+}
 
-document.head.appendChild(notificationStyles);
+async function resetUserAddresses(userId) {
+    if (!confirm('Вы уверены, что хотите сбросить адреса пользователя?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}/reset`, {
+            method: 'POST'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('Адреса пользователя успешно сброшены', 'success');
+            await loadUsers();
+            await loadAddressSets();
+        } else {
+            throw new Error(result.error || 'Неизвестная ошибка');
+        }
+        
+    } catch (error) {
+        console.error('Ошибка сброса адресов пользователя:', error);
+        showNotification('Ошибка сброса адресов: ' + error.message, 'error');
+    }
+}
+
+async function deleteUser(userId) {
+    if (!confirm('Вы уверены, что хотите удалить пользователя?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}`, {
+            method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('Пользователь успешно удален', 'success');
+            await loadUsers();
+            await loadAddressSets();
+        } else {
+            throw new Error(result.error || 'Неизвестная ошибка');
+        }
+        
+    } catch (error) {
+        console.error('Ошибка удаления пользователя:', error);
+        showNotification('Ошибка удаления пользователя: ' + error.message, 'error');
+    }
+}

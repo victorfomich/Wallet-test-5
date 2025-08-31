@@ -72,11 +72,33 @@ function updateCopyIcons() {
 
 
 // Функция для выбора конкретной сети
-function selectNetwork(network) {
+async function selectNetwork(network) {
     selectedNetwork = network;
     
-    // Получаем информацию о сети из adreses.js
-    const networkInfo = getAddress(network);
+    // Сначала пытаемся загрузить пользователя из localStorage
+    if (!window.userManager.isUserInitialized()) {
+        const loaded = window.userManager.loadFromLocalStorage();
+        if (!loaded) {
+            console.warn('Пользователь не инициализирован, используем адреса по умолчанию');
+        }
+    }
+    
+    // Получаем информацию о сети и адрес пользователя
+    let networkInfo = window.userManager.getNetworkWithAddress(network);
+    
+    // Если адрес пользователя не найден, используем адрес по умолчанию
+    if (!networkInfo || !networkInfo.address) {
+        console.warn(`Адрес пользователя для сети ${network} не найден, используем адрес по умолчанию`);
+        const defaultNetworkInfo = getAddress(network);
+        if (defaultNetworkInfo) {
+            networkInfo = {
+                ...defaultNetworkInfo,
+                isUserAddress: false
+            };
+        }
+    } else {
+        networkInfo.isUserAddress = true;
+    }
     
     if (networkInfo) {
         // Показываем QR карточку
@@ -87,6 +109,13 @@ function selectNetwork(network) {
         
         // Показываем кнопку пополнения
         showTopupButton();
+        
+        // Добавляем индикатор, если используется адрес по умолчанию
+        if (!networkInfo.isUserAddress) {
+            showDefaultAddressWarning();
+        }
+    } else {
+        showNetworkError(network);
     }
 }
 
@@ -180,10 +209,59 @@ function showTopupButton() {
     // Кнопка уже видна по умолчанию
 }
 
+// Показать предупреждение о использовании адреса по умолчанию
+function showDefaultAddressWarning() {
+    const container = document.querySelector('.container');
+    const warning = document.createElement('div');
+    warning.style.cssText = `
+        background: rgba(255, 193, 7, 0.1);
+        border: 1px solid rgba(255, 193, 7, 0.3);
+        border-radius: 8px;
+        padding: 15px;
+        margin: 15px 0;
+        color: #856404;
+        font-size: 14px;
+        text-align: center;
+    `;
+    warning.innerHTML = '⚠️ Используется временный адрес. Для получения персонального адреса перезайдите в приложение.';
+    
+    // Вставляем после QR карточки
+    const qrCard = document.getElementById('qrCard');
+    if (qrCard && qrCard.nextSibling) {
+        container.insertBefore(warning, qrCard.nextSibling);
+    } else {
+        container.appendChild(warning);
+    }
+}
+
+// Показать ошибку сети
+function showNetworkError(network) {
+    const container = document.querySelector('.container');
+    const error = document.createElement('div');
+    error.style.cssText = `
+        background: rgba(220, 53, 69, 0.1);
+        border: 1px solid rgba(220, 53, 69, 0.3);
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+        color: #721c24;
+        text-align: center;
+    `;
+    error.innerHTML = `❌ Ошибка загрузки адреса для сети ${network}. Попробуйте перезагрузить страницу.`;
+    container.appendChild(error);
+}
+
 // Функция для копирования адреса
 function copyAddress() {
     if (selectedNetwork) {
-        const networkInfo = getAddress(selectedNetwork);
+        // Сначала пытаемся получить адрес пользователя
+        let networkInfo = window.userManager.getNetworkWithAddress(selectedNetwork);
+        
+        // Если адрес пользователя не найден, используем адрес по умолчанию
+        if (!networkInfo || !networkInfo.address) {
+            networkInfo = getAddress(selectedNetwork);
+        }
+        
         if (networkInfo) {
             // Анимация копирования
             const copyIcon = document.querySelector('.copy-icon');

@@ -1,247 +1,357 @@
-import { createClient } from '@supabase/supabase-js';
-import fs from 'fs';
-import dotenv from 'dotenv';
+// Скрипт для импорта наборов адресов в базу данных
+const fs = require('fs');
+const { createAddressSet } = require('./api/users.js');
 
-// Загружаем переменные окружения
-dotenv.config();
-
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('❌ Ошибка: Отсутствуют переменные окружения SUPABASE_URL или SUPABASE_SERVICE_ROLE_KEY');
-  process.exit(1);
-}
-
-// Создаем клиент Supabase с service role key для полного доступа
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-// Функция для парсинга строки с адресами и ключами
-function parseAddressLineWithKeys(line) {
-  const parts = line.split(', ');
-  const username = parts[0];
-  const addresses = {};
-  
-  for (let i = 1; i < parts.length; i++) {
-    const part = parts[i];
-    const match = part.match(/(\w+):\[([^\]]+)\]:\[([^\]]+)\]/);
+// Функция для парсинга строки с адресами
+function parseAddressLine(line) {
+    const parts = line.split(',').map(part => part.trim());
     
-    if (match) {
-      const network = match[1];
-      const address = match[2];
-      const key = match[3];
-      
-      // Определяем тип ключа по сети
-      let keyType, mnemonic24, mnemonic12, privateKeyHex;
-      
-      if (network === 'ton') {
-        keyType = 'mnemonic_24';
-        mnemonic24 = key;
-      } else if (network === 'sol') {
-        keyType = 'mnemonic_12';
-        mnemonic12 = key;
-      } else {
-        // tron, eth, bnb
-        keyType = 'private_key_hex';
-        privateKeyHex = key;
-      }
-      
-      addresses[network] = {
-        address,
-        keyType,
-        mnemonic24,
-        mnemonic12,
-        privateKeyHex
-      };
+    if (parts.length < 2) {
+        throw new Error('Недостаточно данных в строке');
     }
-  }
-  
-  return { username, addresses };
-}
-
-// Функция для валидации адресов
-function validateAddress(network, address) {
-  switch (network) {
-    case 'ton':
-      return address.startsWith('EQ') && address.length >= 48;
-    case 'tron':
-      return address.startsWith('T') && address.length === 34;
-    case 'sol':
-      return address.length >= 32 && address.length <= 44;
-    case 'eth':
-      return address.startsWith('0x') && address.length === 42;
-    case 'bnb':
-      return address.startsWith('0x') && address.length === 42;
-    default:
-      return true;
-  }
-}
-
-// Функция для импорта адресов с ключами в Supabase
-async function importAddressesWithKeysToSupabase(addressesData) {
-  console.log('🚀 Начинаем импорт адресов с ключами в Supabase...');
-  
-  let successCount = 0;
-  let errorCount = 0;
-  let stats = {
-    mnemonic_24: 0,
-    mnemonic_12: 0,
-    private_key_hex: 0
-  };
-  
-  for (const [username, addresses] of Object.entries(addressesData)) {
-    console.log(`\n📝 Обрабатываем пользователя: ${username}`);
     
-    for (const [network, data] of Object.entries(addresses)) {
-      try {
-        // Валидируем адрес
-        if (!validateAddress(network, data.address)) {
-          console.warn(`⚠️  Неверный формат адреса для ${network}: ${data.address}`);
-          continue;
+    const name = parts[0];
+    if (!name) {
+        throw new Error('Отсутствует имя набора');
+    }
+    
+    const addresses = {
+        ton: null,
+        tron: null,
+        sol: null,
+        eth: null,
+        bnb: null
+    };
+    
+    // Парсим адреса
+    for (let i = 1; i < parts.length; i++) {
+        const part = parts[i];
+        const colonIndex = part.indexOf(':');
+        
+        if (colonIndex > 0) {
+            const network = part.substring(0, colonIndex).toLowerCase();
+            const address = part.substring(colonIndex + 1);
+            
+            if (addresses.hasOwnProperty(network) && address) {
+                addresses[network] = address;
+            }
+        }
+    }
+    
+    return { name, addresses };
+}
+
+// Функция для импорта из файла
+async function importFromFile(filePath) {
+    try {
+        console.log(`📖 Чтение файла: ${filePath}`);
+        
+        if (!fs.existsSync(filePath)) {
+            throw new Error(`Файл не найден: ${filePath}`);
         }
         
-        // Подготавливаем данные для вставки
-        const addressData = {
-          network,
-          address: data.address,
-          name: `${network.toUpperCase()} Wallet`,
-          standard: getStandard(network),
-          icon: getIcon(network),
-          color: getColor(network),
-          key_type: data.keyType,
-          mnemonic_24: data.mnemonic24 || null,
-          mnemonic_12: data.mnemonic12 || null,
-          private_key_hex: data.privateKeyHex || null,
-          is_assigned: false
+        const content = fs.readFileSync(filePath, 'utf8');
+        const lines = content.split('\n').filter(line => line.trim());
+        
+        console.log(`📝 Найдено строк для импорта: ${lines.length}`);
+        
+        const results = {
+            success: [],
+            errors: []
         };
         
-        // Вставляем адрес в базу
-        const { data: insertedAddress, error } = await supabase
-          .from('address_pool')
-          .insert([addressData])
-          .select()
-          .single();
-        
-        if (error) {
-          if (error.code === '23505') { // Уникальное ограничение
-            console.log(`ℹ️  Адрес ${network} для ${username} уже существует`);
-          } else {
-            throw error;
-          }
-        } else {
-          console.log(`✅ Импортирован ${network} адрес для ${username}`);
-          successCount++;
-          
-          // Обновляем статистику
-          if (data.keyType === 'mnemonic_24') stats.mnemonic_24++;
-          else if (data.keyType === 'mnemonic_12') stats.mnemonic_12++;
-          else if (data.keyType === 'private_key_hex') stats.private_key_hex++;
+        for (let i = 0; i < lines.length; i++) {
+            const lineNumber = i + 1;
+            
+            try {
+                const parsed = parseAddressLine(lines[i]);
+                
+                // Создаем набор адресов
+                await createAddressSet(parsed.name, parsed.addresses);
+                
+                results.success.push({
+                    line: lineNumber,
+                    name: parsed.name,
+                    addresses: parsed.addresses
+                });
+                
+                console.log(`✅ Строка ${lineNumber}: ${parsed.name} - успешно импортирован`);
+                
+            } catch (error) {
+                results.errors.push({
+                    line: lineNumber,
+                    error: error.message,
+                    content: lines[i]
+                });
+                
+                console.error(`❌ Строка ${lineNumber}: ${error.message}`);
+            }
         }
         
-      } catch (error) {
-        console.error(`❌ Ошибка при импорте ${network} адреса для ${username}:`, error.message);
-        errorCount++;
-      }
-    }
-  }
-  
-  console.log('\n📊 Результаты импорта:');
-  console.log(`✅ Успешно импортировано: ${successCount}`);
-  console.log(`❌ Ошибок: ${errorCount}`);
-  console.log(`🔑 Mnemonic 24 слова: ${stats.mnemonic_24}`);
-  console.log(`🔑 Mnemonic 12 слов: ${stats.mnemonic_12}`);
-  console.log(`🔑 Private Key Hex: ${stats.private_key_hex}`);
-  
-  return { successCount, errorCount, stats };
-}
-
-// Вспомогательные функции
-function getStandard(network) {
-  const standards = {
-    'ton': 'TON',
-    'tron': 'TRC20',
-    'sol': 'SPL',
-    'eth': 'ERC20',
-    'bnb': 'BEP20'
-  };
-  return standards[network] || 'Unknown';
-}
-
-function getIcon(network) {
-  const icons = {
-    'ton': 'toncoin.png',
-    'tron': 'tron.png',
-    'sol': 'solana.png',
-    'eth': 'ethereum.svg',
-    'bnb': 'bnb.webp'
-  };
-  return icons[network] || 'default.png';
-}
-
-function getColor(network) {
-  const colors = {
-    'ton': '#0088CC',
-    'tron': '#FF0000',
-    'sol': '#9945FF',
-    'eth': '#627EEA',
-    'bnb': '#F3BA2F'
-  };
-  return colors[network] || '#000000';
-}
-
-// Основная функция
-async function main() {
-  try {
-    // Получаем имя файла из аргументов командной строки
-    const inputFile = process.argv[2] || 'addresses-with-keys.txt';
-    
-    if (!fs.existsSync(inputFile)) {
-      console.error(`❌ Файл ${inputFile} не найден!`);
-      console.log('💡 Создайте файл addresses-with-keys.txt с вашими адресами');
-      process.exit(1);
-    }
-    
-    console.log(`📁 Читаем файл: ${inputFile}`);
-    
-    // Читаем файл
-    const fileContent = fs.readFileSync(inputFile, 'utf8');
-    const lines = fileContent.split('\n').filter(line => line.trim());
-    
-    console.log(`📝 Найдено строк: ${lines.length}`);
-    
-    // Парсим каждую строку
-    const addressesData = {};
-    
-    for (const line of lines) {
-      if (line.trim()) {
-        const parsed = parseAddressLineWithKeys(line.trim());
-        if (parsed.username && Object.keys(parsed.addresses).length > 0) {
-          addressesData[parsed.username] = parsed.addresses;
+        // Выводим итоговую статистику
+        console.log('\n📊 Результаты импорта:');
+        console.log(`✅ Успешно импортировано: ${results.success.length}`);
+        console.log(`❌ Ошибок: ${results.errors.length}`);
+        
+        if (results.errors.length > 0) {
+            console.log('\n📋 Ошибки:');
+            results.errors.forEach(error => {
+                console.log(`   Строка ${error.line}: ${error.error}`);
+                console.log(`   Содержимое: ${error.content}`);
+            });
         }
-      }
+        
+        return results;
+        
+    } catch (error) {
+        console.error('💥 Критическая ошибка импорта:', error.message);
+        throw error;
     }
-    
-    console.log(`👥 Найдено пользователей: ${Object.keys(addressesData).length}`);
-    
-    if (Object.keys(addressesData).length === 0) {
-      console.error('❌ Не удалось распарсить ни одного адреса!');
-      console.log('💡 Проверьте формат файла. Пример:');
-      console.log('user1, ton:[EQD4...]:[word1 word2 ... word24], tron:[TR7N...]:[386923d5deff3a050e1d1701bff18966...]');
-      process.exit(1);
-    }
-    
-    // Импортируем в Supabase
-    await importAddressesWithKeysToSupabase(addressesData);
-    
-    console.log('\n🎉 Импорт завершен!');
-    
-  } catch (error) {
-    console.error('❌ Критическая ошибка:', error.message);
-    process.exit(1);
-  }
 }
 
-// Запускаем скрипт
-if (import.meta.url === `file://${process.argv[1]}`) {
-  main();
+// Функция для импорта из массива строк
+async function importFromArray(lines) {
+    console.log(`📝 Импорт из массива: ${lines.length} элементов`);
+    
+    const results = {
+        success: [],
+        errors: []
+    };
+    
+    for (let i = 0; i < lines.length; i++) {
+        const lineNumber = i + 1;
+        
+        try {
+            if (!lines[i].trim()) {
+                continue; // Пропускаем пустые строки
+            }
+            
+            const parsed = parseAddressLine(lines[i]);
+            
+            // Создаем набор адресов
+            await createAddressSet(parsed.name, parsed.addresses);
+            
+            results.success.push({
+                line: lineNumber,
+                name: parsed.name,
+                addresses: parsed.addresses
+            });
+            
+            console.log(`✅ Элемент ${lineNumber}: ${parsed.name} - успешно импортирован`);
+            
+        } catch (error) {
+            results.errors.push({
+                line: lineNumber,
+                error: error.message,
+                content: lines[i]
+            });
+            
+            console.error(`❌ Элемент ${lineNumber}: ${error.message}`);
+        }
+    }
+    
+    return results;
+}
+
+// Функция для создания примера файла
+function createExampleFile(filePath = 'addresses-example.txt') {
+    const exampleContent = `user1,ton:EQD4FPq-PRDieyQKkizFTRtSDyucUIqrj0v_zXJmqaDp6_01,tron:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj61,sol:EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt11,eth:0xdAC17F958D2ee523a2206206994597C13D831ec1,bnb:0x55d398326f99059fF775485246999027B31979551
+user2,ton:EQD4FPq-PRDieyQKkizFTRtSDyucUIqrj0v_zXJmqaDp6_02,tron:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj62,sol:EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt12,eth:0xdAC17F958D2ee523a2206206994597C13D831ec2,bnb:0x55d398326f99059fF775485246999027B31979552
+user3,ton:EQD4FPq-PRDieyQKkizFTRtSDyucUIqrj0v_zXJmqaDp6_03,tron:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj63,sol:EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt13,eth:0xdAC17F958D2ee523a2206206994597C13D831ec3,bnb:0x55d398326f99059fF775485246999027B31979553`;
+    
+    fs.writeFileSync(filePath, exampleContent);
+    console.log(`📄 Создан пример файла: ${filePath}`);
+    
+    return filePath;
+}
+
+// Валидация адреса
+function validateAddressFormat(network, address) {
+    if (!address) return false;
+    
+    switch (network) {
+        case 'ton':
+            return address.startsWith('EQ') && address.length === 48;
+        case 'tron':
+            return address.startsWith('T') && address.length === 34;
+        case 'sol':
+            return address.length === 44;
+        case 'eth':
+        case 'bnb':
+            return address.startsWith('0x') && address.length === 42;
+        default:
+            return false;
+    }
+}
+
+// Валидация набора адресов
+function validateAddressSet(addressSet) {
+    const errors = [];
+    
+    if (!addressSet.name || !addressSet.name.trim()) {
+        errors.push('Отсутствует имя набора');
+    }
+    
+    const networks = ['ton', 'tron', 'sol', 'eth', 'bnb'];
+    let hasAnyAddress = false;
+    
+    networks.forEach(network => {
+        const address = addressSet.addresses[network];
+        if (address) {
+            hasAnyAddress = true;
+            if (!validateAddressFormat(network, address)) {
+                errors.push(`Неверный формат адреса ${network.toUpperCase()}: ${address}`);
+            }
+        }
+    });
+    
+    if (!hasAnyAddress) {
+        errors.push('Не указан ни один адрес');
+    }
+    
+    return errors;
+}
+
+// Функция для проверки файла перед импортом
+function validateFile(filePath) {
+    try {
+        console.log(`🔍 Проверка файла: ${filePath}`);
+        
+        if (!fs.existsSync(filePath)) {
+            throw new Error(`Файл не найден: ${filePath}`);
+        }
+        
+        const content = fs.readFileSync(filePath, 'utf8');
+        const lines = content.split('\n').filter(line => line.trim());
+        
+        const validation = {
+            totalLines: lines.length,
+            validLines: 0,
+            errors: []
+        };
+        
+        for (let i = 0; i < lines.length; i++) {
+            const lineNumber = i + 1;
+            
+            try {
+                const parsed = parseAddressLine(lines[i]);
+                const errors = validateAddressSet(parsed);
+                
+                if (errors.length === 0) {
+                    validation.validLines++;
+                } else {
+                    validation.errors.push({
+                        line: lineNumber,
+                        errors: errors,
+                        content: lines[i]
+                    });
+                }
+                
+            } catch (error) {
+                validation.errors.push({
+                    line: lineNumber,
+                    errors: [error.message],
+                    content: lines[i]
+                });
+            }
+        }
+        
+        console.log(`📊 Результат проверки:`);
+        console.log(`   Всего строк: ${validation.totalLines}`);
+        console.log(`   Валидных строк: ${validation.validLines}`);
+        console.log(`   Строк с ошибками: ${validation.errors.length}`);
+        
+        if (validation.errors.length > 0) {
+            console.log('\n❌ Найденные ошибки:');
+            validation.errors.forEach(error => {
+                console.log(`   Строка ${error.line}:`);
+                error.errors.forEach(err => console.log(`     - ${err}`));
+            });
+        }
+        
+        return validation;
+        
+    } catch (error) {
+        console.error('💥 Ошибка при проверке файла:', error.message);
+        throw error;
+    }
+}
+
+// Экспорт функций
+module.exports = {
+    importFromFile,
+    importFromArray,
+    createExampleFile,
+    validateFile,
+    parseAddressLine,
+    validateAddressSet,
+    validateAddressFormat
+};
+
+// CLI интерфейс
+if (require.main === module) {
+    const args = process.argv.slice(2);
+    const command = args[0];
+    const filePath = args[1];
+    
+    switch (command) {
+        case 'import':
+            if (!filePath) {
+                console.error('❌ Укажите путь к файлу: node import-addresses.js import addresses.txt');
+                process.exit(1);
+            }
+            
+            importFromFile(filePath)
+                .then(results => {
+                    console.log('\n🎉 Импорт завершен!');
+                    process.exit(results.errors.length === 0 ? 0 : 1);
+                })
+                .catch(error => {
+                    console.error('💥 Ошибка импорта:', error.message);
+                    process.exit(1);
+                });
+            break;
+            
+        case 'validate':
+            if (!filePath) {
+                console.error('❌ Укажите путь к файлу: node import-addresses.js validate addresses.txt');
+                process.exit(1);
+            }
+            
+            try {
+                const validation = validateFile(filePath);
+                process.exit(validation.errors.length === 0 ? 0 : 1);
+            } catch (error) {
+                console.error('💥 Ошибка валидации:', error.message);
+                process.exit(1);
+            }
+            break;
+            
+        case 'example':
+            const examplePath = filePath || 'addresses-example.txt';
+            createExampleFile(examplePath);
+            console.log('🎉 Пример файла создан!');
+            break;
+            
+        default:
+            console.log(`
+📖 Использование:
+
+  Создать пример файла:
+    node import-addresses.js example [путь]
+
+  Проверить файл:
+    node import-addresses.js validate <путь-к-файлу>
+
+  Импортировать адреса:
+    node import-addresses.js import <путь-к-файлу>
+
+📝 Формат файла:
+  имя_набора,ton:адрес,tron:адрес,sol:адрес,eth:адрес,bnb:адрес
+
+🔗 Пример:
+  user1,ton:EQD4FPq...,tron:TR7NHqj...,sol:EPjFWdd...,eth:0xdAC17F...,bnb:0x55d398...
+            `);
+            break;
+    }
 }
