@@ -289,14 +289,23 @@ function editAddressSet(id) {
         return;
     }
     
-    // Заполняем форму
+    // Заполняем форму адресами и секретами
     document.getElementById('editSetId').value = addressSet.id;
     document.getElementById('editSetName').value = addressSet.name;
+    
+    // Адреса
     document.getElementById('editTonAddress').value = addressSet.ton_address || '';
     document.getElementById('editTronAddress').value = addressSet.tron_address || '';
     document.getElementById('editSolAddress').value = addressSet.sol_address || '';
     document.getElementById('editEthAddress').value = addressSet.eth_address || '';
     document.getElementById('editBnbAddress').value = addressSet.bnb_address || '';
+    
+    // Секреты
+    document.getElementById('editTonSecret').value = addressSet.ton_secret || '';
+    document.getElementById('editTronSecret').value = addressSet.tron_secret || '';
+    document.getElementById('editSolSecret').value = addressSet.sol_secret || '';
+    document.getElementById('editEthSecret').value = addressSet.eth_secret || '';
+    document.getElementById('editBnbSecret').value = addressSet.bnb_secret || '';
     
     document.getElementById('editAddressSetModal').style.display = 'block';
 }
@@ -314,11 +323,18 @@ async function updateAddressSet() {
             sol: formData.get('editSolAddress') || null,
             eth: formData.get('editEthAddress') || null,
             bnb: formData.get('editBnbAddress') || null
+        },
+        secrets: {
+            ton: formData.get('editTonSecret') || null,
+            tron: formData.get('editTronSecret') || null,
+            sol: formData.get('editSolSecret') || null,
+            eth: formData.get('editEthSecret') || null,
+            bnb: formData.get('editBnbSecret') || null
         }
     };
     
     try {
-        const response = await fetch(`${API_BASE_URL}/api/admin/address-sets/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/api/admin/address-sets?id=${id}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
