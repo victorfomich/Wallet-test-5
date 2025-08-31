@@ -35,7 +35,15 @@ class UserManager {
             if (!response.ok) {
                 const errorText = await response.text();
                 console.error('API Error:', response.status, errorText);
-                throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+                console.error('URL запроса:', `${API_BASE_URL}/api/addresses`);
+                
+                if (response.status === 500 && errorText.includes('переменные окружения')) {
+                    throw new Error('Переменные окружения Supabase не настроены в Vercel');
+                } else if (response.status === 500) {
+                    throw new Error(`Ошибка сервера: ${errorText}`);
+                } else {
+                    throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+                }
             }
             
             const data = await response.json();

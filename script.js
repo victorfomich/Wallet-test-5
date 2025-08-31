@@ -216,15 +216,50 @@ function showUserInitializationError() {
         z-index: 1000;
         font-size: 14px;
     `;
-    errorMessage.textContent = 'Ошибка загрузки данных пользователя. Попробуйте перезагрузить страницу.';
+    errorMessage.innerHTML = `
+        <div>Ошибка загрузки данных пользователя</div>
+        <div style="font-size: 12px; margin-top: 8px;">
+            Возможные причины: не настроены переменные окружения Supabase или проблемы с подключением к базе данных.
+        </div>
+        <button onclick="checkApiDebug()" style="margin-top: 10px; padding: 5px 10px; background: rgba(255,255,255,0.2); border: 1px solid white; color: white; border-radius: 4px; cursor: pointer;">
+            Диагностика
+        </button>
+    `;
     container.appendChild(errorMessage);
     
-    // Убираем сообщение через 5 секунд
+    // Убираем сообщение через 10 секунд
     setTimeout(() => {
         if (errorMessage.parentNode) {
             errorMessage.parentNode.removeChild(errorMessage);
         }
-    }, 5000);
+    }, 10000);
+}
+
+// Функция для проверки API
+async function checkApiDebug() {
+    try {
+        const response = await fetch('/api/debug');
+        const data = await response.json();
+        console.log('Диагностика API:', data);
+        
+        if (data.success) {
+            const missingVars = [];
+            if (!data.variables.SUPABASE_URL.exists) missingVars.push('SUPABASE_URL');
+            if (!data.variables.SUPABASE_ANON_KEY.exists) missingVars.push('SUPABASE_ANON_KEY');
+            if (!data.variables.SUPABASE_SERVICE_KEY.exists) missingVars.push('SUPABASE_SERVICE_KEY');
+            
+            if (missingVars.length > 0) {
+                alert(`Проблема найдена! Отсутствуют переменные окружения в Vercel: ${missingVars.join(', ')}\n\nДобавьте их в настройках проекта Vercel и сделайте редеплой.`);
+            } else if (!data.connection_test.success) {
+                alert(`Переменные настроены, но подключение к Supabase не работает: ${data.connection_test.error}`);
+            } else {
+                alert('Все настройки корректны. Попробуйте перезагрузить страницу.');
+            }
+        }
+    } catch (error) {
+        console.error('Ошибка диагностики:', error);
+        alert('Не удалось выполнить диагностику. Проверьте консоль разработчика.');
+    }
 }
 
 // Функция для переключения видимости баланса
