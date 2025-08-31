@@ -33,10 +33,11 @@ export default async function handler(req, res) {
         let connectionTest = null;
         let databaseTest = null;
         
-        // Импортируем конфигурацию с fallback значениями
-        const { SUPABASE_URL, SUPABASE_ANON_KEY } = await import('./supabase.js');
+        // Используем принудительно правильные ключи
+        const SUPABASE_URL = 'https://qvinjcaarnmafqdtfzrf.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2aW5qY2Fhcm5tYWZxZHRmenJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2NDkyNzQsImV4cCI6MjA3MjIyNTI3NH0.n5yfMg4yrjYUNZ2-J2rJzLT-6qF4hOnS7U0L9qgf3Yo';
         
-        if (SUPABASE_URL && SUPABASE_ANON_KEY && !SUPABASE_URL.includes('YOUR_PROJECT_ID')) {
+        if (SUPABASE_URL && SUPABASE_ANON_KEY) {
             try {
                 // Тест подключения
                 const testUrl = `${SUPABASE_URL}/rest/v1/address_sets?limit=1`;
