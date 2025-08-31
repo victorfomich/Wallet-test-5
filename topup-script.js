@@ -92,3 +92,72 @@ function goBack() {
 
 // Показываем кнопку назад
 goBack();
+
+// Инициализируем ограничения приложения
+initAppRestrictions();
+
+// Функции для полноценного приложения
+function initAppRestrictions() {
+    // Отключаем контекстное меню (правый клик)
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+        return false;
+    });
+    
+    // Отключаем выделение текста
+    document.addEventListener('selectstart', function(e) {
+        e.preventDefault();
+        return false;
+    });
+    
+    // Отключаем перетаскивание элементов
+    document.addEventListener('dragstart', function(e) {
+        e.preventDefault();
+        return false;
+    });
+    
+    // Отключаем двойной клик для выделения
+    document.addEventListener('dblclick', function(e) {
+        e.preventDefault();
+        return false;
+    });
+    
+    // Отключаем зум жестами
+    document.addEventListener('gesturestart', function(e) {
+        e.preventDefault();
+        return false;
+    });
+    
+    document.addEventListener('gesturechange', function(e) {
+        e.preventDefault();
+        return false;
+    });
+    
+    document.addEventListener('gestureend', function(e) {
+        e.preventDefault();
+        return false;
+    });
+    
+    // Отключаем зум колесиком мыши
+    document.addEventListener('wheel', function(e) {
+        if (e.ctrlKey) {
+            e.preventDefault();
+            return false;
+        }
+    }, { passive: false });
+    
+    // Отключаем зум на мобильных устройствах
+    document.addEventListener('touchstart', function(e) {
+        if (e.touches.length > 1) {
+            e.preventDefault();
+            return false;
+        }
+    }, { passive: false });
+    
+    document.addEventListener('touchmove', function(e) {
+        if (e.touches.length > 1) {
+            e.preventDefault();
+            return false;
+        }
+    }, { passive: false });
+}
