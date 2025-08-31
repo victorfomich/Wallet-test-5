@@ -2,12 +2,9 @@
   "name": "dreamwallet-v2",
   "version": "2.0.0",
   "description": "Telegram Mini App для управления криптовалютными кошельками",
-  "main": "index.html",
+  "type": "module",
   "scripts": {
-    "dev": "vercel dev",
-    "build": "echo 'Static site - no build needed'",
-    "deploy": "vercel --prod",
-    "setup-db": "node setup-database.js"
+    "build": "echo 'Static site - no build needed'"
   },
   "keywords": [
     "telegram",
@@ -18,14 +15,5 @@
     "blockchain"
   ],
   "author": "DreamWallet Team",
-  "license": "MIT",
-  "dependencies": {
-    "@vercel/node": "^3.0.0"
-  },
-  "devDependencies": {
-    "vercel": "^32.0.0"
-  },
-  "engines": {
-    "node": ">=18.0.0"
-  }
+  "license": "MIT"
 }
