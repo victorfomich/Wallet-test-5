@@ -96,20 +96,9 @@ async function loadData() {
         renderUsersTable();
         renderAddressesTable();
         updateStats();
-        
-        showNotification('Данные загружены успешно', 'success');
     } catch (error) {
         console.error('Error loading data:', error);
-        
-        // Показываем более подробную ошибку
-        let errorMessage = 'Ошибка загрузки данных';
-        if (error.message.includes('fetch')) {
-            errorMessage = 'Ошибка подключения к API. Проверьте настройки Supabase.';
-        } else if (error.message.includes('SUPABASE')) {
-            errorMessage = 'Отсутствуют переменные окружения Supabase';
-        }
-        
-        showNotification(errorMessage, 'error');
+        showNotification('Ошибка загрузки данных', 'error');
     } finally {
         showLoading(false);
     }
@@ -118,7 +107,7 @@ async function loadData() {
 // Загрузка пользователей
 async function loadUsers() {
     try {
-        const response = await fetch(`${API_BASE_URL}/users-simple`);
+        const response = await fetch(`${API_BASE_URL}/users`);
         const data = await response.json();
         
         if (response.ok) {
@@ -135,7 +124,7 @@ async function loadUsers() {
 // Загрузка адресов
 async function loadAddresses() {
     try {
-        const response = await fetch(`${API_BASE_URL}/addresses-simple`);
+        const response = await fetch(`${API_BASE_URL}/addresses`);
         const data = await response.json();
         
         if (response.ok) {
@@ -154,12 +143,10 @@ function updateStats() {
     const totalUsers = users.length;
     const totalAddresses = addresses.length;
     const assignedAddresses = addresses.filter(addr => addr.is_assigned).length;
-    const availableAddresses = totalAddresses - assignedAddresses;
 
     document.getElementById('totalUsers').textContent = totalUsers;
     document.getElementById('totalAddresses').textContent = totalAddresses;
     document.getElementById('assignedAddresses').textContent = assignedAddresses;
-    document.getElementById('availableAddresses').textContent = availableAddresses;
 }
 
 // Рендеринг таблицы пользователей
@@ -241,7 +228,6 @@ function renderAddressesTable() {
             </td>
             <td>${address.name}</td>
             <td>${address.standard}</td>
-            <td>${address.key_type || '-'}</td>
             <td><span class="status-badge ${statusClass}">${statusText}</span></td>
             <td>${userInfo}</td>
             <td>
@@ -370,7 +356,6 @@ function renderFilteredAddresses(filteredAddresses) {
             </td>
             <td>${address.name}</td>
             <td>${address.standard}</td>
-            <td>${address.key_type || '-'}</td>
             <td><span class="status-badge ${statusClass}">${statusText}</span></td>
             <td>${userInfo}</td>
             <td>
