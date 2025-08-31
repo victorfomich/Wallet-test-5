@@ -1,12 +1,82 @@
 // Telegram Web App API
 let tg = window.Telegram.WebApp;
 
+// Система предзагрузки для мгновенной навигации
+const preloadManager = {
+    pages: {
+        'topup.html': null,
+        'usdt.html': null,
+        'qr-usdt.html': null,
+        'usdt-chain.html': null
+    },
+    
+    // Предзагружаем все страницы
+    preloadAllPages() {
+        console.log('Начинаем предзагрузку всех страниц...');
+        
+        Object.keys(this.pages).forEach(page => {
+            this.preloadPage(page);
+        });
+        
+        // Предзагружаем все CSS и JS файлы
+        this.preloadResources();
+    },
+    
+    // Предзагружаем конкретную страницу
+    preloadPage(page) {
+        const iframe = document.getElementById(`preload-${page.replace('.html', '')}`);
+        if (iframe) {
+            iframe.onload = () => {
+                console.log(`Страница ${page} предзагружена`);
+                this.pages[page] = 'loaded';
+            };
+        }
+    },
+    
+    // Предзагружаем ресурсы
+    preloadResources() {
+        const resources = [
+            'topup-styles.css',
+            'topup-script.js',
+            'usdt-styles.css',
+            'usdt-script.js',
+            'qr-usdt-styles.css',
+            'qr-usdt-script.js',
+            'usdt-chain-styles.css',
+            'usdt-chain-script.js'
+        ];
+        
+        resources.forEach(resource => {
+            if (resource.endsWith('.css')) {
+                const link = document.createElement('link');
+                link.rel = 'preload';
+                link.href = resource;
+                link.as = 'style';
+                document.head.appendChild(link);
+            } else if (resource.endsWith('.js')) {
+                const script = document.createElement('script');
+                script.src = resource;
+                script.async = true;
+                document.head.appendChild(script);
+            }
+        });
+    },
+    
+    // Проверяем готовность страницы
+    isPageReady(page) {
+        return this.pages[page] === 'loaded';
+    }
+};
+
 // Инициализация приложения
 document.addEventListener('DOMContentLoaded', function() {
     // Инициализируем Telegram Web App
     if (tg && tg.ready) {
         tg.ready();
     }
+    
+    // Запускаем предзагрузку всех страниц
+    preloadManager.preloadAllPages();
     
     // Получаем данные пользователя
     loadUserData();
@@ -79,6 +149,86 @@ function initBalanceToggle() {
     
     // Инициализируем ограничения приложения
     initAppRestrictions();
+    
+    // Оптимизируем навигацию
+    optimizeNavigation();
+}
+
+// Оптимизированная навигация с предзагрузкой
+function optimizeNavigation() {
+    // Переопределяем стандартную навигацию для мгновенного перехода
+    const navButtons = document.querySelectorAll('.nav-button');
+    const assetItems = document.querySelectorAll('.asset-item');
+    
+    navButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Получаем целевой URL из data-атрибута
+            const targetUrl = this.getAttribute('data-page');
+            
+            if (targetUrl && preloadManager.isPageReady(targetUrl)) {
+                // Если страница готова, переходим мгновенно
+                console.log(`Мгновенный переход на ${targetUrl}`);
+                window.location.href = targetUrl;
+            } else {
+                // Если страница не готова, показываем индикатор загрузки
+                showLoadingIndicator();
+                setTimeout(() => {
+                    window.location.href = targetUrl;
+                }, 100);
+                console.log(`Страница ${targetUrl} не готова, показываем загрузку`);
+            }
+        });
+    });
+    
+    assetItems.forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const targetUrl = item.getAttribute('data-page');
+            
+            if (targetUrl && preloadManager.isPageReady(targetUrl)) {
+                console.log(`Мгновенный переход на ${targetUrl}`);
+                window.location.href = targetUrl;
+            } else {
+                showLoadingIndicator();
+                setTimeout(() => {
+                    window.location.href = targetUrl;
+                }, 100);
+                console.log(`Страница ${targetUrl} не готова, показываем загрузку`);
+            }
+        });
+    });
+}
+
+// Показываем индикатор загрузки
+function showLoadingIndicator() {
+    // Создаем простой индикатор загрузки
+    const loader = document.createElement('div');
+    loader.id = 'loading-indicator';
+    loader.innerHTML = '<div class="spinner"></div>';
+    loader.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+    `;
+    
+    document.body.appendChild(loader);
+    
+    // Убираем через 500ms
+    setTimeout(() => {
+        if (loader.parentNode) {
+            loader.parentNode.removeChild(loader);
+        }
+    }, 500);
 }
 
 // Функции для полноценного приложения

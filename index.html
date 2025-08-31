@@ -45,7 +45,7 @@
         
         <!-- Навигационные кнопки -->
         <div class="nav-buttons">
-            <div class="nav-button" onclick="window.location.href='topup.html'">
+            <div class="nav-button" data-page="topup.html">
                 <div class="nav-icon">
                     <img src="left-arrow.png" alt="Left Arrow" class="arrow-icon">
                 </div>
@@ -79,7 +79,7 @@
         
         <!-- Список активов -->
         <div class="assets-list">
-            <div class="asset-item" onclick="window.location.href='usdt.html'">
+            <div class="asset-item" data-page="usdt.html">
                 <div class="asset-left">
                     <div class="asset-icon usdt-icon">
                         <img src="usdt.png" alt="USDT" class="crypto-icon">
@@ -159,6 +159,28 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Скрытые iframe'ы для предзагрузки страниц -->
+    <div style="display: none;">
+        <iframe src="topup.html" id="preload-topup"></iframe>
+        <iframe src="usdt.html" id="preload-usdt"></iframe>
+        <iframe src="qr-usdt.html" id="preload-qr-usdt"></iframe>
+        <iframe src="usdt-chain.html" id="preload-usdt-chain"></iframe>
+    </div>
+
+    <!-- Предзагрузка всех изображений -->
+    <div style="display: none;">
+        <img src="house.png" alt="preload">
+        <img src="copy.png" alt="preload">
+        <img src="search.png" alt="preload">
+        <img src="left-arrow.png" alt="preload">
+        <img src="right-arrow.png" alt="preload">
+        <img src="ethereum.svg" alt="preload">
+        <img src="toncoin.png" alt="preload">
+        <img src="solana.png" alt="preload">
+        <img src="tron.png" alt="preload">
+        <img src="bnb.webp" alt="preload">
     </div>
 
     <script src="script.js"></script>
