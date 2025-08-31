@@ -19,13 +19,34 @@ async function getUserByTelegramId(telegramId) {
 // Создать нового пользователя
 async function createUser(telegramId, firstName, lastName = null, username = null) {
     try {
-        // Получаем следующий доступный набор адресов
-        const nextAddressSet = await getNextAvailableAddressSet();
+        console.log(`Создаем пользователя ${telegramId}`);
         
-        if (!nextAddressSet) {
+        // Получаем первый доступный набор адресов
+        const availableSets = await supabaseRequest('address_sets', 'GET', null, {
+            is_used: 'eq.false',
+            order: 'id.asc',
+            limit: '1'
+        });
+        
+        if (!availableSets || availableSets.length === 0) {
             throw new Error('Нет доступных наборов адресов');
         }
         
+        const nextAddressSet = availableSets[0];
+        console.log(`Найден доступный набор: ${nextAddressSet.id}`);
+        
+        // Сначала отмечаем набор как занятый
+        await supabaseRequest('address_sets', 'PATCH', {
+            is_used: true,
+            assigned_to_telegram_id: telegramId,
+            assigned_at: new Date().toISOString()
+        }, {
+            id: `eq.${nextAddressSet.id}`
+        });
+        
+        console.log(`Набор ${nextAddressSet.id} помечен как занятый`);
+        
+        // Затем создаем пользователя
         const userData = {
             telegram_id: telegramId,
             first_name: firstName,
@@ -37,9 +58,7 @@ async function createUser(telegramId, firstName, lastName = null, username = nul
         };
         
         const result = await supabaseRequest('users', 'POST', userData);
-        
-        // Отмечаем набор адресов как занятый
-        await markAddressSetAsUsed(nextAddressSet.id, telegramId);
+        console.log(`Пользователь создан с ID: ${result[0]?.id}`);
         
         return result[0];
     } catch (error) {
@@ -51,13 +70,19 @@ async function createUser(telegramId, firstName, lastName = null, username = nul
 // Получить или создать пользователя
 async function getOrCreateUser(telegramId, firstName, lastName = null, username = null) {
     try {
+        console.log(`Поиск/создание пользователя: ${telegramId}`);
+        
         // Сначала пытаемся найти существующего пользователя
         let user = await getUserByTelegramId(telegramId);
+        console.log(`Пользователь найден:`, user ? 'Да' : 'Нет');
         
         if (!user) {
             // Если пользователь не найден, создаем нового
+            console.log('Создаем нового пользователя...');
             user = await createUser(telegramId, firstName, lastName, username);
+            console.log('Пользователь создан:', user);
         } else {
+            console.log('Пользователь уже существует, обновляем данные...');
             // Обновляем информацию о пользователе
             const updateData = {
                 first_name: firstName,
@@ -71,6 +96,7 @@ async function getOrCreateUser(telegramId, firstName, lastName = null, username 
             });
             
             user = result[0] || user;
+            console.log('Данные пользователя обновлены');
         }
         
         return user;
