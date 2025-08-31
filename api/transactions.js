@@ -14,7 +14,7 @@ export default async function handler(req, res) {
     try {
         const { method } = req;
         
-        if (method === 'GET') {
+        if (method === 'GET' && req.query.admin !== 'true') {
             // Получить транзакции пользователя
             const { telegram_id } = req.query;
             
