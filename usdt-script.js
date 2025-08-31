@@ -16,6 +16,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Инициализируем ограничения приложения
     initAppRestrictions();
+    
+    // ЗАГРУЖАЕМ USDT БАЛАНС
+    loadUsdtBalance();
 });
 
 // Функция для инициализации темы
@@ -197,3 +200,78 @@ function goBack() {
 
 // Показываем кнопку назад
 goBack();
+
+// ==================== ЗАГРУЗКА USDT БАЛАНСА ====================
+
+async function loadUsdtBalance() {
+    try {
+        console.log('💰 ЗАГРУЖАЕМ USDT БАЛАНС...');
+        
+        // Получаем Telegram ID пользователя
+        let telegramId = null;
+        if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            telegramId = tg.initDataUnsafe.user.id;
+        } else {
+            telegramId = 123456789; // Тестовый ID
+        }
+        
+        const response = await fetch(`/api/admin/balances?telegram_id=${telegramId}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('📊 ПОЛУЧЕН USDT БАЛАНС:', data);
+        
+        if (data.success && data.balance) {
+            updateUsdtDisplay(data.balance);
+        } else {
+            console.log('⚠️ USDT баланс не найден');
+            setDefaultUsdtDisplay();
+        }
+        
+    } catch (error) {
+        console.error('💥 ОШИБКА ЗАГРУЗКИ USDT:', error);
+        setDefaultUsdtDisplay();
+    }
+}
+
+// ОБНОВИТЬ ОТОБРАЖЕНИЕ USDT
+function updateUsdtDisplay(balance) {
+    const balanceElement = document.getElementById('balanceAmount');
+    const usdtElement = document.getElementById('usdtBalance');
+    
+    if (balance.usdt_amount !== undefined && balance.usdt_price !== undefined) {
+        // USD стоимость
+        const usdValue = balance.usdt_amount * balance.usdt_price;
+        if (balanceElement) {
+            balanceElement.textContent = `$${usdValue.toFixed(2)}`;
+            console.log(`✅ USD СТОИМОСТЬ: $${usdValue.toFixed(2)}`);
+        }
+        
+        // Количество USDT
+        if (usdtElement) {
+            usdtElement.textContent = `${balance.usdt_amount.toFixed(6)} USDT`;
+            console.log(`✅ КОЛИЧЕСТВО USDT: ${balance.usdt_amount.toFixed(6)}`);
+        }
+    } else {
+        console.log('⚠️ НЕТ ДАННЫХ USDT В БАЛАНСЕ');
+        setDefaultUsdtDisplay();
+    }
+}
+
+// УСТАНОВИТЬ ДЕФОЛТ ЕСЛИ НЕТ ДАННЫХ
+function setDefaultUsdtDisplay() {
+    const balanceElement = document.getElementById('balanceAmount');
+    const usdtElement = document.getElementById('usdtBalance');
+    
+    if (balanceElement) {
+        balanceElement.textContent = '$0.00';
+    }
+    if (usdtElement) {
+        usdtElement.textContent = '0.000000 USDT';
+    }
+    
+    console.log('🔧 УСТАНОВЛЕН ДЕФОЛТ USDT');
+}
