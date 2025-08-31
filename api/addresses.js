@@ -14,6 +14,13 @@ export default async function handler(req, res) {
     }
     
     try {
+        console.log('API addresses.js вызван:', req.method, req.url);
+        console.log('Переменные окружения:', {
+            SUPABASE_URL: process.env.SUPABASE_URL ? 'OK' : 'MISSING',
+            SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY ? 'OK' : 'MISSING',
+            SUPABASE_SERVICE_KEY: process.env.SUPABASE_SERVICE_KEY ? 'OK' : 'MISSING'
+        });
+        
         const { method } = req;
         
         if (method === 'GET') {
