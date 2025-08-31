@@ -568,7 +568,7 @@ function updateBalanceDisplay(balance) {
             totalBalance += balance.trx_amount * balance.trx_price;
         }
         
-        balanceElement.textContent = `$${totalBalance.toFixed(2)}`;
+        balanceElement.textContent = totalBalance.toFixed(2);
         console.log(`💵 ОБЩИЙ БАЛАНС ИЗ БАЗЫ: $${totalBalance.toFixed(2)}`);
     }
 }
@@ -688,7 +688,7 @@ function updateAssetRow(assetId, data) {
 function setDefaultBalances() {
     const balanceElement = document.getElementById('balanceAmount');
     if (balanceElement) {
-        balanceElement.textContent = '$0.13';
+        balanceElement.textContent = '0.13';
     }
     
     console.log('🔧 Установлены дефолтные балансы');
