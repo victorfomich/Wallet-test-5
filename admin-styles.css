@@ -635,3 +635,79 @@ body {
 .d-block {
     display: block;
 }
+
+/* Стили для транзакций */
+.badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.badge-warning {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.badge-info {
+    background-color: #17a2b8;
+    color: #fff;
+}
+
+.badge-success {
+    background-color: #28a745;
+    color: #fff;
+}
+
+.badge-danger {
+    background-color: #dc3545;
+    color: #fff;
+}
+
+.badge-secondary {
+    background-color: #6c757d;
+    color: #fff;
+}
+
+.address-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.address-preview {
+    font-family: monospace;
+    font-size: 12px;
+}
+
+.btn-copy {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px;
+    font-size: 14px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.btn-copy:hover {
+    opacity: 1;
+}
+
+.btn-sm {
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+.error {
+    color: #dc3545;
+    text-align: center;
+    padding: 20px;
+}
+
+.no-data {
+    color: #6c757d;
+    text-align: center;
+    padding: 20px;
+}

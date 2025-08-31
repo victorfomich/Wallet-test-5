@@ -32,6 +32,7 @@
             <button class="nav-tab active" data-tab="users">👥 Пользователи</button>
             <button class="nav-tab" data-tab="addresses">🏠 Адреса</button>
             <button class="nav-tab" data-tab="balances">💰 Балансы</button>
+            <button class="nav-tab" data-tab="transactions">📊 Транзакции</button>
             <button class="nav-tab" data-tab="import">📥 Импорт</button>
         </nav>
 
@@ -131,6 +132,41 @@
                         <tbody id="balancesTableBody">
                             <tr>
                                 <td colspan="8" class="loading">Загрузка...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Таб транзакции -->
+            <div class="tab-content" id="transactions-tab">
+                <div class="section-header">
+                    <h2>Управление транзакциями</h2>
+                    <div class="action-buttons">
+                        <button onclick="refreshTransactions()" class="btn btn-secondary">🔄 Обновить</button>
+                    </div>
+                </div>
+                
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Пользователь</th>
+                                <th>Тип</th>
+                                <th>Валюта</th>
+                                <th>Сеть</th>
+                                <th>Сумма</th>
+                                <th>Комиссия</th>
+                                <th>Адрес</th>
+                                <th>Статус</th>
+                                <th>Дата</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactionsTableBody">
+                            <tr>
+                                <td colspan="11" class="loading">Загрузка...</td>
                             </tr>
                         </tbody>
                     </table>

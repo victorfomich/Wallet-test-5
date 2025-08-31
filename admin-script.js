@@ -58,9 +58,11 @@ function switchTab(tabName) {
         loadUsers();
     } else if (tabName === 'addresses') {
         loadAddressSets();
-    } else if (tabName === 'balances') {
-        loadBalances();
-    }
+            } else if (tabName === 'balances') {
+            loadBalances();
+        } else if (tabName === 'transactions') {
+            loadTransactions();
+        }
 }
 
 // Загрузка начальных данных
@@ -1066,4 +1068,174 @@ async function createBalancesForAllUsers() {
         console.error('💥 Ошибка массового создания балансов:', error);
         showNotification('Ошибка создания балансов: ' + error.message, 'error');
     }
+}
+
+// ==================== ФУНКЦИИ ДЛЯ ТРАНЗАКЦИЙ ====================
+
+async function loadTransactions() {
+    try {
+        console.log('🔄 Загружаем транзакции...');
+        
+        const response = await fetch('/api/transactions?admin=true', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            renderTransactionsTable(data.transactions);
+        } else {
+            throw new Error(data.error || 'Ошибка загрузки транзакций');
+        }
+        
+    } catch (error) {
+        console.error('❌ Ошибка загрузки транзакций:', error);
+        showNotification('❌ Ошибка загрузки транзакций: ' + error.message, 'error');
+        
+        // Показываем ошибку в таблице
+        const tbody = document.getElementById('transactionsTableBody');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="11" class="error">Ошибка загрузки: ${error.message}</td>
+                </tr>
+            `;
+        }
+    }
+}
+
+function renderTransactionsTable(transactions) {
+    const tbody = document.getElementById('transactionsTableBody');
+    if (!tbody) return;
+    
+    if (!transactions || transactions.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="11" class="no-data">Транзакции не найдены</td>
+            </tr>
+        `;
+        return;
+    }
+    
+    tbody.innerHTML = transactions.map(transaction => {
+        const userInfo = transaction.user_info || { first_name: 'Unknown', telegram_id: transaction.user_telegram_id };
+        const date = new Date(transaction.created_timestamp).toLocaleString('ru-RU');
+        
+        return `
+            <tr>
+                <td>${transaction.id}</td>
+                <td>
+                    <strong>${userInfo.first_name || 'Unknown'}</strong><br>
+                    <small>ID: ${userInfo.telegram_id}</small>
+                </td>
+                <td>
+                    <span class="badge badge-${transaction.transaction_type === 'withdraw' ? 'warning' : 'info'}">
+                        ${transaction.transaction_type === 'withdraw' ? 'Вывод' : transaction.transaction_type}
+                    </span>
+                </td>
+                <td>${transaction.crypto_currency}</td>
+                <td>
+                    <span class="badge badge-secondary">
+                        ${transaction.blockchain_network.toUpperCase()}
+                    </span>
+                </td>
+                <td>
+                    <strong>${transaction.withdraw_amount}</strong>
+                </td>
+                <td>${transaction.network_fee || '0'}</td>
+                <td>
+                    <div class="address-cell">
+                        <span class="address-preview">${transaction.recipient_address.substring(0, 8)}...</span>
+                        <button onclick="copyToClipboard('${transaction.recipient_address}')" class="btn-copy" title="Копировать">
+                            📋
+                        </button>
+                    </div>
+                </td>
+                <td>
+                    <span class="badge badge-${getStatusBadgeClass(transaction.transaction_status)}">
+                        ${getStatusText(transaction.transaction_status)}
+                    </span>
+                </td>
+                <td>${date}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button onclick="editTransaction(${transaction.id})" class="btn btn-sm btn-secondary" title="Редактировать">
+                            ✏️
+                        </button>
+                        <button onclick="deleteTransaction(${transaction.id})" class="btn btn-sm btn-danger" title="Удалить">
+                            🗑️
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function getStatusBadgeClass(status) {
+    switch (status) {
+        case 'pending': return 'warning';
+        case 'completed': return 'success';
+        case 'failed': return 'danger';
+        case 'cancelled': return 'secondary';
+        default: return 'info';
+    }
+}
+
+function getStatusText(status) {
+    switch (status) {
+        case 'pending': return 'В ожидании';
+        case 'completed': return 'Завершена';
+        case 'failed': return 'Ошибка';
+        case 'cancelled': return 'Отменена';
+        default: return status;
+    }
+}
+
+async function editTransaction(id) {
+    // TODO: Реализовать редактирование транзакции
+    showNotification('✏️ Редактирование транзакций будет добавлено позже', 'info');
+}
+
+async function deleteTransaction(id) {
+    if (!confirm('Вы уверены, что хотите удалить эту транзакцию? Это действие нельзя отменить.')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/transactions?admin=true&id=${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification('✅ Транзакция удалена', 'success');
+            loadTransactions(); // Перезагружаем таблицу
+        } else {
+            throw new Error(data.error || 'Ошибка удаления транзакции');
+        }
+        
+    } catch (error) {
+        console.error('❌ Ошибка удаления транзакции:', error);
+        showNotification('❌ Ошибка удаления транзакции: ' + error.message, 'error');
+    }
+}
+
+function refreshTransactions() {
+    loadTransactions();
 }
