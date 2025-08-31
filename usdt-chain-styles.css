@@ -48,59 +48,14 @@ h1.page-title {
     font-size: 15px !important;
 }
 
-/* Поиск */
-.search-container {
-    margin-bottom: 10px;
-}
-
-.search-bar {
-    display: flex;
-    align-items: center;
-    background-color: #f5f5f5;
-    border-radius: 12px;
-    padding: 12px 16px;
-    border: 1px solid #e0e0e0;
-}
-
-.search-icon {
-    margin-right: 12px;
-    display: flex;
-    align-items: center;
-}
-
-.search-icon-img {
-    width: 18px;
-    height: 18px;
-    object-fit: contain;
-    opacity: 0.5;
-}
-
-.search-input {
-    flex: 1;
-    border: none;
-    background: transparent;
-    font-size: 16px;
-    color: #333333;
-    outline: none;
-}
-
-.search-input::placeholder {
-    color: #999999;
-    transition: opacity 0.3s ease;
-}
-
-.search-input:focus::placeholder {
-    opacity: 0;
-}
-
-/* Список криптовалют */
-.crypto-list {
+/* Список сетей */
+.networks-list {
     display: flex;
     flex-direction: column;
     gap: 0;
 }
 
-.crypto-item {
+.network-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -113,11 +68,87 @@ h1.page-title {
     position: relative;
 }
 
-.crypto-item:last-child {
+.network-item:last-child {
     margin-bottom: 0;
 }
 
-.crypto-item:not(:last-child)::after {
+.network-item:hover {
+    background-color: #f8f9fa;
+}
+
+.network-item:active {
+    background-color: #e9ecef;
+    transform: scale(0.98);
+}
+
+.network-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.network-icon {
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ton-icon {
+    background-color: #0098e9;
+}
+
+.trx-icon {
+    background-color: #FF0000;
+}
+
+.sol-icon {
+    background-color: #000000;
+}
+
+.eth-icon {
+    background-color: #627EEA;
+}
+
+.bnb-icon {
+    background-color: #F3BA2F;
+}
+
+.network-logo {
+    width: 32px !important;
+    height: 32px !important;
+    object-fit: contain;
+}
+
+
+
+.network-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.network-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #000000;
+}
+
+.network-standard {
+    font-size: 14px;
+    color: #666666;
+}
+
+.network-arrow {
+    font-size: 20px;
+    color: #666666;
+    font-weight: 300;
+}
+
+/* Линии-разделители */
+.network-item:not(:last-child)::after {
     content: '';
     position: absolute;
     bottom: -4px;
@@ -125,79 +156,6 @@ h1.page-title {
     width: 100%;
     height: 1px;
     background-color: rgba(0, 0, 0, 0.1);
-}
-
-.crypto-item:hover {
-    background-color: #f8f9fa;
-}
-
-.crypto-item:active {
-    background-color: #e9ecef;
-    transform: scale(0.98);
-}
-
-.crypto-left {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
-.crypto-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.usdt-icon {
-    background-color: #26A17B;
-}
-
-.eth-icon {
-    background-color: #627EEA;
-}
-
-.ton-icon {
-    background-color: #0098e9;
-}
-
-.sol-icon {
-    background-color: #000000;
-}
-
-.trx-icon {
-    background-color: #FF0000;
-}
-
-.crypto-logo {
-    width: 32px;
-    height: 32px;
-    object-fit: contain;
-}
-
-.crypto-info {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.crypto-ticker {
-    font-size: 16px;
-    font-weight: 600;
-    color: #333333;
-}
-
-.crypto-name {
-    font-size: 14px;
-    color: #666666;
-}
-
-.crypto-arrow {
-    font-size: 20px;
-    color: #666666;
-    font-weight: 300;
 }
 
 /* Адаптивность */
@@ -210,11 +168,25 @@ h1.page-title {
         font-size: 14px;
     }
     
-    .search-bar {
-        padding: 10px 14px;
+    .network-item {
+        padding: 14px 10px;
     }
     
-    .search-input {
+    .network-icon {
+        width: 35px;
+        height: 35px;
+    }
+    
+    .network-logo {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .network-name {
         font-size: 15px;
+    }
+    
+    .network-standard {
+        font-size: 13px;
     }
 }

@@ -1,0 +1,425 @@
+/* Базовые стили */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: #ffffff;
+    padding: 0;
+    margin: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    touch-action: pan-y;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.container {
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 20px;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+.qr-card {
+    max-width: 300px;
+    margin: 0 auto;
+}
+
+/* Выбор сети */
+.network-selector {
+    margin-bottom: 30px;
+}
+
+.network-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 8px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background-color: transparent;
+}
+
+.network-option:hover {
+    background-color: #f8f9fa;
+}
+
+.network-option.selected {
+    background-color: #e3f2fd;
+    border: 2px solid #2196f3;
+}
+
+.network-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ton-icon {
+    background-color: #43a3dd;
+}
+
+.trx-icon {
+    background-color: #FF0000;
+}
+
+.sol-icon {
+    background-color: #000000;
+}
+
+.eth-icon {
+    background-color: #627EEA;
+}
+
+.bnb-icon {
+    background-color: #F3BA2F;
+}
+
+.network-logo {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
+.network-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: #666666;
+    text-align: center;
+}
+
+/* QR карточка */
+.qr-card {
+    background-color: #f5f5f5;
+    border-radius: 16px;
+    padding: 50px;
+    margin-top: 50px;
+    margin-bottom: 20px;
+    border: 1px solid #f0f0f0;
+    position: relative;
+    z-index: 999;
+}
+
+.qr-container {
+    width: 280px;
+    height: 280px;
+    margin: 0 auto 20px auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+    position: relative;
+    z-index: 1000;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.qr-container svg {
+    max-width: none !important;
+    max-height: none !important;
+    width: 240px !important;
+    height: 240px !important;
+    position: relative !important;
+    z-index: 1001 !important;
+    transform: none !important;
+    box-sizing: border-box !important;
+    background-color: #f8f9fa !important;
+    border-radius: 16px !important;
+    border: 1px solid #e9ecef !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+    margin: 20px !important;
+}
+
+/* Дополнительные гарантии видимости */
+.qr-container * {
+    max-width: none !important;
+    max-height: none !important;
+}
+
+/* Принудительно убираем любые ограничения */
+.qr-container {
+    min-width: 280px !important;
+    min-height: 280px !important;
+    max-width: none !important;
+    max-height: none !important;
+}
+
+/* Убираем ограничения для всей карточки */
+.qr-card {
+    min-width: 200px !important;
+    overflow: visible !important;
+}
+
+/* Инструкции */
+.instructions {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.instruction-line {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.instruction-text {
+    font-size: 14px;
+    color: #9d9d9d;
+}
+
+.usdt-icon {
+    width: 20px;
+    height: 20px;
+    background-color: #26A17B;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.network-logo-small {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Минимальная сумма */
+.min-amount {
+    text-align: center;
+    padding: 16px 0;
+    border-top: 1px solid #f0f0f0;
+    margin-bottom: 16px;
+}
+
+.min-amount span {
+    font-size: 14px;
+    color: #9d9d9d;
+}
+
+/* Поделиться адресом */
+.share-address {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+
+.share-address:hover {
+    opacity: 0.8;
+}
+
+.share-icon {
+    font-size: 18px;
+    color: #2196f3;
+}
+
+.share-address span {
+    font-size: 14px;
+    color: #2196f3;
+    font-weight: 500;
+}
+
+/* Информация об адресе */
+.address-info {
+    margin-bottom: 20px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.address-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.crypto-name {
+    font-size: 14px;
+    color: #9d9d9d;
+}
+
+.separator {
+    font-size: 14px;
+    color: #9d9d9d;
+}
+
+.network-standard {
+    font-size: 14px;
+    color: #2196f3;
+    font-weight: 500;
+}
+
+.deposit-label {
+    font-size: 14px;
+    color: #2196f3;
+    font-weight: 500;
+}
+
+.external-link-icon {
+    font-size: 14px;
+    color: #2196f3;
+}
+
+.address-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+    width: 100%;
+}
+
+.address-line {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.address-text {
+    text-align: center;
+    display: inline;
+    max-width: 25ch;
+    word-wrap: break-word;
+    word-break: break-all;
+    line-height: 1.4;
+}
+
+.address-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: #000000;
+    word-break: break-all;
+    flex: 1;
+}
+
+.copy-icon {
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+    position: relative;
+    width: 18px;
+    height: 18px;
+    margin-left: 4px;
+}
+
+.copy-icon img {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    transition: opacity 0.2s ease;
+    opacity: 0.3;
+}
+
+.copy-icon .checkmark {
+    width: 18px;
+    height: 18px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: bold;
+    color: #000000;
+}
+
+.copy-icon:hover .copy-img {
+    opacity: 0.7;
+}
+
+/* Кнопка пополнения */
+.topup-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background-color: #2381cc;
+    color: white;
+    padding: 16px 20px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-weight: 500;
+    width: fit-content;
+    margin: 0 auto;
+}
+
+.address-display {
+    font-size: 12px;
+    opacity: 0.8;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.topup-button:hover {
+    background-color: #1976d2;
+}
+
+.wallet-icon {
+    font-size: 20px;
+}
+
+/* Адаптивность */
+@media (max-width: 480px) {
+    .container {
+        padding: 16px;
+    }
+    
+    .networks-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+    
+    .qr-container {
+        width: 180px;
+        height: 180px;
+    }
+    
+    .qr-card {
+        padding: 20px;
+    }
+}
+
+/* ДОБАВЛЕНО: Стиль для иконки копирования внутри текста */
+.copy-icon-inline {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 5px; /* Создает небольшой отступ */
+}
