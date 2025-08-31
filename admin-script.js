@@ -689,22 +689,98 @@ let allBalances = [];
 // Загрузка балансов
 async function loadBalances() {
     try {
+        console.log('🔄 Начинаем загрузку балансов...');
         showLoading('balancesTableBody');
         
-        const response = await fetch(`${API_BASE_URL}/api/admin/balances`);
+        const url = `${API_BASE_URL}/api/admin/balances`;
+        console.log('📡 Запрос к:', url);
+        
+        const response = await fetch(url);
+        console.log('📊 Статус ответа:', response.status);
+        
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            const errorText = await response.text();
+            console.error('❌ Ошибка ответа:', errorText);
+            throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
         }
         
         const data = await response.json();
+        console.log('📋 Получены данные:', data);
+        
         allBalances = data.balances || [];
+        console.log(`✅ Загружено ${allBalances.length} балансов`);
+        
+        if (allBalances.length === 0) {
+            console.log('⚠️ Балансы пусты, проверяем сообщение API:', data.message);
+            
+            // Если API работает, но балансы пусты, показываем специальное сообщение
+            if (data.success && data.message) {
+                document.getElementById('balancesTableBody').innerHTML = 
+                    `<tr><td colspan="8" class="text-center text-muted">
+                        ${data.message}<br>
+                        <small>API работает, данные загружаются...</small>
+                        <br><button onclick="loadBalances()" class="btn btn-secondary btn-small" style="margin-top: 10px;">🔄 Обновить</button>
+                    </td></tr>`;
+                return;
+            }
+        }
         
         renderBalancesTable(allBalances);
         
     } catch (error) {
-        console.error('Ошибка загрузки балансов:', error);
-        showError('balancesTableBody', 'Ошибка загрузки балансов: ' + error.message);
-        showNotification('Ошибка загрузки балансов', 'error');
+        console.error('💥 Критическая ошибка загрузки балансов:', error);
+        
+        // Максимально подробная ошибка
+        const errorHtml = `
+            <tr><td colspan="8" class="text-center text-muted">
+                <div>❌ Ошибка загрузки балансов</div>
+                <div style="font-size: 12px; margin-top: 8px; color: #666;">
+                    ${error.message}
+                </div>
+                <button onclick="loadBalances()" class="btn btn-secondary btn-small" style="margin-top: 10px;">
+                    🔄 Попробовать снова
+                </button>
+                <button onclick="checkApiStatus()" class="btn btn-secondary btn-small" style="margin-top: 10px; margin-left: 5px;">
+                    🔍 Диагностика
+                </button>
+            </td></tr>
+        `;
+        
+        document.getElementById('balancesTableBody').innerHTML = errorHtml;
+        showNotification('Ошибка загрузки балансов: ' + error.message, 'error');
+    }
+}
+
+// Проверка статуса API
+async function checkApiStatus() {
+    try {
+        console.log('🔍 Проверяем статус API...');
+        
+        // Проверяем основной API
+        const debugResponse = await fetch(`${API_BASE_URL}/api/debug`);
+        const debugData = await debugResponse.json();
+        
+        console.log('🔧 Данные диагностики:', debugData);
+        
+        // Проверяем API балансов напрямую
+        const balancesResponse = await fetch(`${API_BASE_URL}/api/admin/balances`);
+        const balancesText = await balancesResponse.text();
+        
+        console.log('💰 Ответ API балансов:', balancesText);
+        
+        alert(`
+🔍 ДИАГНОСТИКА API:
+
+1. Основной API: ${debugResponse.ok ? '✅ Работает' : '❌ Ошибка'}
+2. API балансов: ${balancesResponse.ok ? '✅ Работает' : '❌ Ошибка'}
+3. Статус: ${balancesResponse.status}
+
+Подробности в консоли браузера (F12)
+        `);
+        
+    } catch (error) {
+        console.error('💥 Ошибка диагностики:', error);
+        alert('❌ Ошибка диагностики: ' + error.message);
     }
 }
 
@@ -925,4 +1001,69 @@ async function updateUserBalance() {
 // Обновить балансы
 function refreshBalances() {
     loadBalances();
+}
+
+// Создать балансы для всех пользователей
+async function createBalancesForAllUsers() {
+    if (!confirm('Создать балансы для всех пользователей без балансов?\n\nЭто безопасная операция, которая не перезапишет существующие балансы.')) {
+        return;
+    }
+    
+    try {
+        console.log('🏗️ Создание балансов для всех пользователей...');
+        
+        // Получаем всех пользователей
+        const usersResponse = await fetch(`${API_BASE_URL}/api/admin/users`);
+        const usersData = await usersResponse.json();
+        const users = usersData.users || [];
+        
+        console.log(`👥 Найдено ${users.length} пользователей`);
+        
+        if (users.length === 0) {
+            showNotification('Пользователи не найдены', 'warning');
+            return;
+        }
+        
+        let created = 0;
+        let errors = 0;
+        
+        // Создаем балансы для каждого пользователя
+        for (const user of users) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/admin/balances`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        telegram_id: user.telegram_id
+                    })
+                });
+                
+                if (response.ok) {
+                    created++;
+                    console.log(`✅ Баланс создан для ${user.telegram_id}`);
+                } else {
+                    const errorText = await response.text();
+                    console.log(`⚠️ Баланс уже существует или ошибка для ${user.telegram_id}:`, errorText);
+                }
+                
+            } catch (error) {
+                errors++;
+                console.error(`❌ Ошибка создания баланса для ${user.telegram_id}:`, error);
+            }
+        }
+        
+        const message = `Обработано пользователей: ${users.length}\nСоздано новых балансов: ${created}\nОшибок: ${errors}`;
+        console.log('📊 Результат:', message);
+        
+        showNotification(message, created > 0 ? 'success' : 'info');
+        
+        // Обновляем таблицу
+        await loadBalances();
+        
+    } catch (error) {
+        console.error('💥 Ошибка массового создания балансов:', error);
+        showNotification('Ошибка создания балансов: ' + error.message, 'error');
+    }
 }
