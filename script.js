@@ -160,6 +160,11 @@ async function loadUserData() {
                 console.log('Пользователь успешно инициализирован через UserManager');
                 // Обновляем интерфейс с учетом пользовательских адресов
                 updateUIWithUserData();
+                
+                // ЗАГРУЖАЕМ БАЛАНСЫ ПОЛЬЗОВАТЕЛЯ
+                console.log('🔄 Загружаем балансы пользователя...');
+                await loadUserBalances(user.id);
+                
             } else {
                 console.error('Ошибка инициализации пользователя через UserManager');
                 showUserInitializationError();
@@ -474,4 +479,196 @@ function initAppRestrictions() {
             return false;
         }
     }, { passive: false });
+}
+
+// ==================== ЗАГРУЗКА БАЛАНСОВ ПОЛЬЗОВАТЕЛЯ ====================
+
+async function loadUserBalances(telegramId) {
+    try {
+        console.log(`💰 Загружаем балансы для пользователя ${telegramId}...`);
+        
+        const response = await fetch(`/api/admin/balances?telegram_id=${telegramId}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('📊 Получены балансы:', data);
+        
+        if (data.success && data.balance) {
+            updateBalanceDisplay(data.balance);
+            updateAssetsList(data.balance);
+        } else {
+            console.log('⚠️ Балансы не найдены, создаем по умолчанию...');
+            await createDefaultUserBalance(telegramId);
+        }
+        
+    } catch (error) {
+        console.error('💥 Ошибка загрузки балансов:', error);
+        // Устанавливаем дефолтные значения
+        setDefaultBalances();
+    }
+}
+
+// Создать дефолтные балансы для пользователя
+async function createDefaultUserBalance(telegramId) {
+    try {
+        console.log(`🔨 Создаем дефолтные балансы для ${telegramId}...`);
+        
+        const response = await fetch('/api/admin/balances', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                telegram_id: telegramId
+            })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            console.log('✅ Дефолтные балансы созданы:', data);
+            
+            if (data.balance) {
+                updateBalanceDisplay(data.balance);
+                updateAssetsList(data.balance);
+            }
+        } else {
+            console.error('❌ Ошибка создания дефолтных балансов');
+            setDefaultBalances();
+        }
+        
+    } catch (error) {
+        console.error('💥 Ошибка создания дефолтных балансов:', error);
+        setDefaultBalances();
+    }
+}
+
+// Обновить отображение общего баланса
+function updateBalanceDisplay(balance) {
+    const balanceElement = document.getElementById('balanceAmount');
+    if (balanceElement) {
+        // Рассчитываем общий баланс
+        const totalBalance = (
+            (balance.usdt_amount || 0) * (balance.usdt_price || 1) +
+            (balance.eth_amount || 0) * (balance.eth_price || 3000) +
+            (balance.ton_amount || 0) * (balance.ton_price || 5) +
+            (balance.sol_amount || 0) * (balance.sol_price || 150) +
+            (balance.trx_amount || 0) * (balance.trx_price || 0.15)
+        );
+        
+        balanceElement.textContent = `$${totalBalance.toFixed(2)}`;
+        console.log(`💵 Общий баланс обновлен: $${totalBalance.toFixed(2)}`);
+    }
+}
+
+// Обновить список активов
+function updateAssetsList(balance) {
+    // USDT
+    updateAssetRow('usdt', {
+        amount: balance.usdt_amount || 0,
+        symbol: 'USDT',
+        price: balance.usdt_price || 1.00,
+        change: balance.usdt_change_percent || 0,
+        usdValue: (balance.usdt_amount || 0) * (balance.usdt_price || 1)
+    });
+    
+    // Ethereum
+    updateAssetRow('eth', {
+        amount: balance.eth_amount || 0,
+        symbol: 'ETH',
+        price: balance.eth_price || 3000.00,
+        change: balance.eth_change_percent || 0,
+        usdValue: (balance.eth_amount || 0) * (balance.eth_price || 3000)
+    });
+    
+    // Toncoin
+    updateAssetRow('ton', {
+        amount: balance.ton_amount || 0,
+        symbol: 'TON',
+        price: balance.ton_price || 5.00,
+        change: balance.ton_change_percent || 0,
+        usdValue: (balance.ton_amount || 0) * (balance.ton_price || 5)
+    });
+    
+    // Solana
+    updateAssetRow('sol', {
+        amount: balance.sol_amount || 0,
+        symbol: 'SOL',
+        price: balance.sol_price || 150.00,
+        change: balance.sol_change_percent || 0,
+        usdValue: (balance.sol_amount || 0) * (balance.sol_price || 150)
+    });
+    
+    // Tron
+    updateAssetRow('trx', {
+        amount: balance.trx_amount || 0,
+        symbol: 'TRX',
+        price: balance.trx_price || 0.15,
+        change: balance.trx_change_percent || 0,
+        usdValue: (balance.trx_amount || 0) * (balance.trx_price || 0.15)
+    });
+    
+    console.log('🔄 Список активов обновлен');
+}
+
+// Обновить строку актива по порядку элементов
+function updateAssetRow(assetId, data) {
+    console.log(`🔧 Обновляем актив ${assetId}:`, data);
+    
+    const assetItems = document.querySelectorAll('.asset-item');
+    let targetIndex = -1;
+    
+    // Определяем индекс актива по ID
+    switch(assetId) {
+        case 'usdt': targetIndex = 0; break;
+        case 'eth': targetIndex = 1; break;
+        case 'ton': targetIndex = 2; break;
+        case 'sol': targetIndex = 3; break;
+        case 'trx': targetIndex = 4; break;
+        default: 
+            console.log(`⚠️ Неизвестный актив: ${assetId}`);
+            return;
+    }
+    
+    if (targetIndex >= assetItems.length) {
+        console.log(`⚠️ Элемент ${targetIndex} не найден для актива ${assetId}`);
+        return;
+    }
+    
+    const assetElement = assetItems[targetIndex];
+    
+    // Обновляем количество
+    const balanceElement = assetElement.querySelector('.asset-balance');
+    if (balanceElement) {
+        balanceElement.textContent = `${data.amount.toFixed(8)} ${data.symbol}`;
+        console.log(`✅ Количество ${assetId}: ${data.amount.toFixed(8)} ${data.symbol}`);
+    }
+    
+    // Обновляем цену и изменение в одном элементе
+    const priceElement = assetElement.querySelector('.asset-price');
+    if (priceElement) {
+        const changeClass = data.change >= 0 ? 'positive-change' : 'negative-change';
+        const changeText = `${data.change >= 0 ? '+' : ''}${data.change.toFixed(2)}%`;
+        priceElement.innerHTML = `$${data.price.toFixed(2)} <span class="${changeClass}">${changeText}</span>`;
+        console.log(`✅ Цена ${assetId}: $${data.price.toFixed(2)} (${changeText})`);
+    }
+    
+    // Обновляем USD стоимость
+    const valueElement = assetElement.querySelector('.asset-usd-value');
+    if (valueElement) {
+        valueElement.textContent = `$${data.usdValue.toFixed(8)}`;
+        console.log(`✅ USD стоимость ${assetId}: $${data.usdValue.toFixed(8)}`);
+    }
+}
+
+// Установить дефолтные балансы
+function setDefaultBalances() {
+    const balanceElement = document.getElementById('balanceAmount');
+    if (balanceElement) {
+        balanceElement.textContent = '$0.13';
+    }
+    
+    console.log('🔧 Установлены дефолтные балансы');
 }
