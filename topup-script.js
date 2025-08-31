@@ -8,12 +8,67 @@ document.addEventListener('DOMContentLoaded', function() {
         tg.ready();
     }
     
+    // Определяем и применяем тему
+    initTheme();
+    
     // Инициализируем функциональность поиска
     initSearch();
     
     // Инициализируем клики по криптовалютам
     initCryptoClicks();
 });
+
+// Инициализация темы
+function initTheme() {
+    // Проверяем системную тему
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    // Проверяем тему Telegram
+    let telegramTheme = 'light';
+    if (tg && tg.colorScheme) {
+        telegramTheme = tg.colorScheme;
+    }
+    
+    // Применяем тему
+    if (prefersDark || telegramTheme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        console.log('Применена темная тема');
+    } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+        console.log('Применена светлая тема');
+    }
+    
+    // Слушаем изменения системной темы
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+        if (e.matches) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+            document.documentElement.setAttribute('data-theme', 'light');
+        }
+        updateSearchIcons();
+    });
+    
+    // Переключаем иконки поиска при смене темы
+    updateSearchIcons();
+}
+
+// Функция для обновления иконок поиска
+function updateSearchIcons() {
+    const searchLight = document.querySelector('.search-light');
+    const searchDark = document.querySelector('.search-dark');
+    
+    if (searchLight && searchDark) {
+        const isDarkTheme = document.documentElement.getAttribute('data-theme') === 'dark';
+        
+        if (isDarkTheme) {
+            searchLight.style.display = 'none';
+            searchDark.style.display = 'block';
+        } else {
+            searchLight.style.display = 'block';
+            searchDark.style.display = 'none';
+        }
+    }
+}
 
 // Функция для поиска криптовалют
 function initSearch() {

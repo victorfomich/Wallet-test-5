@@ -1,3 +1,34 @@
+/* CSS переменные для темной темы */
+:root {
+    /* Светлая тема */
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f5;
+    --bg-card: #ffffff;
+    --text-primary: #333333;
+    --text-secondary: #666666;
+    --text-tertiary: #999999;
+    --accent-color: #2196f3;
+    --accent-secondary: #2381cc;
+    --border-color: #e0e0e0;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+    --overlay-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Темная тема */
+[data-theme="dark"] {
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #2d2d2d;
+    --bg-card: #2d2d2d;
+    --text-primary: #ffffff;
+    --text-secondary: #e0e0e0;
+    --text-tertiary: #b0b0b0;
+    --accent-color: #64b5f6;
+    --accent-secondary: #42a5f5;
+    --border-color: #404040;
+    --shadow-color: rgba(0, 0, 0, 0.3);
+    --overlay-color: rgba(0, 0, 0, 0.7);
+}
+
 /* Базовые стили */
 * {
     margin: 0;
@@ -7,7 +38,8 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background-color: #ffffff;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
     padding: 0;
     margin: 0;
     overflow-x: hidden;
@@ -29,6 +61,7 @@ body {
     padding: 20px;
     min-height: 100vh;
     overflow-x: hidden;
+    background-color: var(--bg-primary);
 }
 
 /* Заголовок */
@@ -40,7 +73,7 @@ body {
 .page-title {
     font-size: 15px !important;
     font-weight: 500;
-    color: #6666667d;
+    color: var(--text-secondary);
     margin: 0;
 }
 
@@ -56,10 +89,10 @@ h1.page-title {
 .search-bar {
     display: flex;
     align-items: center;
-    background-color: #f5f5f5;
+    background-color: var(--bg-secondary);
     border-radius: 12px;
     padding: 12px 16px;
-    border: 1px solid #e0e0e0;
+    border: 1px solid var(--border-color);
 }
 
 .search-icon {
@@ -75,17 +108,34 @@ h1.page-title {
     opacity: 0.5;
 }
 
+/* Переключение иконок поиска для разных тем */
+.search-light {
+    display: block;
+}
+
+.search-dark {
+    display: none;
+}
+
+[data-theme="dark"] .search-light {
+    display: none;
+}
+
+[data-theme="dark"] .search-dark {
+    display: block;
+}
+
 .search-input {
     flex: 1;
     border: none;
     background: transparent;
     font-size: 16px;
-    color: #333333;
+    color: var(--text-primary);
     outline: none;
 }
 
 .search-input::placeholder {
-    color: #999999;
+    color: var(--text-tertiary);
     transition: opacity 0.3s ease;
 }
 
@@ -124,15 +174,15 @@ h1.page-title {
     left: 0;
     width: 100%;
     height: 1px;
-    background-color: rgba(0, 0, 0, 0.1);
+    background-color: var(--border-color);
 }
 
 .crypto-item:hover {
-    background-color: #f8f9fa;
+    background-color: var(--bg-secondary);
 }
 
 .crypto-item:active {
-    background-color: #e9ecef;
+    background-color: var(--border-color);
     transform: scale(0.98);
 }
 
@@ -186,17 +236,17 @@ h1.page-title {
 .crypto-ticker {
     font-size: 16px;
     font-weight: 600;
-    color: #333333;
+    color: var(--text-primary);
 }
 
 .crypto-name {
     font-size: 14px;
-    color: #666666;
+    color: var(--text-secondary);
 }
 
 .crypto-arrow {
     font-size: 20px;
-    color: #666666;
+    color: var(--text-secondary);
     font-weight: 300;
 }
 

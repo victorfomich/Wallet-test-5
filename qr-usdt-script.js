@@ -18,6 +18,9 @@ document.addEventListener('DOMContentLoaded', function() {
         tg.ready();
     }
     
+    // Определяем и применяем тему
+    initTheme();
+    
     // Проверяем, есть ли сеть в URL параметрах
     const urlParams = new URLSearchParams(window.location.search);
     const networkFromUrl = urlParams.get('network');
@@ -34,7 +37,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Показываем сообщение
         const container = document.querySelector('.container');
         const message = document.createElement('div');
-        message.style.cssText = 'text-align: center; padding: 40px; color: #666; font-size: 16px;';
+        message.style.cssText = 'text-align: center; padding: 40px; color: var(--text-secondary); font-size: 16px;';
         message.textContent = 'Выберите сеть на странице выбора';
         container.appendChild(message);
     }
@@ -42,6 +45,62 @@ document.addEventListener('DOMContentLoaded', function() {
     // Инициализируем ограничения приложения
     initAppRestrictions();
 });
+
+// Инициализация темы
+function initTheme() {
+    // Проверяем системную тему
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    // Проверяем тему Telegram
+    let telegramTheme = 'light';
+    if (tg && tg.colorScheme) {
+        telegramTheme = tg.colorScheme;
+    }
+    
+    // Применяем тему
+    if (prefersDark || telegramTheme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        console.log('Применена темная тема');
+    } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+        console.log('Применена светлая тема');
+    }
+    
+    // Слушаем изменения системной темы
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+        if (e.matches) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+            document.documentElement.setAttribute('data-theme', 'light');
+        }
+        updateCopyIcons();
+    });
+    
+    // Переключаем иконки копирования при смене темы
+    updateCopyIcons();
+}
+
+// Функция для обновления иконок копирования
+function updateCopyIcons() {
+    const copyLight = document.querySelector('.copy-light');
+    const copyDark = document.querySelector('.copy-dark');
+    
+    if (copyLight && copyDark) {
+        const isDarkTheme = document.documentElement.getAttribute('data-theme') === 'dark';
+        
+        if (isDarkTheme) {
+            copyLight.style.display = 'none';
+            copyDark.style.display = 'block';
+            // Сбрасываем opacity для плавного появления
+            copyDark.style.opacity = '0.3';
+        } else {
+            copyLight.style.display = 'block';
+            copyDark.style.display = 'none';
+            // Сбрасываем opacity для плавного появления
+            copyLight.style.opacity = '0.3';
+        }
+    }
+}
 
 
 
@@ -161,22 +220,28 @@ function copyAddress() {
         if (networkInfo) {
             // Анимация копирования
             const copyIcon = document.querySelector('.copy-icon');
-            const copyImg = copyIcon.querySelector('.copy-img');
+            const copyLight = copyIcon.querySelector('.copy-light');
+            const copyDark = copyIcon.querySelector('.copy-dark');
             const checkmark = copyIcon.querySelector('.checkmark');
             
-            // Скрываем copy.png
-            copyImg.style.opacity = '0';
+            // Определяем какая иконка активна
+            const activeIcon = copyIcon.querySelector('.copy-light').style.display !== 'none' ? copyLight : copyDark;
+            
+            // Скрываем активную иконку
+            activeIcon.style.opacity = '0';
             
             // Показываем галочку
             setTimeout(() => {
-                checkmark.style.opacity = '0.3';
+                checkmark.style.opacity = '1';
+                checkmark.classList.add('visible');
             }, 200);
             
-            // Скрываем галочку через 1.5 секунды и показываем copy.png
+            // Скрываем галочку через 1.5 секунды и показываем активную иконку
             setTimeout(() => {
                 checkmark.style.opacity = '0';
+                checkmark.classList.remove('visible');
                 setTimeout(() => {
-                    copyImg.style.opacity = '0.3';
+                    activeIcon.style.opacity = '0.3';
                 }, 200);
             }, 1700);
             

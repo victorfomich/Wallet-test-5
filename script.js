@@ -75,12 +75,100 @@ document.addEventListener('DOMContentLoaded', function() {
         tg.ready();
     }
     
+    // Определяем и применяем тему
+    initTheme();
+    
     // Запускаем предзагрузку всех страниц
     preloadManager.preloadAllPages();
     
     // Получаем данные пользователя
     loadUserData();
 });
+
+// Инициализация темы
+function initTheme() {
+    // Проверяем системную тему
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    // Проверяем тему Telegram
+    let telegramTheme = 'light';
+    if (tg && tg.colorScheme) {
+        telegramTheme = tg.colorScheme;
+    }
+    
+    // Применяем тему
+    if (prefersDark || telegramTheme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        console.log('Применена темная тема');
+    } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+        console.log('Применена светлая тема');
+    }
+    
+    // Слушаем изменения системной темы
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+        if (e.matches) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+            document.documentElement.setAttribute('data-theme', 'light');
+        }
+        updateEyeIcons();
+        updateScanChipIcons();
+    });
+    
+    // Переключаем иконки глаз при смене темы
+    updateEyeIcons();
+    
+    // Переключаем иконки scan и chip при смене темы
+    updateScanChipIcons();
+}
+
+// Функция для обновления иконок глаз
+function updateEyeIcons() {
+    const eyeIcon = document.getElementById('eyeIcon');
+    const eyeIconDark = document.getElementById('eyeIconDark');
+    
+    if (eyeIcon && eyeIconDark) {
+        const isDarkTheme = document.documentElement.getAttribute('data-theme') === 'dark';
+        const isHidden = document.getElementById('balanceAmount')?.classList.contains('hidden');
+        
+        if (isDarkTheme) {
+            eyeIcon.style.display = 'none';
+            eyeIconDark.style.display = 'block';
+            // Устанавливаем правильную иконку для темной темы
+            eyeIconDark.src = isHidden ? 'eye2_white.png' : 'eye_white.png';
+        } else {
+            eyeIcon.style.display = 'block';
+            eyeIconDark.style.display = 'none';
+            // Устанавливаем правильную иконку для светлой темы
+            eyeIcon.src = isHidden ? 'eye2.png' : 'eye.png';
+        }
+    }
+}
+
+// Функция для обновления иконок scan и chip
+function updateScanChipIcons() {
+    const scanLight = document.querySelector('.scan-light');
+    const scanDark = document.querySelector('.scan-dark');
+    const chipLight = document.querySelector('.chip-light');
+    const chipDark = document.querySelector('.chip-dark');
+    
+    if (scanLight && scanDark && chipLight && chipDark) {
+        const isDarkTheme = document.documentElement.getAttribute('data-theme') === 'dark';
+        
+        if (isDarkTheme) {
+            scanLight.style.display = 'none';
+            scanDark.style.display = 'block';
+            chipLight.style.display = 'none';
+            chipDark.style.display = 'block';
+        } else {
+            scanLight.style.display = 'block';
+            scanDark.style.display = 'none';
+            chipLight.style.display = 'block';
+            chipDark.style.display = 'none';
+        }
+    }
+}
 
 // Загрузка данных пользователя из Telegram
 function loadUserData() {
@@ -106,7 +194,7 @@ function loadUserData() {
     } else {
         console.log('Данные пользователя недоступны');
         // Показываем заглушку для тестирования
-        document.getElementById('userName').textContent = 'Виктор';
+        document.getElementById('userName').textContent = 'user';
     }
     
     // Инициализируем функциональность скрытия/показа баланса
@@ -116,35 +204,65 @@ function loadUserData() {
 // Функция для переключения видимости баланса
 function initBalanceToggle() {
     const eyeIcon = document.getElementById('eyeIcon');
+    const eyeIconDark = document.getElementById('eyeIconDark');
     const balanceAmount = document.getElementById('balanceAmount');
     
-    if (eyeIcon && balanceAmount) {
+    if (eyeIcon && eyeIconDark && balanceAmount) {
         // Сохраняем оригинальный баланс
         const originalBalance = balanceAmount.textContent;
         
-        eyeIcon.addEventListener('click', function() {
+        // Функция для переключения иконок
+        function toggleEyeIcons(isHidden) {
+            const isDarkTheme = document.documentElement.getAttribute('data-theme') === 'dark';
+            
+            if (isDarkTheme) {
+                // Темная тема
+                if (isHidden) {
+                    eyeIconDark.src = 'eye2_white.png';
+                } else {
+                    eyeIconDark.src = 'eye_white.png';
+                }
+            } else {
+                // Светлая тема
+                if (isHidden) {
+                    eyeIcon.src = 'eye2.png';
+                } else {
+                    eyeIcon.src = 'eye.png';
+                }
+            }
+        }
+        
+        // Обработчик клика для обеих иконок
+        const handleEyeClick = function() {
             const isHidden = balanceAmount.classList.contains('hidden');
             
             if (isHidden) {
                 // Показываем баланс
                 balanceAmount.textContent = originalBalance;
                 balanceAmount.classList.remove('hidden');
-                eyeIcon.src = 'eye.png';
+                toggleEyeIcons(false);
                 eyeIcon.classList.remove('hidden');
+                eyeIconDark.classList.remove('hidden');
             } else {
                 // Скрываем баланс (показываем точки)
                 balanceAmount.textContent = '•••';
                 balanceAmount.classList.add('hidden');
-                eyeIcon.src = 'eye2.png';
+                toggleEyeIcons(true);
                 eyeIcon.classList.add('hidden');
+                eyeIconDark.classList.add('hidden');
             }
-        });
+        };
+        
+        // Добавляем обработчики для обеих иконок
+        eyeIcon.addEventListener('click', handleEyeClick);
+        eyeIconDark.addEventListener('click', handleEyeClick);
         
         // По умолчанию баланс показан
         balanceAmount.textContent = originalBalance;
         balanceAmount.classList.remove('hidden');
-        eyeIcon.src = 'eye.png';
+        toggleEyeIcons(false);
         eyeIcon.classList.remove('hidden');
+        eyeIconDark.classList.remove('hidden');
     }
     
     // Инициализируем ограничения приложения

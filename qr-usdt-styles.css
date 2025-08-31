@@ -1,3 +1,34 @@
+/* CSS переменные для темной темы */
+:root {
+    /* Светлая тема */
+    --bg-primary: #f5f5f5;
+    --bg-secondary: #ffffff;
+    --bg-card: #f5f5f5;
+    --text-primary: #333333;
+    --text-secondary: #666666;
+    --text-tertiary: #808080;
+    --accent-color: #2196f3;
+    --accent-secondary: #2381cc;
+    --border-color: #f0f0f0;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+    --overlay-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Темная тема */
+[data-theme="dark"] {
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #ffffff;
+    --bg-card: #2d2d2d;
+    --text-primary: #ffffff;
+    --text-secondary: #cccccc;
+    --text-tertiary: #999999;
+    --accent-color: #64b5f6;
+    --accent-secondary: #42a5f5;
+    --border-color: #404040;
+    --shadow-color: rgba(0, 0, 0, 0.3);
+    --overlay-color: rgba(0, 0, 0, 0.7);
+}
+
 /* Базовые стили */
 * {
     margin: 0;
@@ -7,7 +38,7 @@
 
 /* Создаем бесконечный фон для приложения */
 html {
-    background-color: #f5f5f5;
+    background-color: var(--bg-primary);
     min-height: 100vh;
 }
 
@@ -19,13 +50,14 @@ body::before {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: #f5f5f5;
+    background-color: var(--bg-primary);
     z-index: -1;
 }
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background-color: #f5f5f5;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
     padding: 0;
     margin: 0;
     overflow-x: hidden;
@@ -48,7 +80,7 @@ body {
     padding: 20px;
     min-height: 100vh;
     overflow-x: hidden;
-    background-color: #f5f5f5;
+    background-color: var(--bg-primary);
     position: relative;
 }
 
@@ -127,12 +159,12 @@ body {
 
 /* QR карточка */
 .qr-card {
-    background-color: #f5f5f5;
+    background-color: var(--bg-card);
     border-radius: 16px;
     padding: 50px;
     margin-top: 50px;
     margin-bottom: 20px;
-    border: 1px solid #f0f0f0;
+    border: 1px solid var(--border-color);
     position: relative;
     z-index: 999;
 }
@@ -203,7 +235,7 @@ body {
 
 .instruction-text {
     font-size: 14px;
-    color: #9d9d9d;
+    color: var(--text-secondary);
 }
 
 .usdt-icon {
@@ -232,13 +264,13 @@ body {
 .min-amount {
     text-align: center;
     padding: 16px 0;
-    border-top: 1px solid #f0f0f0;
+    border-top: 1px solid var(--border-color);
     margin-bottom: 16px;
 }
 
 .min-amount span {
     font-size: 14px;
-    color: #9d9d9d;
+    color: var(--text-secondary);
 }
 
 /* Поделиться адресом */
@@ -257,12 +289,12 @@ body {
 
 .share-icon {
     font-size: 18px;
-    color: #2196f3;
+    color: var(--accent-color);
 }
 
 .share-address span {
     font-size: 14px;
-    color: #2196f3;
+    color: var(--accent-color);
     font-weight: 500;
 }
 
@@ -338,7 +370,7 @@ body {
 .address-text {
     font-size: 14px;
     font-weight: 600;
-    color: #000000;
+    color: var(--text-primary);
     word-break: break-all;
     flex: 1;
 }
@@ -360,11 +392,42 @@ body {
     opacity: 0.3;
 }
 
+/* Переключение иконок копирования для разных тем */
+.copy-light {
+    display: block;
+}
+
+.copy-dark {
+    display: none;
+}
+
+[data-theme="dark"] .copy-light {
+    display: none;
+}
+
+[data-theme="dark"] .copy-dark {
+    display: block;
+}
+
+/* Обе иконки должны иметь одинаковые стили */
+.copy-light,
+.copy-dark {
+    opacity: 0.3;
+    transition: all 0.2s ease;
+}
+
+/* Hover эффект для обеих иконок */
+.copy-icon:hover .copy-light,
+.copy-icon:hover .copy-dark {
+    opacity: 0.7;
+}
+
+/* Скрываем иконки при показе галочки */
 .copy-icon .checkmark {
     width: 18px;
     height: 18px;
     opacity: 0;
-    transition: opacity 0.2s ease;
+    transition: all 0.2s ease;
     position: absolute;
     top: 0;
     left: 0;
@@ -373,11 +436,18 @@ body {
     justify-content: center;
     font-size: 16px;
     font-weight: bold;
-    color: #000000;
+    color: var(--text-primary);
+    z-index: 1;
 }
 
-.copy-icon:hover .copy-img {
-    opacity: 0.7;
+/* Когда галочка видна, скрываем обе иконки */
+.copy-icon .checkmark.visible {
+    opacity: 1;
+}
+
+.copy-icon .checkmark.visible ~ .copy-light,
+.copy-icon .checkmark.visible ~ .copy-dark {
+    opacity: 0;
 }
 
 /* Кнопка пополнения */
@@ -386,7 +456,7 @@ body {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    background-color: #2381cc;
+    background-color: var(--accent-secondary);
     color: white;
     padding: 16px 20px;
     border-radius: 12px;
@@ -407,7 +477,7 @@ body {
 }
 
 .topup-button:hover {
-    background-color: #1976d2;
+    background-color: var(--accent-color);
 }
 
 .wallet-icon {
