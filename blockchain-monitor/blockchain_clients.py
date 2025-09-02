@@ -80,25 +80,59 @@ class TronClient(BlockchainClient):
         """Получить последние транзакции TRON"""
         try:
             async with httpx.AsyncClient(timeout=30) as client:
+                transactions = []
+                
                 if token_contract:
-                    # TRC20 транзакции
+                    # TRC20 транзакции (USDT)
                     url = f"{self.rpc_url}/v1/accounts/{address}/transactions/trc20"
                     params = {
                         'contract_address': token_contract,
                         'limit': 50,
                         'order_by': 'block_timestamp,desc'
                     }
+                    
+                    response = await client.get(url, params=params)
+                    if response.status_code == 200:
+                        data = response.json()
+                        raw_txs = data.get('data', [])
+                        
+                        for tx in raw_txs:
+                            # Нормализуем TRC20 транзакцию
+                            normalized = {
+                                'hash': tx.get('transaction_id'),
+                                'from': tx.get('from'),
+                                'to': tx.get('to'),
+                                'amount': float(tx.get('value', 0)) / (10**6),  # USDT имеет 6 десятичных знаков
+                                'timestamp': tx.get('block_timestamp'),
+                                'token_contract': token_contract
+                            }
+                            transactions.append(normalized)
                 else:
-                    # TRX транзакции
+                    # Нативные TRX транзакции
                     url = f"{self.rpc_url}/v1/accounts/{address}/transactions"
                     params = {'limit': 50}
-                
-                response = await client.get(url, params=params)
-                if response.status_code == 200:
-                    data = response.json()
-                    return data.get('data', [])
                     
-                return []
+                    response = await client.get(url, params=params)
+                    if response.status_code == 200:
+                        data = response.json()
+                        raw_txs = data.get('data', [])
+                        
+                        for tx in raw_txs:
+                            # Проверяем что это перевод TRX
+                            if tx.get('raw_data', {}).get('contract', [{}])[0].get('type') == 'TransferContract':
+                                contract_data = tx.get('raw_data', {}).get('contract', [{}])[0]
+                                parameter = contract_data.get('parameter', {}).get('value', {})
+                                
+                                normalized = {
+                                    'hash': tx.get('txID'),
+                                    'from': parameter.get('owner_address'),
+                                    'to': parameter.get('to_address'),
+                                    'amount': float(parameter.get('amount', 0)) / (10**6),  # TRX имеет 6 десятичных знаков
+                                    'timestamp': tx.get('block_timestamp')
+                                }
+                                transactions.append(normalized)
+                
+                return transactions
                 
         except Exception as e:
             logger.error(f"❌ Ошибка получения транзакций TRON для {address}: {e}")
@@ -274,6 +308,8 @@ class TONClient(BlockchainClient):
         """Получить последние транзакции TON"""
         try:
             async with httpx.AsyncClient(timeout=30) as client:
+                transactions = []
+                
                 url = f"{self.rpc_url}/getTransactions"
                 params = {
                     'address': address,
@@ -284,9 +320,22 @@ class TONClient(BlockchainClient):
                 if response.status_code == 200:
                     data = response.json()
                     if data.get('ok'):
-                        return data.get('result', [])
+                        raw_txs = data.get('result', [])
                         
-                return []
+                        for tx in raw_txs:
+                            # Нормализуем TON транзакцию
+                            in_msg = tx.get('in_msg', {})
+                            if in_msg and in_msg.get('value'):
+                                normalized = {
+                                    'hash': tx.get('transaction_id', {}).get('hash'),
+                                    'from': in_msg.get('source'),
+                                    'to': in_msg.get('destination'),
+                                    'amount': float(in_msg.get('value', 0)) / (10**9),  # TON имеет 9 десятичных знаков
+                                    'timestamp': tx.get('utime')
+                                }
+                                transactions.append(normalized)
+                
+                return transactions
                 
         except Exception as e:
             logger.error(f"❌ Ошибка получения транзакций TON для {address}: {e}")

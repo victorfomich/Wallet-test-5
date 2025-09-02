@@ -36,8 +36,8 @@ class BlockchainMonitor:
         
         logger.info("✅ BlockchainMonitor инициализирован")
     
-    async def check_address_balance(self, address: str, network: str, user_telegram_id: int) -> bool:
-        """Проверить баланс конкретного адреса"""
+    async def check_address_transactions(self, address: str, network: str, user_telegram_id: int) -> bool:
+        """Проверить новые транзакции конкретного адреса"""
         if network not in self.clients:
             return False
         
@@ -45,57 +45,73 @@ class BlockchainMonitor:
         network_config = NETWORKS[network]
         
         try:
-            # Проверяем нативный токен (TON, TRX, SOL, ETH, BNB)
-            native_balance = await client.get_balance(address)
-            balance_key = f"{address}_{network}_native"
+            # Получаем последние транзакции для нативного токена
+            native_transactions = await client.get_transactions(address)
             
-            if native_balance > MIN_AMOUNT:
-                last_balance = self.last_balances.get(balance_key, 0)
+            for tx in native_transactions:
+                tx_hash = tx.get('hash') or tx.get('txid') or tx.get('signature', '')
+                if not tx_hash or tx_hash in self.processed_txs:
+                    continue
                 
-                if native_balance > last_balance:
-                    # Баланс увеличился - засчитываем как депозит
-                    deposit_amount = native_balance - last_balance
-                    logger.info(f"💰 Новый депозит: +{deposit_amount} {network_config['native_token']} на {address[:8]}...")
-                    
-                    # Обновляем баланс пользователя
-                    currency = network_config['native_token'].lower()
-                    if currency == 'trx':
-                        currency = 'trx'  # Приводим к стандартному названию
-                    
-                    await self.db.update_balance(user_telegram_id, currency, deposit_amount)
-                    
-                    # Записываем депозит
-                    await self.db.record_deposit(
-                        user_telegram_id, network, currency.upper(), 
-                        deposit_amount, f"balance_check_{int(time.time())}", address
-                    )
+                # Проверяем что это входящая транзакция (TO адрес = наш адрес)
+                to_address = tx.get('to', '').lower()
+                from_address = tx.get('from', '').lower()
+                our_address = address.lower()
                 
-                self.last_balances[balance_key] = native_balance
-            
-            # Проверяем USDT если есть контракт
-            usdt_contract = network_config.get('usdt_contract')
-            if usdt_contract:
-                usdt_balance = await client.get_balance(address, usdt_contract)
-                usdt_balance_key = f"{address}_{network}_usdt"
-                
-                if usdt_balance > MIN_AMOUNT:
-                    last_usdt_balance = self.last_balances.get(usdt_balance_key, 0)
-                    
-                    if usdt_balance > last_usdt_balance:
-                        # USDT баланс увеличился
-                        deposit_amount = usdt_balance - last_usdt_balance
-                        logger.info(f"💰 Новый USDT депозит: +{deposit_amount} USDT на {address[:8]}... ({network.upper()})")
+                if to_address == our_address and from_address != our_address:
+                    # Это входящая транзакция
+                    amount = float(tx.get('amount', 0))
+                    if amount > MIN_AMOUNT:
+                        currency = network_config['native_token'].lower()
+                        if currency == 'trx':
+                            currency = 'trx'
                         
-                        # Обновляем USDT баланс пользователя
-                        await self.db.update_balance(user_telegram_id, 'usdt', deposit_amount)
+                        logger.info(f"💰 Входящая транзакция: +{amount} {currency.upper()} на {address[:8]}... (tx: {tx_hash[:8]}...)")
+                        
+                        # Обновляем баланс пользователя
+                        await self.db.update_balance(user_telegram_id, currency, amount)
                         
                         # Записываем депозит
                         await self.db.record_deposit(
-                            user_telegram_id, network, 'USDT', 
-                            deposit_amount, f"usdt_balance_check_{int(time.time())}", address
+                            user_telegram_id, network, currency.upper(), 
+                            amount, tx_hash, address
                         )
+                        
+                        # Отмечаем транзакцию как обработанную
+                        self.processed_txs.add(tx_hash)
+            
+            # Проверяем USDT транзакции если есть контракт
+            usdt_contract = network_config.get('usdt_contract')
+            if usdt_contract:
+                usdt_transactions = await client.get_transactions(address, usdt_contract)
+                
+                for tx in usdt_transactions:
+                    tx_hash = tx.get('hash') or tx.get('txid') or tx.get('signature', '')
+                    if not tx_hash or tx_hash in self.processed_txs:
+                        continue
                     
-                    self.last_balances[usdt_balance_key] = usdt_balance
+                    # Проверяем что это входящая USDT транзакция
+                    to_address = tx.get('to', '').lower()
+                    from_address = tx.get('from', '').lower()
+                    our_address = address.lower()
+                    
+                    if to_address == our_address and from_address != our_address:
+                        # Это входящая USDT транзакция
+                        amount = float(tx.get('amount', 0))
+                        if amount > MIN_AMOUNT:
+                            logger.info(f"💰 Входящая USDT: +{amount} USDT на {address[:8]}... ({network.upper()}, tx: {tx_hash[:8]}...)")
+                            
+                            # Обновляем USDT баланс пользователя
+                            await self.db.update_balance(user_telegram_id, 'usdt', amount)
+                            
+                            # Записываем депозит
+                            await self.db.record_deposit(
+                                user_telegram_id, network, 'USDT', 
+                                amount, tx_hash, address
+                            )
+                            
+                            # Отмечаем транзакцию как обработанную
+                            self.processed_txs.add(tx_hash)
             
             return True
             
@@ -128,7 +144,7 @@ class BlockchainMonitor:
                     address = addr_set.get(address_field)
                     
                     if address:
-                        task = self.check_address_balance(address, network, user_telegram_id)
+                        task = self.check_address_transactions(address, network, user_telegram_id)
                         tasks.append(task)
             
             # Выполняем все проверки параллельно
