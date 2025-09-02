@@ -302,6 +302,13 @@ async function handleAdminTransaction(req, res) {
             });
         }
         
+        if (!['completed', 'pending', 'failed'].includes(transaction_status)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Неверный статус транзакции. Допустимы: completed, pending, failed'
+            });
+        }
+        
         // Генерируем хеш если не предоставлен
         const finalHash = blockchain_hash || `admin_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         
@@ -321,7 +328,7 @@ async function handleAdminTransaction(req, res) {
             updated_timestamp: new Date().toISOString()
         };
         
-        console.log('🔧 Создаем админскую транзакцию:', transactionData);
+        console.log(`🔧 Создаем админскую транзакцию (${transaction_status}):`, transactionData);
         
         const newTransaction = await supabaseRequest('wallet_transactions', 'POST', transactionData);
         

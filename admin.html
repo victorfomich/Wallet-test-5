@@ -487,6 +487,15 @@
                     </div>
                     
                     <div class="form-group">
+                        <label for="txStatus">Статус транзакции:</label>
+                        <select id="txStatus" name="txStatus" required>
+                            <option value="completed">✅ Завершена (влияет на баланс)</option>
+                            <option value="pending">⏳ В ожидании (не влияет на баланс)</option>
+                            <option value="failed">❌ Отклонена</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
                         <label for="txCurrency">Валюта:</label>
                         <select id="txCurrency" name="txCurrency" required>
                             <option value="TON">TON</option>
