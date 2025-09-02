@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>Ethereum - DreamWallet</title>
+    <link rel="stylesheet" href="eth-styles.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Логотип Ethereum -->
+        <div class="logo-container">
+            <div class="main-logo">
+                <img src="ethereum.svg" alt="ETH" class="eth-logo">
+            </div>
+        </div>
+        
+        <!-- Заголовок -->
+        <div class="balance-header">
+            <h1 class="balance-title">Ваш Ethereum баланс</h1>
+        </div>
+        
+        <!-- Основной баланс -->
+        <div class="main-balance">
+            <span class="balance-amount" id="balanceAmount">$—</span>
+            <img src="eye.png" alt="Eye" class="eye-icon eye-light" id="eyeIcon">
+            <img src="eye_white.png" alt="Eye" class="eye-icon eye-dark" id="eyeIconDark" style="display: none;">
+        </div>
+        
+        <!-- Детальный баланс -->
+        <div class="detailed-balance">
+            <span class="eth-balance" id="ethBalance">— ETH</span>
+        </div>
+        
+        <!-- Навигационные кнопки -->
+        <div class="nav-buttons">
+            <div class="nav-button" onclick="window.location.href='topup.html'">
+                <div class="nav-icon">
+                    <img src="left-arrow.png" alt="Left Arrow" class="arrow-icon">
+                </div>
+                <span class="nav-text">Пополнить</span>
+            </div>
+            <div class="nav-button">
+                <div class="nav-icon">
+                    <img src="left-arrow.png" alt="Left Arrow" class="arrow-icon withdraw-arrow">
+                </div>
+                <span class="nav-text">Вывести</span>
+            </div>
+            <div class="nav-button">
+                <div class="nav-icon">
+                    <img src="exchange.png" alt="Exchange" class="exchange-icon">
+                </div>
+                <span class="nav-text">Обмен</span>
+            </div>
+            <div class="nav-button">
+                <div class="nav-icon">
+                    <img src="reload.png" alt="Reload" class="reload-icon">
+                </div>
+                <span class="nav-text">Биржа</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="eth-script.js"></script>
+</body>
+</html>

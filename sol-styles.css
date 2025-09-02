@@ -1,0 +1,239 @@
+/* CSS переменные для темной темы */
+:root {
+    /* Темная тема по умолчанию */
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #2d2d2d;
+    --bg-card: #2d2d2d;
+    --text-primary: #ffffff;
+    --text-secondary: #e0e0e0;
+    --text-tertiary: #b0b0b0;
+    --accent-color: #9945ff;
+    --accent-secondary: #9945ff;
+    --border-color: #404040;
+    --shadow-color: rgba(0, 0, 0, 0.3);
+    --overlay-color: rgba(0, 0, 0, 0.7);
+}
+
+/* Базовые стили */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 0;
+    margin: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    touch-action: pan-y;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.container {
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 20px;
+    min-height: 100vh;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: var(--bg-primary);
+}
+
+/* Логотип Solana */
+.logo-container {
+    position: relative;
+    width: 70px !important;
+    height: 70px !important;
+    margin: 20px 0 !important;
+}
+
+.main-logo {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #9945ff, #14f195);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 2;
+}
+
+.sol-logo {
+    width: 50px !important;
+    height: 50px !important;
+    object-fit: contain;
+}
+
+/* Заголовок */
+.balance-header {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.balance-title {
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+/* Основной баланс */
+.main-balance {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 6px;
+}
+
+.balance-amount {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.eye-icon {
+    width: 20px;
+    height: 20px;
+    opacity: 0.5;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.eye-icon:hover {
+    opacity: 0.7;
+}
+
+/* Переключение иконок глаз для разных тем */
+.eye-light {
+    display: block;
+}
+
+.eye-dark {
+    display: none;
+}
+
+[data-theme="dark"] .eye-light {
+    display: none;
+}
+
+[data-theme="dark"] .eye-dark {
+    display: block;
+}
+
+/* Детальный баланс */
+.detailed-balance {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.sol-balance {
+    font-size: 14px;
+    color: var(--text-secondary);
+    opacity: 0.8;
+}
+
+/* Навигационные кнопки */
+.nav-buttons {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 320px;
+    gap: 20px;
+}
+
+.nav-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.nav-button:hover {
+    transform: scale(1.05);
+}
+
+.nav-icon {
+    width: 35px;
+    height: 35px;
+    background-color: var(--accent-secondary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.arrow-icon {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    transform: rotate(-45deg);
+}
+
+.withdraw-arrow {
+    transform: rotate(135deg);
+}
+
+.exchange-icon {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+}
+
+.reload-icon {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+}
+
+.nav-text {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--accent-secondary);
+    text-align: center;
+    line-height: 1.2;
+}
+
+/* Адаптивность */
+@media (max-width: 480px) {
+    .container {
+        padding: 16px;
+    }
+    
+    .logo-container {
+        width: 100px;
+        height: 100px;
+        margin: 30px 0;
+    }
+    
+    .sol-logo {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .balance-title {
+        font-size: 16px;
+    }
+    
+    .balance-amount {
+        font-size: 28px;
+    }
+}

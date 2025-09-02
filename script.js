@@ -679,10 +679,10 @@ function createAssetElement(asset) {
     
     const pageMap = {
         'usdt': 'usdt.html',
-        'eth': 'topup.html',
-        'ton': 'topup.html',
-        'sol': 'topup.html',
-        'trx': 'topup.html'
+        'eth': 'eth.html',
+        'ton': 'ton.html',
+        'sol': 'sol.html',
+        'trx': 'trx.html'
     };
     
     const change = asset.change || 0;
