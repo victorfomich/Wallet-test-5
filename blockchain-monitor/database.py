@@ -20,7 +20,7 @@ class SupabaseClient:
             async with httpx.AsyncClient() as client:
                 url = f"{self.base_url}/rest/v1/address_sets"
                 params = {
-                    'select': 'id,name,ton_address,tron_address,sol_address,eth_address,bnb_address,assigned_to,assigned_user_id'
+                    'select': '*'
                 }
                 
                 response = await client.get(url, headers=self.headers, params=params)
@@ -28,6 +28,11 @@ class SupabaseClient:
                 
                 addresses = response.json()
                 logger.info(f"📊 Загружено {len(addresses)} наборов адресов")
+                
+                # Отладка: показываем структуру первого адреса
+                if addresses and len(addresses) > 0:
+                    logger.info(f"🔍 Структура адреса: {list(addresses[0].keys())}")
+                
                 return addresses
                 
         except Exception as e:
