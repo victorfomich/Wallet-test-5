@@ -2,7 +2,7 @@
 let tg = window.Telegram.WebApp;
 
 // Глобальные переменные
-let selectedNetwork = 'trx';
+let selectedNetwork = 'tron';
 let qrCode = null;
 
 // Проверяем загрузку библиотеки QR кода
@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initTheme();
     
     // Автоматически загружаем TRX адрес
-    selectNetwork('trx');
+    selectNetwork('tron');
     
     // Инициализируем ограничения приложения
     initAppRestrictions();
@@ -55,34 +55,56 @@ function updateCopyIcons() {
 
 // Функция для выбора конкретной сети
 async function selectNetwork(network) {
+    console.log('🔍 TRON QR: selectNetwork вызван с параметром:', network);
     selectedNetwork = network;
     
     // Сначала пытаемся загрузить пользователя из localStorage
     if (!window.userManager.isUserInitialized()) {
         const loaded = window.userManager.loadFromLocalStorage();
         if (!loaded) {
-            console.warn('Пользователь не инициализирован, используем адреса по умолчанию');
+            console.warn('🔍 TRON QR: Пользователь не инициализирован, используем адреса по умолчанию');
         }
     }
     
     // Получаем информацию о сети и адрес пользователя
     let networkInfo = window.userManager.getNetworkWithAddress(network);
+    console.log('🔍 TRON QR: networkInfo от userManager:', networkInfo);
     
     // Если адрес пользователя не найден, используем адрес по умолчанию
     if (!networkInfo || !networkInfo.address) {
-        console.warn(`Адрес пользователя для сети ${network} не найден, используем адрес по умолчанию`);
-        const defaultNetworkInfo = getAddress(network);
-        if (defaultNetworkInfo) {
-            networkInfo = {
-                ...defaultNetworkInfo,
-                isUserAddress: false
-            };
+        console.warn(`🔍 TRON QR: Адрес пользователя для сети ${network} не найден, используем адрес по умолчанию`);
+        
+        // Проверяем доступность функции getAddress
+        if (typeof getAddress === 'function') {
+            const defaultNetworkInfo = getAddress(network);
+            console.log('🔍 TRON QR: defaultNetworkInfo от getAddress:', defaultNetworkInfo);
+            if (defaultNetworkInfo) {
+                networkInfo = {
+                    ...defaultNetworkInfo,
+                    isUserAddress: false
+                };
+            }
+        } else {
+            console.error('🔍 TRON QR: Функция getAddress не доступна!');
+            // Попробуем использовать window.getAddress
+            if (typeof window.getAddress === 'function') {
+                const defaultNetworkInfo = window.getAddress(network);
+                console.log('🔍 TRON QR: defaultNetworkInfo от window.getAddress:', defaultNetworkInfo);
+                if (defaultNetworkInfo) {
+                    networkInfo = {
+                        ...defaultNetworkInfo,
+                        isUserAddress: false
+                    };
+                }
+            }
         }
     } else {
         networkInfo.isUserAddress = true;
     }
     
     if (networkInfo) {
+        console.log('✅ TRON QR: networkInfo найден, показываем QR:', networkInfo);
+        
         // Показываем QR карточку
         showQRCard(networkInfo);
         
@@ -97,6 +119,7 @@ async function selectNetwork(network) {
             showDefaultAddressWarning();
         }
     } else {
+        console.error('❌ TRON QR: networkInfo НЕ найден! Показываем ошибку');
         showNetworkError(network);
     }
 }
