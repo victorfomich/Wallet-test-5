@@ -661,8 +661,16 @@ function createAssetElement(asset) {
         'trx': 'tron.png'
     };
     
+    const iconClassMap = {
+        'usdt': 'usdt-icon',
+        'eth': 'eth-icon',
+        'ton': 'ton-icon',
+        'sol': 'sol-icon',
+        'trx': 'trx-icon'
+    };
+    
     const nameMap = {
-        'usdt': 'USDT',
+        'usdt': 'Tether',
         'eth': 'Ethereum',
         'ton': 'Toncoin',
         'sol': 'Solana', 
@@ -685,18 +693,19 @@ function createAssetElement(asset) {
     assetElement.className = 'asset-item';
     assetElement.setAttribute('data-page', pageMap[asset.id] || 'topup.html');
     
+    // ТОЧНАЯ КОПИЯ ОРИГИНАЛЬНОЙ СТРУКТУРЫ
     assetElement.innerHTML = `
         <div class="asset-left">
-            <div class="crypto-icon">
-                <img src="${iconMap[asset.id] || 'usdt.png'}" alt="${asset.symbol}" class="crypto-logo">
+            <div class="asset-icon ${iconClassMap[asset.id]}">
+                <img src="${iconMap[asset.id]}" alt="${asset.symbol}" class="crypto-icon${asset.id === 'eth' ? ' eth-icon-img' : ''}">
             </div>
-            <div class="crypto-info">
-                <div class="crypto-name">${nameMap[asset.id] || asset.symbol}</div>
-                <div class="asset-balance">${asset.amount.toFixed(6)} ${asset.symbol}</div>
+            <div class="asset-info">
+                <div class="asset-name">${nameMap[asset.id]}</div>
+                <div class="asset-price">$${asset.price.toFixed(2)} <span class="${changeClass}">${changeText}</span></div>
             </div>
         </div>
         <div class="asset-right">
-            <div class="asset-price">$${asset.price.toFixed(2)} <span class="${changeClass}">${changeText}</span></div>
+            <div class="asset-balance">${asset.amount.toFixed(6)} ${asset.symbol}</div>
             <div class="asset-usd-value">$${asset.usdValue.toFixed(6)}</div>
         </div>
     `;
