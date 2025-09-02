@@ -577,52 +577,227 @@ function updateBalanceDisplay(balance) {
 function updateAssetsList(balance) {
     console.log('🔥 ОБНОВЛЯЕМ ТОЛЬКО ИЗ БАЗЫ!', balance);
     
-    // USDT - ТОЛЬКО ИЗ БАЗЫ
-    updateAssetRow('usdt', {
-        amount: balance.usdt_amount,
-        symbol: 'USDT',
-        price: balance.usdt_price,
-        change: balance.usdt_change_percent,
-        usdValue: balance.usdt_amount * balance.usdt_price
-    });
+    // Создаем массив активов с их USD стоимостью
+    const assets = [
+        {
+            id: 'usdt',
+            amount: balance.usdt_amount,
+            symbol: 'USDT',
+            price: balance.usdt_price,
+            change: balance.usdt_change_percent,
+            usdValue: balance.usdt_amount * balance.usdt_price
+        },
+        {
+            id: 'eth',
+            amount: balance.eth_amount,
+            symbol: 'ETH',
+            price: balance.eth_price,
+            change: balance.eth_change_percent,
+            usdValue: balance.eth_amount * balance.eth_price
+        },
+        {
+            id: 'ton',
+            amount: balance.ton_amount,
+            symbol: 'TON',
+            price: balance.ton_price,
+            change: balance.ton_change_percent,
+            usdValue: balance.ton_amount * balance.ton_price
+        },
+        {
+            id: 'sol',
+            amount: balance.sol_amount,
+            symbol: 'SOL',
+            price: balance.sol_price,
+            change: balance.sol_change_percent,
+            usdValue: balance.sol_amount * balance.sol_price
+        },
+        {
+            id: 'trx',
+            amount: balance.trx_amount,
+            symbol: 'TRX',
+            price: balance.trx_price,
+            change: balance.trx_change_percent,
+            usdValue: balance.trx_amount * balance.trx_price
+        }
+    ];
     
-    // Ethereum - ТОЛЬКО ИЗ БАЗЫ
-    updateAssetRow('eth', {
-        amount: balance.eth_amount,
-        symbol: 'ETH',
-        price: balance.eth_price,
-        change: balance.eth_change_percent,
-        usdValue: balance.eth_amount * balance.eth_price
-    });
+    // СОРТИРУЕМ ПО USD СТОИМОСТИ (больше стоимость = выше в списке)
+    assets.sort((a, b) => (b.usdValue || 0) - (a.usdValue || 0));
     
-    // Toncoin - ТОЛЬКО ИЗ БАЗЫ
-    updateAssetRow('ton', {
-        amount: balance.ton_amount,
-        symbol: 'TON',
-        price: balance.ton_price,
-        change: balance.ton_change_percent,
-        usdValue: balance.ton_amount * balance.ton_price
-    });
+    console.log('💰 Активы отсортированы по USD стоимости:', assets.map(a => `${a.symbol}: $${(a.usdValue || 0).toFixed(2)}`));
     
-    // Solana - ТОЛЬКО ИЗ БАЗЫ
-    updateAssetRow('sol', {
-        amount: balance.sol_amount,
-        symbol: 'SOL',
-        price: balance.sol_price,
-        change: balance.sol_change_percent,
-        usdValue: balance.sol_amount * balance.sol_price
-    });
+    // ФИЗИЧЕСКИ ПЕРЕСТАВЛЯЕМ DOM ЭЛЕМЕНТЫ
+    const assetsList = document.querySelector('.assets-list');
+    const assetItems = Array.from(document.querySelectorAll('.asset-item'));
     
-    // Tron - ТОЛЬКО ИЗ БАЗЫ
-    updateAssetRow('trx', {
-        amount: balance.trx_amount,
-        symbol: 'TRX',
-        price: balance.trx_price,
-        change: balance.trx_change_percent,
-        usdValue: balance.trx_amount * balance.trx_price
-    });
+    if (assetsList && assetItems.length >= 5) {
+        // Удаляем все элементы из списка
+        assetItems.forEach(item => item.remove());
+        
+        // Добавляем в новом порядке
+        assets.forEach((asset, index) => {
+            const newElement = createAssetElement(asset);
+            assetsList.appendChild(newElement);
+        });
+        
+        console.log('🔄 DOM элементы физически переставлены!');
+    } else {
+        // Fallback: обновляем содержимое на месте
+        assets.forEach((asset, index) => {
+            updateAssetRowAtPosition(index, asset);
+        });
+    }
     
     console.log('✅ ОБНОВЛЕНО ТОЛЬКО ИЗ БАЗЫ БЕЗ ДЕФОЛТОВ!');
+}
+
+// СОЗДАНИЕ НОВОГО DOM ЭЛЕМЕНТА АКТИВА
+function createAssetElement(asset) {
+    const iconMap = {
+        'usdt': 'usdt.png',
+        'eth': 'ethereum.svg',
+        'ton': 'toncoin.png', 
+        'sol': 'solana.png',
+        'trx': 'tron.png'
+    };
+    
+    const nameMap = {
+        'usdt': 'USDT',
+        'eth': 'Ethereum',
+        'ton': 'Toncoin',
+        'sol': 'Solana', 
+        'trx': 'Tron'
+    };
+    
+    const pageMap = {
+        'usdt': 'usdt.html',
+        'eth': 'topup.html',
+        'ton': 'topup.html',
+        'sol': 'topup.html',
+        'trx': 'topup.html'
+    };
+    
+    const change = asset.change || 0;
+    const changeClass = change >= 0 ? 'positive-change' : 'negative-change';
+    const changeText = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
+    
+    const assetElement = document.createElement('div');
+    assetElement.className = 'asset-item';
+    assetElement.setAttribute('data-page', pageMap[asset.id] || 'topup.html');
+    
+    assetElement.innerHTML = `
+        <div class="asset-left">
+            <div class="crypto-icon">
+                <img src="${iconMap[asset.id] || 'usdt.png'}" alt="${asset.symbol}" class="crypto-logo">
+            </div>
+            <div class="crypto-info">
+                <div class="crypto-name">${nameMap[asset.id] || asset.symbol}</div>
+                <div class="asset-balance">${asset.amount.toFixed(6)} ${asset.symbol}</div>
+            </div>
+        </div>
+        <div class="asset-right">
+            <div class="asset-price">$${asset.price.toFixed(2)} <span class="${changeClass}">${changeText}</span></div>
+            <div class="asset-usd-value">$${asset.usdValue.toFixed(6)}</div>
+        </div>
+    `;
+    
+    // Добавляем обработчик клика для навигации
+    assetElement.addEventListener('click', function(e) {
+        e.preventDefault();
+        const targetUrl = this.getAttribute('data-page');
+        if (targetUrl) {
+            window.location.href = targetUrl;
+        }
+    });
+    
+    console.log(`🆕 Создан DOM элемент для ${asset.symbol}`);
+    return assetElement;
+}
+
+// ОБНОВЛЕНИЕ ПОЗИЦИИ В СПИСКЕ С РЕАЛЬНЫМИ ДАННЫМИ ИЗ БАЗЫ
+function updateAssetRowAtPosition(position, asset) {
+    console.log(`🔧 ОБНОВЛЯЕМ ПОЗИЦИЮ ${position} -> ${asset.symbol}:`, asset);
+    
+    // ПРОВЕРЯЕМ ЕСТЬ ЛИ ДАННЫЕ
+    if (!asset.amount && asset.amount !== 0) {
+        console.log(`⚠️ НЕТ AMOUNT ДЛЯ ${asset.id} - ПРОПУСКАЕМ`);
+        return;
+    }
+    if (!asset.price && asset.price !== 0) {
+        console.log(`⚠️ НЕТ PRICE ДЛЯ ${asset.id} - ПРОПУСКАЕМ`);
+        return;
+    }
+    
+    const assetItems = document.querySelectorAll('.asset-item');
+    
+    if (position < 0 || position >= assetItems.length) {
+        console.error(`❌ НЕВЕРНАЯ ПОЗИЦИЯ ${position} ДЛЯ ${asset.id}`);
+        return;
+    }
+    
+    const element = assetItems[position];
+    
+    // ОБНОВЛЯЕМ ИКОНКУ КРИПТОВАЛЮТЫ
+    const iconEl = element.querySelector('.crypto-icon img');
+    if (iconEl) {
+        const iconMap = {
+            'usdt': 'usdt.png',
+            'eth': 'ethereum.svg', 
+            'ton': 'toncoin.png',
+            'sol': 'solana.png',
+            'trx': 'tron.png'
+        };
+        iconEl.src = iconMap[asset.id] || 'usdt.png';
+    }
+    
+    // ОБНОВЛЯЕМ НАЗВАНИЕ
+    const nameEl = element.querySelector('.crypto-name');
+    if (nameEl) {
+        const nameMap = {
+            'usdt': 'USDT',
+            'eth': 'Ethereum',
+            'ton': 'Toncoin', 
+            'sol': 'Solana',
+            'trx': 'Tron'
+        };
+        nameEl.textContent = nameMap[asset.id] || asset.symbol;
+    }
+    
+    // ОБНОВЛЯЕМ КОЛИЧЕСТВО
+    const balanceEl = element.querySelector('.asset-balance');
+    if (balanceEl && (asset.amount || asset.amount === 0)) {
+        balanceEl.textContent = `${asset.amount.toFixed(6)} ${asset.symbol}`;
+        console.log(`✅ БАЛАНС ${asset.id}: ${asset.amount.toFixed(6)} ${asset.symbol}`);
+    }
+    
+    // ОБНОВЛЯЕМ ЦЕНУ И ПРОЦЕНТ
+    const priceEl = element.querySelector('.asset-price');
+    if (priceEl && (asset.price || asset.price === 0)) {
+        const change = asset.change || 0;
+        const changeClass = change >= 0 ? 'positive-change' : 'negative-change';
+        const changeText = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
+        priceEl.innerHTML = `$${asset.price.toFixed(2)} <span class="${changeClass}">${changeText}</span>`;
+        console.log(`✅ ЦЕНА ${asset.id}: $${asset.price.toFixed(2)} (${changeText})`);
+    }
+    
+    // ОБНОВЛЯЕМ USD СТОИМОСТЬ
+    const usdEl = element.querySelector('.asset-usd-value');
+    if (usdEl && (asset.usdValue || asset.usdValue === 0)) {
+        usdEl.textContent = `$${asset.usdValue.toFixed(6)}`;
+        console.log(`✅ USD ${asset.id}: $${asset.usdValue.toFixed(6)}`);
+    }
+    
+    // ОБНОВЛЯЕМ DATA-PAGE для правильной навигации
+    const pageMap = {
+        'usdt': 'usdt.html',
+        'eth': 'topup.html',
+        'ton': 'topup.html',
+        'sol': 'topup.html', 
+        'trx': 'topup.html'
+    };
+    element.setAttribute('data-page', pageMap[asset.id] || 'topup.html');
+    
+    console.log(`🚀 ПОЗИЦИЯ ${position} ОБНОВЛЕНА НА ${asset.symbol.toUpperCase()}!`);
 }
 
 // ОБНОВЛЕНИЕ ТОЛЬКО С РЕАЛЬНЫМИ ДАННЫМИ ИЗ БАЗЫ
