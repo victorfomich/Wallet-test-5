@@ -1,0 +1,31 @@
+# Blockchain Monitor Dependencies
+# Основные библиотеки
+requests==2.31.0
+python-dotenv==1.0.0
+asyncio==3.4.3
+aiohttp==3.9.1
+schedule==1.2.0
+
+# Blockchain APIs
+web3==6.12.0              # Ethereum/BNB
+solana==0.32.0             # Solana
+tronpy==0.4.0             # Tron
+pytonlib==0.0.54          # TON (unofficial)
+
+# Database
+supabase==2.3.0
+psycopg2-binary==2.9.7
+
+# Utilities
+colorama==0.4.6           # Colored console output
+python-dateutil==2.8.2    # Date utilities
+pycryptodome==3.19.0      # Crypto utilities
+
+# Logging
+loguru==0.7.2
+
+# JSON handling
+ujson==5.8.0
+
+# HTTP client
+httpx==0.25.2
