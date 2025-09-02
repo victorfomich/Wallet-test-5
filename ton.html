@@ -63,6 +63,26 @@
                 <span class="nav-text">Биржа</span>
             </div>
         </div>
+
+        <!-- Раздел транзакций -->
+        <div class="transactions-section">
+            <div class="transactions-header">
+                <h2 class="transactions-title">Транзакции TON</h2>
+            </div>
+            
+            <div class="transactions-list" id="transactionsList">
+                <div class="loading-message" id="loadingMessage">
+                    <div class="loading-spinner"></div>
+                    <span>Загрузка транзакций...</span>
+                </div>
+                
+                <div class="no-transactions" id="noTransactions" style="display: none;">
+                    <div class="no-transactions-icon">💸</div>
+                    <div class="no-transactions-text">Транзакций пока нет</div>
+                    <div class="no-transactions-subtitle">Ваши TON транзакции появятся здесь</div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="ton-script.js"></script>
