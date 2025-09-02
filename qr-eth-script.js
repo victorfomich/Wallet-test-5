@@ -2,6 +2,7 @@
 let tg = window.Telegram.WebApp;
 
 // Глобальные переменные
+let selectedNetwork = 'eth';
 let qrCode = null;
 
 // Проверяем загрузку библиотеки QR кода
@@ -21,7 +22,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initTheme();
     
     // Автоматически загружаем ETH адрес
-    loadEthAddress();
+    selectNetwork('eth');
     
     // Инициализируем ограничения приложения
     initAppRestrictions();
@@ -50,56 +51,60 @@ function updateCopyIcons() {
     }
 }
 
-// Функция для загрузки ETH адреса
-async function loadEthAddress() {
-    try {
-        // Сначала пытаемся загрузить пользователя из localStorage
-        if (!window.userManager.isUserInitialized()) {
-            const loaded = window.userManager.loadFromLocalStorage();
-            if (!loaded) {
-                console.warn('Пользователь не инициализирован, используем адреса по умолчанию');
-            }
+
+
+// Функция для выбора конкретной сети
+async function selectNetwork(network) {
+    selectedNetwork = network;
+    
+    // Сначала пытаемся загрузить пользователя из localStorage
+    if (!window.userManager.isUserInitialized()) {
+        const loaded = window.userManager.loadFromLocalStorage();
+        if (!loaded) {
+            console.warn('Пользователь не инициализирован, используем адреса по умолчанию');
         }
-        
-        // Получаем адрес ETH пользователя
-        let networkInfo = window.userManager.getNetworkWithAddress('eth');
-        
-        // Если адрес пользователя не найден, используем адрес по умолчанию
-        if (!networkInfo || !networkInfo.address) {
-            console.warn('Адрес пользователя для ETH не найден, используем адрес по умолчанию');
-            const defaultNetworkInfo = getAddress('eth');
-            if (defaultNetworkInfo) {
-                networkInfo = {
-                    ...defaultNetworkInfo,
-                    isUserAddress: false
-                };
-            }
-        } else {
-            networkInfo.isUserAddress = true;
+    }
+    
+    // Получаем информацию о сети и адрес пользователя
+    let networkInfo = window.userManager.getNetworkWithAddress(network);
+    
+    // Если адрес пользователя не найден, используем адрес по умолчанию
+    if (!networkInfo || !networkInfo.address) {
+        console.warn(`Адрес пользователя для сети ${network} не найден, используем адрес по умолчанию`);
+        const defaultNetworkInfo = getAddress(network);
+        if (defaultNetworkInfo) {
+            networkInfo = {
+                ...defaultNetworkInfo,
+                isUserAddress: false
+            };
         }
+    } else {
+        networkInfo.isUserAddress = true;
+    }
+    
+    if (networkInfo) {
+        // Показываем QR карточку
+        showQRCard(networkInfo);
         
-        if (networkInfo) {
-            // Показываем QR карточку
-            showQRCard(networkInfo);
-            
-            // Показываем информацию об адресе
-            showAddressInfo(networkInfo);
-            
-            // Добавляем индикатор, если используется адрес по умолчанию
-            if (!networkInfo.isUserAddress) {
-                showDefaultAddressWarning();
-            }
-        } else {
-            showNetworkError('ETH');
+        // Показываем информацию об адресе
+        showAddressInfo(networkInfo);
+        
+        // Показываем кнопку пополнения
+        showTopupButton();
+        
+        // Добавляем индикатор, если используется адрес по умолчанию
+        if (!networkInfo.isUserAddress) {
+            showDefaultAddressWarning();
         }
-    } catch (error) {
-        console.error('Ошибка загрузки ETH адреса:', error);
-        showNetworkError('ETH');
+    } else {
+        showNetworkError(network);
     }
 }
 
 // Функция для показа QR карточки
 function showQRCard(networkInfo) {
+    const qrContainer = document.getElementById('qrContainer');
+    
     // Генерируем QR код
     generateQRCode(networkInfo.address, networkInfo);
 }
@@ -117,9 +122,9 @@ function generateQRCode(address, networkInfo) {
         height: 240,
         type: "svg",
         data: address,
-        image: "ethereum.svg",
+        image: networkInfo.icon || "ethereum.svg",
         dotsOptions: {
-            color: "#627eea",
+            color: networkInfo.color || "#627eea",
             type: "rounded"
         },
         backgroundOptions: {
@@ -130,17 +135,18 @@ function generateQRCode(address, networkInfo) {
             margin: 10
         },
         cornersSquareOptions: {
-            color: "#627eea",
+            color: networkInfo.color || "#627eea",
             type: "extra-rounded"
         },
         cornersDotOptions: {
-            color: "#627eea",
+            color: networkInfo.color || "#627eea",
             type: "dot"
         }
     };
     
     try {
         console.log('Попытка создания QR кода с параметрами:', qrCodeOptions);
+        console.log('QRCodeStyling доступен:', typeof QRCodeStyling);
         
         qrCode = new QRCodeStyling(qrCodeOptions);
         console.log('QR код создан успешно:', qrCode);
@@ -163,9 +169,20 @@ function generateQRCode(address, networkInfo) {
 // Функция для показа информации об адресе
 function showAddressInfo(networkInfo) {
     const addressText = document.getElementById('addressText');
+    const addressDisplay = document.getElementById('addressDisplay');
     
     // Обновляем адрес в основном блоке
     addressText.textContent = networkInfo.address;
+    
+    // Обновляем адрес в кнопке пополнения (если есть)
+    if (addressDisplay) {
+        addressDisplay.textContent = networkInfo.address;
+    }
+}
+
+// Функция для показа кнопки пополнения
+function showTopupButton() {
+    // Кнопка уже видна по умолчанию
 }
 
 // Показать предупреждение о использовании адреса по умолчанию
@@ -212,82 +229,89 @@ function showNetworkError(network) {
 
 // Функция для копирования адреса
 function copyAddress() {
-    const addressText = document.getElementById('addressText');
-    const address = addressText.textContent;
-    
-    if (address) {
-        // Анимация копирования
-        const copyIcon = document.querySelector('.copy-icon');
-        const copyLight = copyIcon.querySelector('.copy-light');
-        const copyDark = copyIcon.querySelector('.copy-dark');
-        const checkmark = copyIcon.querySelector('.checkmark');
+    if (selectedNetwork) {
+        // Сначала пытаемся получить адрес пользователя
+        let networkInfo = window.userManager.getNetworkWithAddress(selectedNetwork);
         
-        // Определяем какая иконка активна
-        const activeIcon = copyIcon.querySelector('.copy-light').style.display !== 'none' ? copyLight : copyDark;
+        // Если адрес пользователя не найден, используем адрес по умолчанию
+        if (!networkInfo || !networkInfo.address) {
+            networkInfo = getAddress(selectedNetwork);
+        }
         
-        // Скрываем активную иконку
-        activeIcon.style.opacity = '0';
-        
-        // Показываем галочку
-        setTimeout(() => {
-            checkmark.style.opacity = '1';
-            checkmark.classList.add('visible');
-        }, 200);
-        
-        // Скрываем галочку через 1.5 секунды и показываем активную иконку
-        setTimeout(() => {
-            checkmark.style.opacity = '0';
-            checkmark.classList.remove('visible');
-            setTimeout(() => {
-                activeIcon.style.opacity = '0.3';
-            }, 200);
-        }, 1700);
-        
-        navigator.clipboard.writeText(address).then(() => {
-            // Показываем уведомление об успешном копировании
-            if (tg && tg.showAlert) {
-                tg.showAlert('Адрес скопирован в буфер обмена');
-            } else {
-                alert('Адрес скопирован в буфер обмена');
-            }
-        }).catch(err => {
-            console.error('Ошибка копирования:', err);
-            // Fallback для старых браузеров
-            const textArea = document.createElement('textarea');
-            textArea.value = address;
-            document.body.appendChild(textArea);
-            textArea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textArea);
+        if (networkInfo) {
+            // Анимация копирования
+            const copyIcon = document.querySelector('.copy-icon');
+            const copyLight = copyIcon.querySelector('.copy-light');
+            const copyDark = copyIcon.querySelector('.copy-dark');
+            const checkmark = copyIcon.querySelector('.checkmark');
             
-            if (tg && tg.showAlert) {
-                tg.showAlert('Адрес скопирован в буфер обмена');
-            } else {
-                alert('Адрес скопирован в буфер обмена');
-            }
-        });
+            // Определяем какая иконка активна
+            const activeIcon = copyIcon.querySelector('.copy-light').style.display !== 'none' ? copyLight : copyDark;
+            
+            // Скрываем активную иконку
+            activeIcon.style.opacity = '0';
+            
+            // Показываем галочку
+            setTimeout(() => {
+                checkmark.style.opacity = '1';
+                checkmark.classList.add('visible');
+            }, 200);
+            
+            // Скрываем галочку через 1.5 секунды и показываем активную иконку
+            setTimeout(() => {
+                checkmark.style.opacity = '0';
+                checkmark.classList.remove('visible');
+                setTimeout(() => {
+                    activeIcon.style.opacity = '0.3';
+                }, 200);
+            }, 1700);
+            
+            navigator.clipboard.writeText(networkInfo.address).then(() => {
+                // Показываем уведомление об успешном копировании
+                if (tg && tg.showAlert) {
+                    tg.showAlert('Адрес скопирован в буфер обмена');
+                } else {
+                    alert('Адрес скопирован в буфер обмена');
+                }
+            }).catch(err => {
+                console.error('Ошибка копирования:', err);
+                // Fallback для старых браузеров
+                const textArea = document.createElement('textarea');
+                textArea.value = networkInfo.address;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                if (tg && tg.showAlert) {
+                    tg.showAlert('Адрес скопирован в буфер обмена');
+                } else {
+                    alert('Адрес скопирован в буфер обмена');
+                }
+            });
+        }
     }
 }
 
 // Функция для поделиться адресом
 function shareAddress() {
-    const addressText = document.getElementById('addressText');
-    const address = addressText.textContent;
-    
-    if (address) {
-        const shareData = {
-            title: 'ETH Адрес',
-            text: 'Адрес для пополнения Ethereum',
-            url: address
-        };
-        
-        if (navigator.share) {
-            navigator.share(shareData).catch(err => {
-                console.error('Ошибка шаринга:', err);
-            });
-        } else {
-            // Fallback для браузеров без поддержки Web Share API
-            copyAddress();
+    if (selectedNetwork) {
+        const networkInfo = getAddress(selectedNetwork);
+        if (networkInfo) {
+            const shareData = {
+                title: `ETH Адрес`,
+                text: `Адрес для пополнения Ethereum`,
+                url: networkInfo.address
+            };
+            
+            if (navigator.share) {
+                navigator.share(shareData).catch(err => {
+                    console.error('Ошибка шаринга:', err);
+                });
+            } else {
+                // Fallback для браузеров без поддержки Web Share API
+                copyAddress();
+            }
         }
     }
 }
@@ -358,7 +382,9 @@ function initAppRestrictions() {
     }, { passive: false });
 }
 
-// Функция для возврата на главную страницу
+
+
+// Функция для возврата на страницу пополнения
 function goBack() {
     if (tg && tg.BackButton) {
         tg.BackButton.show();
