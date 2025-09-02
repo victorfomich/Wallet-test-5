@@ -143,6 +143,7 @@
                 <div class="section-header">
                     <h2>Управление транзакциями</h2>
                     <div class="action-buttons">
+                        <button onclick="showAddTransactionModal()" class="btn btn-primary">➕ Добавить транзакцию</button>
                         <button onclick="refreshTransactions()" class="btn btn-secondary">🔄 Обновить</button>
                     </div>
                 </div>
@@ -459,6 +460,83 @@
             <div class="modal-footer">
                 <button onclick="closeModal('editBalanceModal')" class="btn btn-secondary">Отмена</button>
                 <button onclick="updateUserBalance()" class="btn btn-primary">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно добавления транзакции -->
+    <div id="addTransactionModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Добавить новую транзакцию</h3>
+                <span class="close" onclick="closeModal('addTransactionModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="addTransactionForm">
+                    <div class="form-group">
+                        <label for="txTelegramId">Telegram ID пользователя:</label>
+                        <input type="number" id="txTelegramId" name="txTelegramId" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="txType">Тип транзакции:</label>
+                        <select id="txType" name="txType" required>
+                            <option value="deposit">💰 Пополнение (deposit)</option>
+                            <option value="withdraw">💸 Вывод (withdraw)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="txCurrency">Валюта:</label>
+                        <select id="txCurrency" name="txCurrency" required>
+                            <option value="TON">TON</option>
+                            <option value="USDT">USDT</option>
+                            <option value="ETH">ETH</option>
+                            <option value="SOL">SOL</option>
+                            <option value="TRX">TRX</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="txNetwork">Сеть:</label>
+                        <select id="txNetwork" name="txNetwork" required>
+                            <option value="ton">TON</option>
+                            <option value="tron">TRON</option>
+                            <option value="eth">Ethereum</option>
+                            <option value="sol">Solana</option>
+                            <option value="bnb">BNB Smart Chain</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="txAmount">Сумма:</label>
+                        <input type="number" id="txAmount" name="txAmount" step="0.00000001" min="0.00000001" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="txFee">Комиссия сети:</label>
+                        <input type="number" id="txFee" name="txFee" step="0.00000001" min="0" value="0">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="txAddress">Адрес получателя/отправителя:</label>
+                        <input type="text" id="txAddress" name="txAddress" required placeholder="Введите адрес кошелька">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="txHash">Хеш транзакции:</label>
+                        <input type="text" id="txHash" name="txHash" placeholder="Оставьте пустым для автогенерации">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="txComment">Комментарий:</label>
+                        <textarea id="txComment" name="txComment" placeholder="Описание транзакции..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeModal('addTransactionModal')" class="btn btn-secondary">Отмена</button>
+                <button onclick="addTransaction()" class="btn btn-primary">Добавить</button>
             </div>
         </div>
     </div>

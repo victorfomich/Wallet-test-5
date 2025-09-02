@@ -36,6 +36,11 @@ export default async function handler(req, res) {
             });
             
         } else if (method === 'POST') {
+            // Проверяем если это админская транзакция
+            if (req.body.action === 'add_admin_transaction') {
+                return await handleAdminTransaction(req, res);
+            }
+            
             // Создать новую транзакцию вывода
             const { 
                 telegram_id, 
@@ -254,6 +259,91 @@ export default async function handler(req, res) {
         return res.status(500).json({ 
             error: 'Внутренняя ошибка сервера',
             details: error.message 
+        });
+    }
+}
+
+// Функция обработки админских транзакций
+async function handleAdminTransaction(req, res) {
+    try {
+        const {
+            user_telegram_id,
+            transaction_type,
+            crypto_currency,
+            blockchain_network,
+            withdraw_amount,
+            network_fee = 0,
+            recipient_address,
+            blockchain_hash,
+            transaction_status = 'completed',
+            user_comment
+        } = req.body;
+        
+        // Валидация обязательных полей
+        if (!user_telegram_id || !transaction_type || !crypto_currency || 
+            !blockchain_network || !withdraw_amount || !recipient_address) {
+            return res.status(400).json({
+                success: false,
+                error: 'Отсутствуют обязательные поля'
+            });
+        }
+        
+        if (withdraw_amount <= 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'Сумма должна быть больше 0'
+            });
+        }
+        
+        if (!['deposit', 'withdraw'].includes(transaction_type)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Неверный тип транзакции. Допустимы: deposit, withdraw'
+            });
+        }
+        
+        // Генерируем хеш если не предоставлен
+        const finalHash = blockchain_hash || `admin_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        // Создаем транзакцию в wallet_transactions
+        const transactionData = {
+            user_telegram_id,
+            transaction_type,
+            crypto_currency: crypto_currency.toUpperCase(),
+            blockchain_network: blockchain_network.toLowerCase(),
+            withdraw_amount,
+            network_fee,
+            recipient_address,
+            blockchain_hash: finalHash,
+            transaction_status,
+            user_comment: user_comment || `Админская транзакция (${transaction_type})`,
+            created_timestamp: new Date().toISOString(),
+            updated_timestamp: new Date().toISOString()
+        };
+        
+        console.log('🔧 Создаем админскую транзакцию:', transactionData);
+        
+        const newTransaction = await supabaseRequest('wallet_transactions', 'POST', transactionData);
+        
+        if (!newTransaction || newTransaction.length === 0) {
+            throw new Error('Ошибка создания транзакции в базе данных');
+        }
+        
+        console.log('✅ Админская транзакция создана:', newTransaction[0]);
+        
+        return res.status(200).json({
+            success: true,
+            message: 'Админская транзакция успешно создана',
+            transaction: newTransaction[0],
+            hash: finalHash
+        });
+        
+    } catch (error) {
+        console.error('❌ Ошибка создания админской транзакции:', error);
+        return res.status(500).json({
+            success: false,
+            error: 'Ошибка создания транзакции',
+            details: error.message
         });
     }
 }

@@ -109,6 +109,11 @@ export default async function handler(req, res) {
             }
             
         } else if (method === 'POST') {
+            // Проверяем если это обновление баланса от админки
+            if (req.body.action === 'update_balance') {
+                return await handleBalanceUpdate(req, res);
+            }
+            
             // Создать баланс для нового пользователя
             const { telegram_id, user_id } = req.body;
             
@@ -226,4 +231,65 @@ async function createDefaultBalance(telegramId, userId = null) {
     
     const result = await supabaseRequest('user_balances', 'POST', defaultBalanceData);
     return result[0];
+}
+
+// Функция обновления баланса для админских транзакций
+async function handleBalanceUpdate(req, res) {
+    try {
+        const { telegram_id, currency, amount_change, reason } = req.body;
+        
+        if (!telegram_id || !currency || amount_change === undefined) {
+            return res.status(400).json({
+                success: false,
+                error: 'Отсутствуют обязательные поля: telegram_id, currency, amount_change'
+            });
+        }
+        
+        // Получаем текущий баланс пользователя
+        const currentBalances = await supabaseRequest('user_balances', 'GET', null, {
+            telegram_id: `eq.${telegram_id}`
+        });
+        
+        let userBalance;
+        if (currentBalances.length === 0) {
+            // Создаем баланс если его нет
+            userBalance = await createDefaultBalance(telegram_id);
+        } else {
+            userBalance = currentBalances[0];
+        }
+        
+        // Определяем поле для обновления
+        const currencyField = `${currency.toLowerCase()}_amount`;
+        const currentAmount = parseFloat(userBalance[currencyField] || 0);
+        const newAmount = Math.max(0, currentAmount + parseFloat(amount_change));
+        
+        console.log(`💰 Админ обновляет баланс: ${telegram_id} ${currency} ${currentAmount} + ${amount_change} = ${newAmount}`);
+        
+        // Обновляем баланс
+        const updateData = {
+            [currencyField]: newAmount,
+            updated_at: new Date().toISOString()
+        };
+        
+        const updatedBalance = await supabaseRequest('user_balances', 'PUT', updateData, {
+            telegram_id: `eq.${telegram_id}`
+        });
+        
+        return res.status(200).json({
+            success: true,
+            message: `Баланс обновлен: ${currency} ${currentAmount} → ${newAmount}`,
+            balance_change: amount_change,
+            new_balance: newAmount,
+            currency,
+            reason
+        });
+        
+    } catch (error) {
+        console.error('❌ Ошибка обновления баланса:', error);
+        return res.status(500).json({
+            success: false,
+            error: 'Ошибка обновления баланса',
+            details: error.message
+        });
+    }
 }

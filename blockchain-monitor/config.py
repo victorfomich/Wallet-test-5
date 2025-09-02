@@ -15,10 +15,13 @@ SOLANA_RPC_URL = "https://api.mainnet-beta.solana.com"
 TRON_RPC_URL = "https://api.trongrid.io"
 TON_API_URL = "https://toncenter.com/api/v2"
 
-# Monitor Settings
-CHECK_INTERVAL = 30  # seconds
-BATCH_SIZE = 20      # addresses per batch
+# Monitor Settings - СИЛЬНО УВЕЛИЧЕНЫ ЗАДЕРЖКИ
+CHECK_INTERVAL = 90  # seconds - ЕЩЕ БОЛЬШЕ УВЕЛИЧЕН для обхода лимитов
+BATCH_SIZE = 5       # addresses per batch - ЕЩЕ МЕНЬШЕ для обхода лимитов  
 MIN_AMOUNT = 0.000001  # minimum amount to track
+REQUEST_DELAY = 3.0  # seconds between requests - УВЕЛИЧЕНО в 2 раза
+MAX_RETRIES = 5      # maximum retries for failed requests
+RETRY_DELAY = 10     # seconds to wait after rate limit hit
 
 # Supported Networks
 NETWORKS = {
@@ -65,8 +68,9 @@ TABLES = {
 # Logging Configuration
 import logging
 
+# ВКЛЮЧАЕМ DEBUG логи для отслеживания проблем
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,  # ИЗМЕНЕНО на DEBUG
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler('monitor.log'),
@@ -75,3 +79,6 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
+
+# Устанавливаем уровень httpx на INFO чтобы не спамил
+logging.getLogger('httpx').setLevel(logging.INFO)

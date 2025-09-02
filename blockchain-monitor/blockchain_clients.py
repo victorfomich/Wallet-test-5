@@ -5,6 +5,32 @@ import asyncio
 from typing import List, Dict, Optional, Tuple
 from abc import ABC, abstractmethod
 from config import logger, MIN_AMOUNT
+from datetime import datetime, timedelta
+import time
+
+def is_recent_transaction(timestamp: int, max_age_minutes: int = 5) -> bool:
+    """Проверить что транзакция была в последние N минут"""
+    if not timestamp:
+        return False
+    
+    current_time = int(time.time())
+    transaction_time = timestamp
+    
+    # Если timestamp в миллисекундах, конвертируем в секунды
+    if timestamp > 1000000000000:
+        transaction_time = timestamp // 1000
+    
+    age_seconds = current_time - transaction_time
+    max_age_seconds = max_age_minutes * 60
+    
+    is_recent = age_seconds <= max_age_seconds
+    
+    if is_recent:
+        logger.debug(f"⏰ Транзакция свежая: {age_seconds} сек назад (макс: {max_age_seconds} сек)")
+    else:
+        logger.debug(f"⏰ Транзакция старая: {age_seconds} сек назад (макс: {max_age_seconds} сек) - пропускаем")
+    
+    return is_recent
 
 class BlockchainClient(ABC):
     """Базовый класс для клиентов блокчейнов"""
@@ -82,6 +108,11 @@ class TronClient(BlockchainClient):
             async with httpx.AsyncClient(timeout=30) as client:
                 transactions = []
                 
+                # Проверяем валидность TRON адреса
+                if not address or not address.startswith('T') or len(address) != 34:
+                    logger.warning(f"⚠️ Неправильный TRON адрес: {address}")
+                    return []
+                
                 if token_contract:
                     # TRC20 транзакции (USDT)
                     url = f"{self.rpc_url}/v1/accounts/{address}/transactions/trc20"
@@ -97,16 +128,24 @@ class TronClient(BlockchainClient):
                         raw_txs = data.get('data', [])
                         
                         for tx in raw_txs:
-                            # Нормализуем TRC20 транзакцию
-                            normalized = {
-                                'hash': tx.get('transaction_id'),
-                                'from': tx.get('from'),
-                                'to': tx.get('to'),
-                                'amount': float(tx.get('value', 0)) / (10**6),  # USDT имеет 6 десятичных знаков
-                                'timestamp': tx.get('block_timestamp'),
-                                'token_contract': token_contract
-                            }
-                            transactions.append(normalized)
+                            # Проверяем что транзакция успешна
+                            if tx.get('transaction_id') and tx.get('value'):
+                                amount_raw = int(tx.get('value', 0))
+                                amount = amount_raw / (10**6)  # USDT имеет 6 десятичных знаков
+                                
+                                # Нормализуем TRC20 транзакцию
+                                normalized = {
+                                    'hash': tx.get('transaction_id'),
+                                    'from': tx.get('from'),
+                                    'to': tx.get('to'),
+                                    'amount': amount,
+                                    'timestamp': tx.get('block_timestamp'),
+                                    'token_contract': token_contract,
+                                    'value_raw': amount_raw
+                                }
+                                transactions.append(normalized)
+                                
+                                logger.debug(f"🔍 TRON USDT транзакция: {amount} USDT, hash: {tx.get('transaction_id')}")
                 else:
                     # Нативные TRX транзакции
                     url = f"{self.rpc_url}/v1/accounts/{address}/transactions"
@@ -118,19 +157,28 @@ class TronClient(BlockchainClient):
                         raw_txs = data.get('data', [])
                         
                         for tx in raw_txs:
-                            # Проверяем что это перевод TRX
-                            if tx.get('raw_data', {}).get('contract', [{}])[0].get('type') == 'TransferContract':
-                                contract_data = tx.get('raw_data', {}).get('contract', [{}])[0]
+                            # Проверяем что это перевод TRX и транзакция успешна
+                            contracts = tx.get('raw_data', {}).get('contract', [])
+                            if (contracts and contracts[0].get('type') == 'TransferContract' 
+                                and tx.get('ret', [{}])[0].get('contractRet') == 'SUCCESS'):
+                                
+                                contract_data = contracts[0]
                                 parameter = contract_data.get('parameter', {}).get('value', {})
+                                
+                                amount_raw = int(parameter.get('amount', 0))
+                                amount = amount_raw / (10**6)  # TRX имеет 6 десятичных знаков
                                 
                                 normalized = {
                                     'hash': tx.get('txID'),
                                     'from': parameter.get('owner_address'),
                                     'to': parameter.get('to_address'),
-                                    'amount': float(parameter.get('amount', 0)) / (10**6),  # TRX имеет 6 десятичных знаков
-                                    'timestamp': tx.get('block_timestamp')
+                                    'amount': amount,
+                                    'timestamp': tx.get('block_timestamp'),
+                                    'value_raw': amount_raw
                                 }
                                 transactions.append(normalized)
+                                
+                                logger.debug(f"🔍 TRON TRX транзакция: {amount} TRX, hash: {tx.get('txID')}")
                 
                 return transactions
                 
@@ -310,30 +358,104 @@ class TONClient(BlockchainClient):
             async with httpx.AsyncClient(timeout=30) as client:
                 transactions = []
                 
+                # Проверяем валидность TON адреса
+                if not address or len(address) < 20:
+                    logger.warning(f"⚠️ Неправильный TON адрес: {address}")
+                    return []
+                
+                logger.debug(f"🔍 Запрашиваем TON транзакции для: {address}")
+                
                 url = f"{self.rpc_url}/getTransactions"
                 params = {
                     'address': address,
-                    'limit': 50
+                    'limit': 50,
+                    'archival': 'true'  # Важно для получения архивных данных
                 }
                 
                 response = await client.get(url, params=params)
+                logger.debug(f"TON API ответ: status={response.status_code}")
+                
                 if response.status_code == 200:
                     data = response.json()
                     if data.get('ok'):
                         raw_txs = data.get('result', [])
                         
-                        for tx in raw_txs:
+                        logger.info(f"🔍 TON API вернул {len(raw_txs)} транзакций для {address[:8]}...")
+                        
+                        for i, tx in enumerate(raw_txs):
+                            # Проверяем время транзакции - только последние 5 минут
+                            tx_timestamp = tx.get('utime')
+                            if not is_recent_transaction(tx_timestamp):
+                                continue
+                            
                             # Нормализуем TON транзакцию
                             in_msg = tx.get('in_msg', {})
+                            out_msgs = tx.get('out_msgs', [])
+                            
+                            logger.debug(f"TON транзакция #{i}: in_msg={bool(in_msg)}, out_msgs={len(out_msgs) if out_msgs else 0}")
+                            
+                            # Обрабатываем ВХОДЯЩИЕ транзакции
                             if in_msg and in_msg.get('value'):
-                                normalized = {
-                                    'hash': tx.get('transaction_id', {}).get('hash'),
-                                    'from': in_msg.get('source'),
-                                    'to': in_msg.get('destination'),
-                                    'amount': float(in_msg.get('value', 0)) / (10**9),  # TON имеет 9 десятичных знаков
-                                    'timestamp': tx.get('utime')
-                                }
-                                transactions.append(normalized)
+                                try:
+                                    amount_raw = int(in_msg.get('value', '0'))
+                                    if amount_raw > 0:
+                                        amount = amount_raw / (10**9)  # TON имеет 9 десятичных знаков
+                                        
+                                        # Получаем хеш транзакции правильно
+                                        tx_hash = tx.get('transaction_id', {}).get('hash')
+                                        if not tx_hash:
+                                            tx_hash = f"lt_{tx.get('transaction_id', {}).get('lt', '')}"
+                                        
+                                        from_addr = in_msg.get('source', '')
+                                        to_addr = in_msg.get('destination', '')
+                                        
+                                        normalized = {
+                                            'hash': tx_hash,
+                                            'from': from_addr,
+                                            'to': to_addr,
+                                            'amount': amount,
+                                            'timestamp': tx.get('utime'),
+                                            'value_raw': amount_raw,
+                                            'type': 'incoming'
+                                        }
+                                        transactions.append(normalized)
+                                        
+                                        logger.info(f"💰 TON ВХОДЯЩАЯ: {amount} TON от {from_addr[:8] if from_addr else 'N/A'}... к {to_addr[:8] if to_addr else 'N/A'}... (hash: {tx_hash})")
+                                except (ValueError, TypeError) as e:
+                                    logger.debug(f"⚠️ Ошибка парсинга TON входящей: {e}")
+                            
+                            # Обрабатываем ИСХОДЯЩИЕ транзакции
+                            if out_msgs:
+                                for out_msg in out_msgs:
+                                    if out_msg.get('value'):
+                                        try:
+                                            amount_raw = int(out_msg.get('value', '0'))
+                                            if amount_raw > 0:
+                                                amount = amount_raw / (10**9)
+                                                
+                                                tx_hash = tx.get('transaction_id', {}).get('hash')
+                                                if not tx_hash:
+                                                    tx_hash = f"lt_{tx.get('transaction_id', {}).get('lt', '')}"
+                                                
+                                                from_addr = out_msg.get('source', '')
+                                                to_addr = out_msg.get('destination', '')
+                                                
+                                                normalized = {
+                                                    'hash': tx_hash + '_out',  # Добавляем суффикс для исходящих
+                                                    'from': from_addr,
+                                                    'to': to_addr,
+                                                    'amount': amount,
+                                                    'timestamp': tx.get('utime'),
+                                                    'value_raw': amount_raw,
+                                                    'type': 'outgoing'
+                                                }
+                                                transactions.append(normalized)
+                                                
+                                                logger.info(f"💸 TON ИСХОДЯЩАЯ: {amount} TON от {from_addr[:8] if from_addr else 'N/A'}... к {to_addr[:8] if to_addr else 'N/A'}... (hash: {tx_hash})")
+                                        except (ValueError, TypeError) as e:
+                                            logger.debug(f"⚠️ Ошибка парсинга TON исходящей: {e}")
+                        
+                        logger.info(f"✅ TON: найдено {len(transactions)} входящих транзакций из {len(raw_txs)}")
                 
                 return transactions
                 

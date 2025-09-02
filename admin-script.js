@@ -1239,3 +1239,121 @@ async function deleteTransaction(id) {
 function refreshTransactions() {
     loadTransactions();
 }
+
+// ======================== ДОБАВЛЕНИЕ ТРАНЗАКЦИИ ========================
+
+function showAddTransactionModal() {
+    document.getElementById('addTransactionModal').style.display = 'block';
+    
+    // Очищаем форму
+    document.getElementById('addTransactionForm').reset();
+    
+    // Генерируем случайный хеш если поле пустое
+    const hashField = document.getElementById('txHash');
+    if (!hashField.value) {
+        hashField.placeholder = 'Будет сгенерирован автоматически';
+    }
+}
+
+async function addTransaction() {
+    const form = document.getElementById('addTransactionForm');
+    const formData = new FormData(form);
+    
+    // Собираем данные из формы
+    const transactionData = {
+        user_telegram_id: parseInt(formData.get('txTelegramId')),
+        transaction_type: formData.get('txType'),
+        crypto_currency: formData.get('txCurrency'),
+        blockchain_network: formData.get('txNetwork'),
+        withdraw_amount: parseFloat(formData.get('txAmount')),
+        network_fee: parseFloat(formData.get('txFee')) || 0,
+        recipient_address: formData.get('txAddress'),
+        blockchain_hash: formData.get('txHash') || generateTransactionHash(),
+        transaction_status: 'completed',
+        user_comment: formData.get('txComment') || `Админская транзакция (${formData.get('txType')})`
+    };
+    
+    // Валидация
+    if (!transactionData.user_telegram_id || !transactionData.transaction_type || 
+        !transactionData.crypto_currency || !transactionData.blockchain_network ||
+        !transactionData.withdraw_amount || !transactionData.recipient_address) {
+        showNotification('❌ Пожалуйста, заполните все обязательные поля', 'error');
+        return;
+    }
+    
+    if (transactionData.withdraw_amount <= 0) {
+        showNotification('❌ Сумма должна быть больше 0', 'error');
+        return;
+    }
+    
+    try {
+        // Сначала добавляем транзакцию в wallet_transactions
+        const txResponse = await fetch('/api/transactions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                action: 'add_admin_transaction',
+                ...transactionData 
+            })
+        });
+        
+        if (!txResponse.ok) {
+            throw new Error(`HTTP error! status: ${txResponse.status}`);
+        }
+        
+        const txResult = await txResponse.json();
+        
+        if (!txResult.success) {
+            throw new Error(txResult.error || 'Ошибка создания транзакции');
+        }
+        
+        // Теперь обновляем баланс пользователя
+        const balanceChange = transactionData.transaction_type === 'deposit' 
+            ? transactionData.withdraw_amount 
+            : -transactionData.withdraw_amount;
+            
+        const balanceResponse = await fetch('/api/admin/balances', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'update_balance',
+                telegram_id: transactionData.user_telegram_id,
+                currency: transactionData.crypto_currency.toLowerCase(),
+                amount_change: balanceChange,
+                reason: `admin_transaction_${transactionData.transaction_type}`
+            })
+        });
+        
+        if (!balanceResponse.ok) {
+            console.warn('Транзакция создана, но баланс не обновлен');
+        }
+        
+        // Закрываем модальное окно и обновляем данные
+        closeModal('addTransactionModal');
+        showNotification(`✅ Транзакция успешно добавлена! Хеш: ${transactionData.blockchain_hash}`, 'success');
+        
+        // Обновляем таблицы
+        loadTransactions();
+        if (currentTab === 'balances') {
+            loadBalances();
+        }
+        
+    } catch (error) {
+        console.error('❌ Ошибка добавления транзакции:', error);
+        showNotification('❌ Ошибка добавления транзакции: ' + error.message, 'error');
+    }
+}
+
+function generateTransactionHash() {
+    // Генерируем псевдо-хеш транзакции
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = 'admin_';
+    for (let i = 0; i < 32; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+}
