@@ -14,6 +14,8 @@
     --overlay-color: rgba(0, 0, 0, 0.7);
 }
 
+
+
 /* Базовые стили */
 * {
     margin: 0;
@@ -65,55 +67,157 @@ body {
     padding: 20px;
     min-height: 100vh;
     overflow-x: hidden;
+    background-color: var(--bg-primary);
+    position: relative;
+}
+
+.qr-card {
+    max-width: 300px;
+    margin: 0 auto;
+}
+
+/* Выбор сети */
+.network-selector {
+    margin-bottom: 30px;
+}
+
+.network-option {
     display: flex;
     flex-direction: column;
     align-items: center;
-    background-color: var(--bg-primary);
-    position: relative;
+    gap: 8px;
+    padding: 16px 8px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background-color: transparent;
+}
+
+.network-option:hover {
+    background-color: #f8f9fa;
+}
+
+.network-option.selected {
+    background-color: #e3f2fd;
+    border: 2px solid #2196f3;
+}
+
+.network-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ton-icon {
+    background-color: #0088cc;
+}
+
+.trx-icon {
+    background-color: #FF0000;
+}
+
+.sol-icon {
+    background-color: #000000;
+}
+
+.eth-icon {
+    background-color: #627EEA;
+}
+
+.bnb-icon {
+    background-color: #F3BA2F;
+}
+
+.network-logo {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
+.network-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: #666666;
+    text-align: center;
 }
 
 /* QR карточка */
 .qr-card {
     background-color: var(--bg-card);
-    border-radius: 20px;
-    padding: 20px;
-    width: 100%;
-    max-width: 350px;
+    border-radius: 16px;
+    padding: 50px;
+    margin-top: 50px;
     margin-bottom: 20px;
-    box-shadow: 0 4px 20px var(--shadow-color);
     border: 1px solid var(--border-color);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    position: relative;
+    z-index: 999;
 }
 
-/* QR контейнер */
 .qr-container {
-    width: 200px;
-    height: 200px;
-    margin-bottom: 20px;
+    width: 280px;
+    height: 280px;
+    margin: 0 auto 20px auto;
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: white;
-    border-radius: 15px;
-    padding: 10px;
+    overflow: visible;
+    position: relative;
+    z-index: 1000;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.qr-container svg {
+    max-width: none !important;
+    max-height: none !important;
+    width: 240px !important;
+    height: 240px !important;
+    position: relative !important;
+    z-index: 1001 !important;
+    transform: none !important;
+    box-sizing: border-box !important;
+    background-color: #f8f9fa !important;
+    border-radius: 16px !important;
+    border: 1px solid #e9ecef !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+    margin: 20px !important;
+}
+
+/* Дополнительные гарантии видимости */
+.qr-container * {
+    max-width: none !important;
+    max-height: none !important;
+}
+
+/* Принудительно убираем любые ограничения */
+.qr-container {
+    min-width: 280px !important;
+    min-height: 280px !important;
+    max-width: none !important;
+    max-height: none !important;
+}
+
+/* Убираем ограничения для всей карточки */
+.qr-card {
+    min-width: 200px !important;
+    overflow: visible !important;
 }
 
 /* Инструкции */
 .instructions {
     text-align: center;
-    margin-bottom: 15px;
-    line-height: 1.4;
+    margin-bottom: 20px;
 }
 
 .instruction-line {
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-bottom: 4px;
+    gap: 8px;
+    margin-bottom: 8px;
 }
 
 .instruction-text {
@@ -122,30 +226,38 @@ body {
 }
 
 .ton-icon {
-    display: inline-flex;
+    width: 20px;
+    height: 20px;
+    background-color: #0088cc;
+    border-radius: 50%;
+    display: flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
-    background-color: var(--accent-color);
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.network-logo-small {
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
-    padding: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* Минимальная сумма */
 .min-amount {
-    background-color: rgba(1, 136, 204, 0.1);
-    border: 1px solid var(--accent-color);
-    border-radius: 10px;
-    padding: 8px 15px;
-    margin-bottom: 15px;
     text-align: center;
+    padding: 16px 0;
+    border-top: 1px solid var(--border-color);
+    margin-bottom: 16px;
 }
 
 .min-amount span {
-    font-size: 12px;
-    color: var(--accent-color);
-    font-weight: 500;
+    font-size: 14px;
+    color: var(--text-secondary);
 }
 
 /* Поделиться адресом */
@@ -154,87 +266,120 @@ body {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    background-color: var(--accent-secondary);
-    color: white;
-    padding: 12px 20px;
-    border-radius: 12px;
     cursor: pointer;
-    transition: all 0.3s ease;
-    font-size: 14px;
-    font-weight: 500;
+    transition: opacity 0.2s ease;
 }
 
 .share-address:hover {
-    background-color: #0077bb;
-    transform: scale(1.02);
+    opacity: 0.8;
 }
 
 .share-icon {
-    font-size: 16px;
-    font-weight: bold;
+    font-size: 18px;
+    color: var(--accent-color);
+}
+
+.share-address span {
+    font-size: 14px;
+    color: var(--accent-color);
+    font-weight: 500;
 }
 
 /* Информация об адресе */
 .address-info {
-    width: 100%;
-    max-width: 350px;
-    background-color: var(--bg-card);
-    border-radius: 15px;
-    padding: 20px;
     margin-bottom: 20px;
-    box-shadow: 0 4px 20px var(--shadow-color);
-    border: 1px solid var(--border-color);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.address-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.crypto-name {
+    font-size: 14px;
+    color: #9d9d9d;
+}
+
+.separator {
+    font-size: 14px;
+    color: #9d9d9d;
+}
+
+.network-standard {
+    font-size: 14px;
+    color: #2196f3;
+    font-weight: 500;
+}
+
+.deposit-label {
+    font-size: 14px;
+    color: #2196f3;
+    font-weight: 500;
+}
+
+.external-link-icon {
+    font-size: 14px;
+    color: #2196f3;
 }
 
 .address-container {
-    background-color: var(--bg-secondary);
-    border-radius: 12px;
-    padding: 15px;
-    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+    width: 100%;
 }
 
 .address-line {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 10px;
+    justify-content: center;
+    gap: 4px;
+    flex-wrap: wrap;
 }
 
 .address-text {
-    font-size: 12px;
-    color: var(--text-primary);
-    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    text-align: center;
+    display: inline;
+    max-width: 25ch;
+    word-wrap: break-word;
     word-break: break-all;
     line-height: 1.4;
+}
+
+.address-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    word-break: break-all;
     flex: 1;
 }
 
-/* Иконка копирования */
 .copy-icon {
-    position: relative;
-    width: 24px;
-    height: 24px;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 6px;
-    background-color: var(--bg-primary);
-    transition: all 0.3s ease;
-    flex-shrink: 0;
+    transition: opacity 0.2s ease;
+    position: relative;
+    width: 18px;
+    height: 18px;
+    margin-left: 4px;
 }
 
-.copy-icon:hover {
-    background-color: var(--accent-secondary);
-}
-
-.copy-img {
-    width: 16px;
-    height: 16px;
+.copy-icon img {
+    width: 18px;
+    height: 18px;
     object-fit: contain;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.2s ease;
+    opacity: 0.3;
 }
 
+/* Переключение иконок копирования для разных тем */
 .copy-light {
     display: block;
 }
@@ -251,46 +396,79 @@ body {
     display: block;
 }
 
-.checkmark {
+/* Обе иконки должны иметь одинаковые стили */
+.copy-light,
+.copy-dark {
+    opacity: 0.3;
+    transition: all 0.2s ease;
+}
+
+/* Hover эффект для обеих иконок */
+.copy-icon:hover .copy-light,
+.copy-icon:hover .copy-dark {
+    opacity: 0.7;
+}
+
+/* Скрываем иконки при показе галочки */
+.copy-icon .checkmark {
+    width: 18px;
+    height: 18px;
+    opacity: 0;
+    transition: all 0.2s ease;
     position: absolute;
-    color: #4CAF50;
+    top: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 16px;
     font-weight: bold;
-    opacity: 0;
-    transition: opacity 0.3s ease;
+    color: var(--text-primary);
+    z-index: 1;
 }
 
-.copy-icon.copied .copy-img {
-    opacity: 0;
-}
-
-.copy-icon.copied .checkmark {
+/* Когда галочка видна, скрываем обе иконки */
+.copy-icon .checkmark.visible {
     opacity: 1;
+}
+
+.copy-icon .checkmark.visible ~ .copy-light,
+.copy-icon .checkmark.visible ~ .copy-dark {
+    opacity: 0;
 }
 
 /* Кнопка пополнения */
 .topup-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     background-color: var(--accent-secondary);
     color: white;
-    padding: 15px 30px;
-    border-radius: 15px;
+    padding: 16px 20px;
+    border-radius: 12px;
     cursor: pointer;
-    transition: all 0.3s ease;
-    font-size: 16px;
-    font-weight: 600;
-    text-align: center;
-    min-width: 200px;
-    box-shadow: 0 4px 15px rgba(1, 136, 204, 0.3);
+    transition: background-color 0.2s ease;
+    font-weight: 500;
+    width: fit-content;
+    margin: 0 auto;
+}
+
+.address-display {
+    font-size: 12px;
+    opacity: 0.8;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .topup-button:hover {
-    background-color: #0077bb;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(1, 136, 204, 0.4);
+    background-color: var(--accent-color);
 }
 
-.topup-button:active {
-    transform: translateY(0);
+.wallet-icon {
+    font-size: 20px;
 }
 
 /* Адаптивность */
@@ -299,9 +477,9 @@ body {
         padding: 16px;
     }
     
-    .qr-card, .address-info {
-        padding: 16px;
-        max-width: 100%;
+    .networks-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
     }
     
     .qr-container {
@@ -309,13 +487,17 @@ body {
         height: 180px;
     }
     
-    .address-text {
-        font-size: 11px;
+    .qr-card {
+        padding: 20px;
     }
-    
-    .topup-button {
-        min-width: 180px;
-        padding: 12px 24px;
-        font-size: 14px;
-    }
+}
+
+/* ДОБАВЛЕНО: Стиль для иконки копирования внутри текста */
+.copy-icon-inline {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 5px; /* Создает небольшой отступ */
 }
