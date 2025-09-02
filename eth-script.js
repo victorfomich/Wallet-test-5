@@ -19,6 +19,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // ЗАГРУЖАЕМ ETH БАЛАНС
     loadEthBalance();
+    
+    // ЗАГРУЖАЕМ ETH ТРАНЗАКЦИИ
+    loadEthTransactions();
 });
 
 // Функция для инициализации темы
@@ -299,4 +302,140 @@ function setDefaultEthDisplay() {
     }
     
     console.log('🔧 УСТАНОВЛЕН ДЕФОЛТ ETH');
+}
+
+// ЗАГРУЗКА ETH ТРАНЗАКЦИЙ
+async function loadEthTransactions() {
+    console.log('📊 Начинаем загрузку ETH транзакций...');
+    
+    try {
+        const telegramUser = tg?.initDataUnsafe?.user;
+        if (!telegramUser?.id) {
+            console.warn('📊 Telegram пользователь не найден для загрузки транзакций');
+            showNoTransactions();
+            return;
+        }
+        
+        const telegramId = telegramUser.id;
+        const response = await fetch(`/api/transactions?telegram_id=${telegramId}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success && data.transactions) {
+            const ethTransactions = data.transactions.filter(tx => 
+                tx.crypto_currency === 'ETH' || tx.blockchain_network === 'eth'
+            );
+            
+            if (ethTransactions.length > 0) {
+                displayTransactions(ethTransactions);
+            } else {
+                showNoTransactions();
+            }
+        } else {
+            showNoTransactions();
+        }
+        
+    } catch (error) {
+        console.error('📊 Ошибка загрузки ETH транзакций:', error);
+        showTransactionError();
+    }
+}
+
+function displayTransactions(transactions) {
+    const loadingMessage = document.getElementById('loadingMessage');
+    const noTransactions = document.getElementById('noTransactions');
+    const transactionsList = document.getElementById('transactionsList');
+    
+    if (loadingMessage) loadingMessage.style.display = 'none';
+    if (noTransactions) noTransactions.style.display = 'none';
+    
+    transactionsList.innerHTML = '';
+    
+    transactions.forEach(transaction => {
+        const transactionElement = createTransactionElement(transaction);
+        transactionsList.appendChild(transactionElement);
+    });
+}
+
+function createTransactionElement(transaction) {
+    const div = document.createElement('div');
+    div.className = 'transaction-item';
+    
+    const isDeposit = transaction.transaction_type === 'deposit';
+    const iconClass = isDeposit ? 'deposit' : 'withdraw';
+    const iconSymbol = isDeposit ? '↓' : '↑';
+    const typeText = isDeposit ? 'Пополнение' : 'Вывод';
+    
+    const date = new Date(transaction.created_timestamp);
+    const dateStr = date.toLocaleDateString('ru-RU', {
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    
+    const amount = parseFloat(transaction.withdraw_amount || 0);
+    const amountClass = isDeposit ? 'positive' : 'negative';
+    const amountSign = isDeposit ? '+' : '-';
+    
+    const status = transaction.transaction_status || 'pending';
+    const statusText = {
+        'pending': 'В ожидании',
+        'completed': 'Завершено',
+        'failed': 'Ошибка',
+        'cancelled': 'Отменено'
+    }[status] || status;
+    
+    div.innerHTML = `
+        <div class="transaction-icon ${iconClass}">
+            ${iconSymbol}
+        </div>
+        <div class="transaction-info">
+            <div class="transaction-type">${typeText}</div>
+            <div class="transaction-details">
+                <span class="transaction-network">ETH</span>
+                <span>${dateStr}</span>
+            </div>
+        </div>
+        <div class="transaction-amount">
+            <div class="transaction-crypto ${amountClass}">
+                ${amountSign}${amount.toFixed(6)} ETH
+            </div>
+            <div class="transaction-status ${status}">
+                ${statusText}
+            </div>
+        </div>
+    `;
+    
+    return div;
+}
+
+function showNoTransactions() {
+    const loadingMessage = document.getElementById('loadingMessage');
+    const noTransactions = document.getElementById('noTransactions');
+    
+    if (loadingMessage) loadingMessage.style.display = 'none';
+    if (noTransactions) noTransactions.style.display = 'block';
+}
+
+function showTransactionError() {
+    const loadingMessage = document.getElementById('loadingMessage');
+    const transactionsList = document.getElementById('transactionsList');
+    
+    if (loadingMessage) loadingMessage.style.display = 'none';
+    
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'no-transactions';
+    errorDiv.innerHTML = `
+        <div class="no-transactions-icon">⚠️</div>
+        <div class="no-transactions-text">Ошибка загрузки</div>
+        <div class="no-transactions-subtitle">Не удалось загрузить транзакции</div>
+    `;
+    
+    transactionsList.innerHTML = '';
+    transactionsList.appendChild(errorDiv);
 }

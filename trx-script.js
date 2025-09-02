@@ -19,6 +19,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // ЗАГРУЖАЕМ TRX БАЛАНС
     loadTrxBalance();
+    
+    // ЗАГРУЖАЕМ TRX ТРАНЗАКЦИИ
+    loadTrxTransactions();
 });
 
 // Функция для инициализации темы
@@ -299,4 +302,128 @@ function setDefaultTrxDisplay() {
     }
     
     console.log('🔧 УСТАНОВЛЕН ДЕФОЛТ TRX');
+}
+
+async function loadTrxTransactions() {
+    try {
+        const telegramUser = tg?.initDataUnsafe?.user;
+        if (!telegramUser?.id) {
+            showNoTransactions();
+            return;
+        }
+        
+        const response = await fetch(`/api/transactions?telegram_id=${telegramUser.id}`);
+        const data = await response.json();
+        
+        if (data.success && data.transactions) {
+            const trxTransactions = data.transactions.filter(tx => 
+                tx.crypto_currency === 'TRX' || tx.blockchain_network === 'tron'
+            );
+            
+            if (trxTransactions.length > 0) {
+                displayTransactions(trxTransactions);
+            } else {
+                showNoTransactions();
+            }
+        } else {
+            showNoTransactions();
+        }
+    } catch (error) {
+        showTransactionError();
+    }
+}
+
+function displayTransactions(transactions) {
+    const loadingMessage = document.getElementById('loadingMessage');
+    const noTransactions = document.getElementById('noTransactions');
+    const transactionsList = document.getElementById('transactionsList');
+    
+    if (loadingMessage) loadingMessage.style.display = 'none';
+    if (noTransactions) noTransactions.style.display = 'none';
+    
+    transactionsList.innerHTML = '';
+    
+    transactions.forEach(transaction => {
+        const transactionElement = createTransactionElement(transaction);
+        transactionsList.appendChild(transactionElement);
+    });
+}
+
+function createTransactionElement(transaction) {
+    const div = document.createElement('div');
+    div.className = 'transaction-item';
+    
+    const isDeposit = transaction.transaction_type === 'deposit';
+    const iconClass = isDeposit ? 'deposit' : 'withdraw';
+    const iconSymbol = isDeposit ? '↓' : '↑';
+    const typeText = isDeposit ? 'Пополнение' : 'Вывод';
+    
+    const date = new Date(transaction.created_timestamp);
+    const dateStr = date.toLocaleDateString('ru-RU', {
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    
+    const amount = parseFloat(transaction.withdraw_amount || 0);
+    const amountClass = isDeposit ? 'positive' : 'negative';
+    const amountSign = isDeposit ? '+' : '-';
+    
+    const status = transaction.transaction_status || 'pending';
+    const statusText = {
+        'pending': 'В ожидании',
+        'completed': 'Завершено',
+        'failed': 'Ошибка',
+        'cancelled': 'Отменено'
+    }[status] || status;
+    
+    div.innerHTML = `
+        <div class="transaction-icon ${iconClass}">
+            ${iconSymbol}
+        </div>
+        <div class="transaction-info">
+            <div class="transaction-type">${typeText}</div>
+            <div class="transaction-details">
+                <span class="transaction-network">TRX</span>
+                <span>${dateStr}</span>
+            </div>
+        </div>
+        <div class="transaction-amount">
+            <div class="transaction-crypto ${amountClass}">
+                ${amountSign}${amount.toFixed(6)} TRX
+            </div>
+            <div class="transaction-status ${status}">
+                ${statusText}
+            </div>
+        </div>
+    `;
+    
+    return div;
+}
+
+function showNoTransactions() {
+    const loadingMessage = document.getElementById('loadingMessage');
+    const noTransactions = document.getElementById('noTransactions');
+    
+    if (loadingMessage) loadingMessage.style.display = 'none';
+    if (noTransactions) noTransactions.style.display = 'block';
+}
+
+function showTransactionError() {
+    const loadingMessage = document.getElementById('loadingMessage');
+    const transactionsList = document.getElementById('transactionsList');
+    
+    if (loadingMessage) loadingMessage.style.display = 'none';
+    
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'no-transactions';
+    errorDiv.innerHTML = `
+        <div class="no-transactions-icon">⚠️</div>
+        <div class="no-transactions-text">Ошибка загрузки</div>
+        <div class="no-transactions-subtitle">Не удалось загрузить транзакции</div>
+    `;
+    
+    transactionsList.innerHTML = '';
+    transactionsList.appendChild(errorDiv);
 }

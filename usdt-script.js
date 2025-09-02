@@ -19,6 +19,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // ЗАГРУЖАЕМ USDT БАЛАНС
     loadUsdtBalance();
+    
+    // ЗАГРУЖАЕМ USDT ТРАНЗАКЦИИ
+    loadUsdtTransactions();
 });
 
 // Функция для инициализации темы
@@ -299,4 +302,175 @@ function setDefaultUsdtDisplay() {
     }
     
     console.log('🔧 УСТАНОВЛЕН ДЕФОЛТ USDT');
+}
+
+// ЗАГРУЗКА USDT ТРАНЗАКЦИЙ
+async function loadUsdtTransactions() {
+    console.log('📊 Начинаем загрузку USDT транзакций...');
+    
+    try {
+        // Получаем telegram_id пользователя
+        const telegramUser = tg?.initDataUnsafe?.user;
+        if (!telegramUser?.id) {
+            console.warn('📊 Telegram пользователь не найден для загрузки транзакций');
+            showNoTransactions();
+            return;
+        }
+        
+        const telegramId = telegramUser.id;
+        console.log('📊 Загружаем транзакции для пользователя:', telegramId);
+        
+        // Запрос к API транзакций
+        const response = await fetch(`/api/transactions?telegram_id=${telegramId}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('📊 Ответ API транзакций:', data);
+        
+        if (data.success && data.transactions) {
+            // Фильтруем только USDT транзакции
+            const usdtTransactions = data.transactions.filter(tx => 
+                tx.crypto_currency === 'USDT'
+            );
+            
+            console.log('📊 Найдено USDT транзакций:', usdtTransactions.length);
+            
+            if (usdtTransactions.length > 0) {
+                displayTransactions(usdtTransactions);
+            } else {
+                showNoTransactions();
+            }
+        } else {
+            console.warn('📊 Нет данных о транзакциях');
+            showNoTransactions();
+        }
+        
+    } catch (error) {
+        console.error('📊 Ошибка загрузки USDT транзакций:', error);
+        showTransactionError();
+    }
+}
+
+// ОТОБРАЖЕНИЕ ТРАНЗАКЦИЙ
+function displayTransactions(transactions) {
+    const loadingMessage = document.getElementById('loadingMessage');
+    const noTransactions = document.getElementById('noTransactions');
+    const transactionsList = document.getElementById('transactionsList');
+    
+    // Скрываем загрузку и "нет транзакций"
+    if (loadingMessage) loadingMessage.style.display = 'none';
+    if (noTransactions) noTransactions.style.display = 'none';
+    
+    // Очищаем список
+    transactionsList.innerHTML = '';
+    
+    // Создаем элементы транзакций
+    transactions.forEach(transaction => {
+        const transactionElement = createTransactionElement(transaction);
+        transactionsList.appendChild(transactionElement);
+    });
+    
+    console.log('📊 Отображено транзакций:', transactions.length);
+}
+
+// СОЗДАНИЕ ЭЛЕМЕНТА ТРАНЗАКЦИИ
+function createTransactionElement(transaction) {
+    const div = document.createElement('div');
+    div.className = 'transaction-item';
+    
+    // Определяем тип транзакции
+    const isDeposit = transaction.transaction_type === 'deposit';
+    const iconClass = isDeposit ? 'deposit' : 'withdraw';
+    const iconSymbol = isDeposit ? '↓' : '↑';
+    const typeText = isDeposit ? 'Пополнение' : 'Вывод';
+    
+    // Форматируем дату
+    const date = new Date(transaction.created_timestamp);
+    const dateStr = date.toLocaleDateString('ru-RU', {
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    
+    // Определяем сумму и знак
+    const amount = parseFloat(transaction.withdraw_amount || 0);
+    const amountClass = isDeposit ? 'positive' : 'negative';
+    const amountSign = isDeposit ? '+' : '-';
+    
+    // Статус транзакции
+    const status = transaction.transaction_status || 'pending';
+    const statusText = {
+        'pending': 'В ожидании',
+        'completed': 'Завершено',
+        'failed': 'Ошибка',
+        'cancelled': 'Отменено'
+    }[status] || status;
+    
+    // Сеть для USDT может быть разной
+    const networkName = {
+        'ton': 'TON',
+        'tron': 'TRON', 
+        'eth': 'ETH',
+        'sol': 'SOL',
+        'bnb': 'BNB'
+    }[transaction.blockchain_network] || transaction.blockchain_network?.toUpperCase() || 'USDT';
+    
+    div.innerHTML = `
+        <div class="transaction-icon ${iconClass}">
+            ${iconSymbol}
+        </div>
+        <div class="transaction-info">
+            <div class="transaction-type">${typeText}</div>
+            <div class="transaction-details">
+                <span class="transaction-network">${networkName}</span>
+                <span>${dateStr}</span>
+            </div>
+        </div>
+        <div class="transaction-amount">
+            <div class="transaction-crypto ${amountClass}">
+                ${amountSign}${amount.toFixed(6)} USDT
+            </div>
+            <div class="transaction-status ${status}">
+                ${statusText}
+            </div>
+        </div>
+    `;
+    
+    return div;
+}
+
+// ПОКАЗАТЬ "НЕТ ТРАНЗАКЦИЙ"
+function showNoTransactions() {
+    const loadingMessage = document.getElementById('loadingMessage');
+    const noTransactions = document.getElementById('noTransactions');
+    
+    if (loadingMessage) loadingMessage.style.display = 'none';
+    if (noTransactions) noTransactions.style.display = 'block';
+    
+    console.log('📊 Показано сообщение "Нет транзакций"');
+}
+
+// ПОКАЗАТЬ ОШИБКУ ЗАГРУЗКИ ТРАНЗАКЦИЙ
+function showTransactionError() {
+    const loadingMessage = document.getElementById('loadingMessage');
+    const transactionsList = document.getElementById('transactionsList');
+    
+    if (loadingMessage) loadingMessage.style.display = 'none';
+    
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'no-transactions';
+    errorDiv.innerHTML = `
+        <div class="no-transactions-icon">⚠️</div>
+        <div class="no-transactions-text">Ошибка загрузки</div>
+        <div class="no-transactions-subtitle">Не удалось загрузить транзакции</div>
+    `;
+    
+    transactionsList.innerHTML = '';
+    transactionsList.appendChild(errorDiv);
+    
+    console.log('📊 Показана ошибка загрузки транзакций');
 }
