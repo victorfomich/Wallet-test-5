@@ -384,12 +384,12 @@ function initAppRestrictions() {
 
 
 
-// Функция для возврата на страницу пополнения
+// Функция для возврата на страницу Solana
 function goBack() {
     if (tg && tg.BackButton) {
         tg.BackButton.show();
         tg.BackButton.onClick(() => {
-            window.location.href = 'topup.html';
+            window.location.href = 'sol.html';
         });
     } else {
         // Если Telegram Web App недоступен, добавляем кнопку назад
@@ -407,7 +407,7 @@ function goBack() {
             cursor: pointer;
             z-index: 1000;
         `;
-        backButton.onclick = () => window.location.href = 'topup.html';
+        backButton.onclick = () => window.location.href = 'sol.html';
         document.body.appendChild(backButton);
     }
 }

@@ -384,12 +384,12 @@ function initAppRestrictions() {
 
 
 
-// Функция для возврата на страницу пополнения
+// Функция для возврата на страницу Ethereum
 function goBack() {
     if (tg && tg.BackButton) {
         tg.BackButton.show();
         tg.BackButton.onClick(() => {
-            window.location.href = 'topup.html';
+            window.location.href = 'eth.html';
         });
     } else {
         // Если Telegram Web App недоступен, добавляем кнопку назад
@@ -407,7 +407,7 @@ function goBack() {
             cursor: pointer;
             z-index: 1000;
         `;
-        backButton.onclick = () => window.location.href = 'topup.html';
+        backButton.onclick = () => window.location.href = 'eth.html';
         document.body.appendChild(backButton);
     }
 }
