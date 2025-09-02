@@ -161,7 +161,7 @@ class SupabaseClient:
                 # Определяем поле адреса в зависимости от сети
                 address_field = f"{network}_address"
                 params = {
-                    'select': 'assigned_to',
+                    'select': 'assigned_to_telegram_id',
                     address_field: f'eq.{address}'
                 }
                 
@@ -169,8 +169,8 @@ class SupabaseClient:
                 response.raise_for_status()
                 
                 results = response.json()
-                if results and results[0].get('assigned_to'):
-                    return int(results[0]['assigned_to'])
+                if results and results[0].get('assigned_to_telegram_id'):
+                    return int(results[0]['assigned_to_telegram_id'])
                 
                 return None
                 

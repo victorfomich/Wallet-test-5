@@ -118,7 +118,7 @@ class BlockchainMonitor:
             # Обрабатываем каждый набор адресов
             tasks = []
             for addr_set in address_sets:
-                user_telegram_id = addr_set.get('assigned_to')
+                user_telegram_id = addr_set.get('assigned_to_telegram_id')
                 if not user_telegram_id:
                     continue  # Пропускаем неназначенные адреса
                 
