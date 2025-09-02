@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>QR код TRX - DreamWallet</title>
+    <link rel="stylesheet" href="qr-tron-styles.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script type="text/javascript" src="https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
+    <script src="adreses.js"></script>
+    <script src="user-manager.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- QR код карточка -->
+        <div class="qr-card" id="qrCard">
+            <div class="qr-container" id="qrContainer"></div>
+            
+            <!-- Инструкции -->
+            <div class="instructions">
+                <div class="instruction-line">
+                    <span class="instruction-text">Отправляйте только</span>
+                    <div class="trx-icon">
+                        <img src="tron.png" alt="TRX" style="width: 20px; height: 20px; object-fit: contain;">
+                    </div>
+                    <span class="instruction-text">TRX через</span>
+                </div>
+                <div class="instruction-line">
+                    <span class="instruction-text">сеть TRON, иначе</span>
+                </div>
+                <div class="instruction-line">
+                    <span class="instruction-text">монеты будут утеряны.</span>
+                </div>
+            </div>
+
+            <!-- Минимальная сумма -->
+            <div class="min-amount">
+                <span>Мин. сумма: 1 TRX</span>
+            </div>
+
+            <!-- Поделиться адресом -->
+            <div class="share-address" onclick="shareAddress()">
+                <div class="share-icon">↗</div>
+                <span>Поделиться адресом</span>
+            </div>
+        </div>
+
+        <!-- Информация об адресе -->
+        <div class="address-info" id="addressInfo">
+            <div class="address-header"></div>
+            <div class="address-container">
+                <div class="address-line">
+                    <span class="address-text" id="addressText"></span>
+                    <div class="copy-icon" onclick="copyAddress()">
+                        <img src="copy.png" alt="Копировать" class="copy-img copy-light">
+                        <img src="copy_white.png" alt="Копировать" class="copy-img copy-dark" style="display: none;">
+                        <span class="checkmark">✓</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Пустое пространство для увеличения расстояния -->
+        <div style="height: 30px;"></div>
+
+        <!-- Контейнер для центрирования кнопки -->
+        <div style="display: flex; justify-content: center; width: 100%;">
+            <!-- Кнопка пополнения -->
+            <div class="topup-button" id="topupButton" onclick="window.location.href='index.html'">
+                <span>Вернуться на Главную</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="qr-tron-script.js"></script>
+</body>
+</html>
