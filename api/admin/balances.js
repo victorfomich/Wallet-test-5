@@ -23,18 +23,47 @@ export default async function handler(req, res) {
                     telegram_id: `eq.${telegram_id}`
                 });
                 
+                let userBalance;
                 if (balances.length === 0) {
                     // Создаем баланс по умолчанию для нового пользователя
-                    const defaultBalance = await createDefaultBalance(telegram_id);
-                    return res.status(200).json({ 
-                        success: true, 
-                        balance: defaultBalance 
+                    userBalance = await createDefaultBalance(telegram_id);
+                } else {
+                    userBalance = balances[0];
+                }
+
+                // Авто-пересчет балансов на основе завершенных транзакций
+                try {
+                    const txs = await supabaseRequest('wallet_transactions', 'GET', null, {
+                        user_telegram_id: `eq.${telegram_id}`,
+                        transaction_status: `eq.completed`
                     });
+                    const sums = { usdt: 0, eth: 0, ton: 0, sol: 0, trx: 0 };
+                    for (const tx of (txs || [])) {
+                        const cur = (tx.crypto_currency || '').toLowerCase();
+                        if (!sums.hasOwnProperty(cur)) continue;
+                        const amt = parseFloat(tx.withdraw_amount || 0) || 0;
+                        if (tx.transaction_type === 'deposit') sums[cur] += amt; else if (tx.transaction_type === 'withdraw') sums[cur] -= amt;
+                    }
+
+                    const updateData = {
+                        usdt_amount: sums.usdt,
+                        eth_amount: sums.eth,
+                        ton_amount: sums.ton,
+                        sol_amount: sums.sol,
+                        trx_amount: sums.trx,
+                        updated_at: new Date().toISOString()
+                    };
+                    const updated = await supabaseRequest('user_balances', 'PATCH', updateData, {
+                        telegram_id: `eq.${telegram_id}`
+                    });
+                    userBalance = updated && updated[0] ? updated[0] : userBalance;
+                } catch (recalcErr) {
+                    console.warn('Не удалось выполнить авто-пересчет баланса:', recalcErr.message);
                 }
                 
                 return res.status(200).json({ 
                     success: true, 
-                    balance: balances[0] 
+                    balance: userBalance 
                 });
                 
             } else {
