@@ -67,7 +67,8 @@ export default async function handler(req, res) {
                                 ton_change: Number(((j?.toncoin?.usd_24h_change ?? j?.['the-open-network']?.usd_24h_change)) ?? 0),
                                 sol: Number(j?.solana?.usd ?? 0),
                                 sol_change: Number(j?.solana?.usd_24h_change ?? 0),
-                                trx: Number(j?.tron?.usd ?? 0)
+                                trx: Number(j?.tron?.usd ?? 0),
+                                trx_change: Number(j?.tron?.usd_24h_change ?? 0)
                             };
                         }
                     } catch {}
@@ -162,7 +163,8 @@ export default async function handler(req, res) {
                                 ton_change: Number(((j?.toncoin?.usd_24h_change ?? j?.['the-open-network']?.usd_24h_change)) ?? 0),
                                 sol: Number(j?.solana?.usd ?? 0),
                                 sol_change: Number(j?.solana?.usd_24h_change ?? 0),
-                                trx: Number(j?.tron?.usd ?? 0)
+                                trx: Number(j?.tron?.usd ?? 0),
+                                trx_change: Number(j?.tron?.usd_24h_change ?? 0)
                             };
                         }
                     } catch {}
