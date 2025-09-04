@@ -1200,8 +1200,71 @@ function getStatusText(status) {
 }
 
 async function editTransaction(id) {
-    // TODO: Реализовать редактирование транзакции
-    showNotification('✏️ Редактирование транзакций будет добавлено позже', 'info');
+    try {
+        const resp = await fetch(`/api/transactions?admin=true&transaction_id=${id}`);
+        const data = await resp.json();
+        if (!resp.ok || !data.success || !data.transaction) throw new Error('Не удалось загрузить транзакцию');
+        const tx = data.transaction;
+        // Заполняем форму
+        document.getElementById('editTxId').value = tx.id;
+        document.getElementById('editTxType').value = tx.transaction_type || 'withdraw';
+        document.getElementById('editTxStatus').value = tx.transaction_status || 'pending';
+        document.getElementById('editTxAmount').value = tx.withdraw_amount || 0;
+        document.getElementById('editTxFee').value = tx.network_fee || 0;
+        document.getElementById('editTxCrypto').value = tx.crypto_currency || '';
+        document.getElementById('editTxNetwork').value = tx.blockchain_network || '';
+        document.getElementById('editTxAddress').value = tx.recipient_address || '';
+        document.getElementById('editTxHash').value = tx.blockchain_hash || '';
+        // Преобразуем ISO в datetime-local
+        const dt = tx.created_timestamp ? new Date(tx.created_timestamp) : null;
+        if (dt && !isNaN(dt.getTime())) {
+            const tzOffset = dt.getTimezoneOffset() * 60000;
+            const localISO = new Date(dt - tzOffset).toISOString().slice(0,16);
+            document.getElementById('editTxCreated').value = localISO;
+        } else {
+            document.getElementById('editTxCreated').value = '';
+        }
+        document.getElementById('editTransactionModal').style.display = 'block';
+    } catch (e) {
+        console.error(e);
+        showNotification('❌ Ошибка загрузки транзакции', 'error');
+    }
+}
+
+async function saveTransactionEdits() {
+    const id = document.getElementById('editTxId').value;
+    const type = document.getElementById('editTxType').value;
+    const status = document.getElementById('editTxStatus').value;
+    const amount = parseFloat(document.getElementById('editTxAmount').value || 0);
+    const fee = parseFloat(document.getElementById('editTxFee').value || 0);
+    const crypto = (document.getElementById('editTxCrypto').value || '').toUpperCase();
+    const network = (document.getElementById('editTxNetwork').value || '').toLowerCase();
+    const address = document.getElementById('editTxAddress').value || '';
+    const tx_hash = document.getElementById('editTxHash').value || '';
+    const createdLocal = document.getElementById('editTxCreated').value; // yyyy-MM-ddTHH:mm
+    let created_timestamp = null;
+    if (createdLocal) {
+        // Преобразуем локальное время в ISO
+        const dt = new Date(createdLocal);
+        if (!isNaN(dt.getTime())) {
+            created_timestamp = dt.toISOString();
+        }
+    }
+    try {
+        const resp = await fetch(`/api/transactions?id=${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status, tx_hash, type, amount, fee, address, crypto, network, created_timestamp })
+        });
+        const data = await resp.json();
+        if (!resp.ok || !data.success) throw new Error(data.error || 'Ошибка сохранения');
+        showNotification('✅ Транзакция обновлена', 'success');
+        closeModal('editTransactionModal');
+        loadTransactions();
+    } catch (e) {
+        console.error(e);
+        showNotification('❌ Ошибка сохранения транзакции: ' + e.message, 'error');
+    }
 }
 
 async function deleteTransaction(id) {

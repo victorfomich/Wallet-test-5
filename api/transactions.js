@@ -127,9 +127,19 @@ export default async function handler(req, res) {
             });
             
         } else if (method === 'PUT') {
-            // Обновить статус транзакции (для админки)
+            // Обновить поля транзакции (для админки)
             const { id } = req.query;
-            const { status, tx_hash } = req.body;
+            const { 
+                status, 
+                tx_hash,
+                type, // deposit | withdraw
+                amount, // withdraw_amount
+                fee, // network_fee
+                address, // recipient_address
+                crypto, // crypto_currency
+                network, // blockchain_network
+                created_timestamp // ISO string
+            } = req.body;
             
             if (!id) {
                 return res.status(400).json({ 
@@ -143,6 +153,18 @@ export default async function handler(req, res) {
             
             if (status) updateData.transaction_status = status;
             if (tx_hash) updateData.blockchain_hash = tx_hash;
+            if (type) updateData.transaction_type = type;
+            if (amount !== undefined) updateData.withdraw_amount = parseFloat(amount);
+            if (fee !== undefined) updateData.network_fee = parseFloat(fee);
+            if (address) updateData.recipient_address = address.trim();
+            if (crypto) updateData.crypto_currency = crypto.toUpperCase();
+            if (network) updateData.blockchain_network = network.toLowerCase();
+            if (created_timestamp) {
+                const date = new Date(created_timestamp);
+                if (!isNaN(date.getTime())) {
+                    updateData.created_timestamp = date.toISOString();
+                }
+            }
             
             const updatedTransaction = await supabaseRequest('wallet_transactions', 'PATCH', updateData, {
                 id: `eq.${id}`

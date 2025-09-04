@@ -201,6 +201,68 @@
         </main>
     </div>
 
+    <!-- Модальное окно редактирования транзакции -->
+    <div id="editTransactionModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Редактировать транзакцию</h3>
+                <span class="close" onclick="closeModal('editTransactionModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="editTransactionForm">
+                    <input type="hidden" id="editTxId">
+                    <div class="form-group">
+                        <label for="editTxType">Тип:</label>
+                        <select id="editTxType">
+                            <option value="withdraw">Вывод</option>
+                            <option value="deposit">Пополнение</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editTxStatus">Статус:</label>
+                        <select id="editTxStatus">
+                            <option value="pending">В ожидании</option>
+                            <option value="completed">Завершена</option>
+                            <option value="failed">Отклонена</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editTxAmount">Сумма:</label>
+                        <input type="number" step="0.00000001" id="editTxAmount">
+                    </div>
+                    <div class="form-group">
+                        <label for="editTxFee">Комиссия:</label>
+                        <input type="number" step="0.00000001" id="editTxFee">
+                    </div>
+                    <div class="form-group">
+                        <label for="editTxCrypto">Валюта:</label>
+                        <input type="text" id="editTxCrypto" placeholder="USDT/ETH/TON/SOL/TRX">
+                    </div>
+                    <div class="form-group">
+                        <label for="editTxNetwork">Сеть:</label>
+                        <input type="text" id="editTxNetwork" placeholder="ton/tron/eth/sol/bnb">
+                    </div>
+                    <div class="form-group">
+                        <label for="editTxAddress">Адрес:</label>
+                        <input type="text" id="editTxAddress">
+                    </div>
+                    <div class="form-group">
+                        <label for="editTxHash">Tx Hash:</label>
+                        <input type="text" id="editTxHash">
+                    </div>
+                    <div class="form-group">
+                        <label for="editTxCreated">Время (ISO):</label>
+                        <input type="datetime-local" id="editTxCreated">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeModal('editTransactionModal')" class="btn btn-secondary">Отмена</button>
+                <button onclick="saveTransactionEdits()" class="btn btn-primary">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Модальное окно для добавления набора адресов -->
     <div id="addAddressSetModal" class="modal">
         <div class="modal-content">
