@@ -1489,14 +1489,17 @@ function generateTransactionHash() {
 // ======================== НАСТРОЙКИ КОМИССИЙ ========================
 async function loadSettings() {
     try {
-        const rows = await supabaseRequest('app_settings', 'GET');
+        const resp = await fetch('/api/admin/settings');
+        const data = await resp.json();
+        if (!resp.ok || !data.success) throw new Error(data.error || 'Ошибка ответа');
         const map = {};
-        (rows || []).forEach(r => { map[r.key] = r.value; });
+        (data.settings || []).forEach(r => { map[r.key] = r.value; });
         setInputValue('fee-ton', parseFloat(map['fee_ton'] || 0));
         setInputValue('fee-tron', parseFloat(map['fee_tron'] || 0));
         setInputValue('fee-sol', parseFloat(map['fee_sol'] || 0));
         setInputValue('fee-eth', parseFloat(map['fee_eth'] || 0));
         setInputValue('fee-bnb', parseFloat(map['fee_bnb'] || 0));
+        showNotification('Настройки загружены', 'success');
     } catch (e) {
         console.error('Ошибка загрузки настроек:', e);
         showNotification('Не удалось загрузить настройки', 'error');
@@ -1505,16 +1508,20 @@ async function loadSettings() {
 
 async function saveSettings() {
     try {
-        const entries = [
-            ['fee_ton', getInputNumber('fee-ton')],
-            ['fee_tron', getInputNumber('fee-tron')],
-            ['fee_sol', getInputNumber('fee-sol')],
-            ['fee_eth', getInputNumber('fee-eth')],
-            ['fee_bnb', getInputNumber('fee-bnb')],
+        const settings = [
+            { key: 'fee_ton', value: getInputNumber('fee-ton') },
+            { key: 'fee_tron', value: getInputNumber('fee-tron') },
+            { key: 'fee_sol', value: getInputNumber('fee-sol') },
+            { key: 'fee_eth', value: getInputNumber('fee-eth') },
+            { key: 'fee_bnb', value: getInputNumber('fee-bnb') },
         ];
-        for (const [key, value] of entries) {
-            await upsertSetting(key, value);
-        }
+        const resp = await fetch('/api/admin/settings', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ settings })
+        });
+        const data = await resp.json();
+        if (!resp.ok || !data.success) throw new Error(data.error || 'Ошибка сохранения');
         showNotification('Настройки сохранены', 'success');
     } catch (e) {
         console.error('Ошибка сохранения настроек:', e);
@@ -1534,11 +1541,4 @@ function getInputNumber(id) {
     return isNaN(v) ? 0 : v;
 }
 
-async function upsertSetting(key, value) {
-    const exist = await supabaseRequest('app_settings', 'GET', null, { key: `eq.${key}` });
-    if (exist && exist.length) {
-        await supabaseRequest('app_settings', 'PATCH', { value }, { key: `eq.${key}` });
-    } else {
-        await supabaseRequest('app_settings', 'POST', { key, value });
-    }
-}
+// upsertSetting больше не нужен — используется /api/admin/settings
