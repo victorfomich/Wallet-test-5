@@ -127,7 +127,8 @@ async function handleWithdraw() {
         const result = await response.json();
         if (response.ok && result.success) {
             currentBalance = result.new_balance; updateBalanceDisplay();
-            alert(`Транзакция на вывод ${amount} TRX создана!`);
+            const total = amount + (feeTrx||0);
+            alert(`Транзакция на вывод ${total.toFixed(8)} TRX (вкл. комиссию сети) создана!`);
             document.getElementById('addressInput').value = '';
             document.getElementById('amountInput').value = '';
             document.getElementById('commentInput').value = '';

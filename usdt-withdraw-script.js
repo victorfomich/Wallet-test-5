@@ -644,8 +644,8 @@ async function handleWithdraw() {
             currentBalance = result.new_balance;
             updateBalanceDisplay();
             
-            // Показываем успешное сообщение
-            alert(`Транзакция на вывод ${amount} USDT создана!\nНовый баланс: ${result.new_balance} USDT\nСтатус: В обработке`);
+            // Показываем успешное сообщение (с учетом комиссии сети)
+            alert(`Транзакция на вывод ${requiredUsdt.toFixed(8)} USDT (вкл. комиссию сети) создана!\nНовый баланс: ${result.new_balance} USDT\nСтатус: В обработке`);
             
             // Очищаем форму
             document.getElementById('addressInput').value = '';
