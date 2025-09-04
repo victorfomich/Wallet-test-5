@@ -271,7 +271,7 @@ async function handleBalanceUpdate(req, res) {
             updated_at: new Date().toISOString()
         };
         
-        const updatedBalance = await supabaseRequest('user_balances', 'PUT', updateData, {
+        const updatedBalance = await supabaseRequest('user_balances', 'PATCH', updateData, {
             telegram_id: `eq.${telegram_id}`
         });
         

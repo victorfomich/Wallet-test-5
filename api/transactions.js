@@ -170,6 +170,36 @@ export default async function handler(req, res) {
                 id: `eq.${id}`
             });
             
+            // Если меняется статус, синхронизируем баланс при необходимости
+            try {
+                if (status || type || amount !== undefined || crypto) {
+                    const txAfter = updatedTransaction[0];
+                    if (txAfter) {
+                        const userId = txAfter.user_telegram_id;
+                        const currency = (crypto || txAfter.crypto_currency || '').toUpperCase();
+                        const finalType = type || txAfter.transaction_type;
+                        const finalStatus = status || txAfter.transaction_status;
+                        const delta = parseFloat(amount !== undefined ? amount : txAfter.withdraw_amount) || 0;
+                        if (userId && currency && delta > 0) {
+                            if (finalStatus === 'completed') {
+                                const change = finalType === 'deposit' ? delta : -delta;
+                                const updateData = { [`${currency.toLowerCase()}_amount`]: null };
+                                // Получить текущий баланс
+                                const balances = await supabaseRequest('user_balances', 'GET', null, { telegram_id: `eq.${userId}` });
+                                if (balances && balances.length) {
+                                    const current = parseFloat(balances[0][`${currency.toLowerCase()}_amount`] || 0);
+                                    updateData[`${currency.toLowerCase()}_amount`] = current + change;
+                                    updateData.updated_at = new Date().toISOString();
+                                    await supabaseRequest('user_balances', 'PATCH', updateData, { telegram_id: `eq.${userId}` });
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (syncErr) {
+                console.warn('Не удалось синхронизировать баланс при обновлении транзакции:', syncErr.message);
+            }
+            
             return res.status(200).json({ 
                 success: true, 
                 transaction: updatedTransaction[0],
