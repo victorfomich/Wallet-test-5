@@ -1602,6 +1602,10 @@ function setInputValue(id, value) {
         el.style.opacity = '1';
     }
     
+    // Форсируем явный цвет текста (на случай если стиль перетёрт)
+    el.style.color = '#111';
+    el.style.webkitTextFillColor = '#111';
+
     // Множественные способы установки значения
     el.value = num.toString();
     el.setAttribute('value', num.toString());

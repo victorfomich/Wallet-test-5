@@ -216,6 +216,24 @@ body {
     border: 1px solid #e1e5e9;
 }
 
+/* Явные стили для инпутов настроек (некоторые браузеры могли скрывать текст) */
+#settings-tab input[type="number"] {
+    color: #111 !important;
+    -webkit-text-fill-color: #111 !important;
+    background: #fff !important;
+    border: 2px solid #e1e5e9;
+    border-radius: 6px;
+    padding: 8px 10px;
+    width: 140px;
+    opacity: 1 !important;
+    caret-color: #111;
+}
+
+#settings-tab input[type="number"]:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
 .data-table {
     width: 100%;
     border-collapse: collapse;
