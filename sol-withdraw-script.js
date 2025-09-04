@@ -1,10 +1,19 @@
 let tg = window.Telegram.WebApp;
 let currentBalance = 0;
+let feeSol = 0; // комиссия из админки (SOL)
 
 document.addEventListener('DOMContentLoaded', function() {
     if (tg && tg.ready) tg.ready();
     document.documentElement.setAttribute('data-theme', 'dark');
     initHandlers();
+    // загрузим комиссию SOL из настроек
+    fetch('/api/admin/settings').then(r=>r.json()).then(d=>{
+        if (d?.success && Array.isArray(d.settings)) {
+            const sol = d.settings.find(s=> (s.network||'').toLowerCase()==='sol');
+            feeSol = parseFloat(sol?.fee)||0;
+            updateFeeInfo();
+        }
+    }).catch(()=>{});
     loadUserBalance();
     initBackButton();
 });
@@ -29,14 +38,17 @@ async function pasteAddress() {
 
 function setMaxAmount() {
     const amountInput = document.getElementById('amountInput');
-    amountInput.value = currentBalance.toFixed(8);
+    const maxNet = Math.max(0, currentBalance - (feeSol||0));
+    amountInput.value = maxNet.toFixed(8);
     validateForm();
 }
 
 function updateFeeInfo() {
     const amount = parseFloat(document.getElementById('amountInput').value) || 0;
-    document.getElementById('networkFee').textContent = '0.01 SOL';
-    document.getElementById('totalAmount').textContent = `${amount.toFixed(8)} SOL`;
+    const fee = feeSol || 0;
+    document.getElementById('networkFee').textContent = `${fee} SOL`;
+    const total = amount + fee;
+    document.getElementById('totalAmount').textContent = `${total.toFixed(8)} SOL`;
 }
 
 function toggleComment() {
@@ -106,8 +118,8 @@ async function handleWithdraw() {
                 type: 'withdraw',
                 crypto: 'SOL',
                 network: 'sol',
-                amount: amount,
-                fee: 0.01,
+                amount: amount + (feeSol||0),
+                fee: (feeSol||0),
                 address: address,
                 comment: comment || null
             })

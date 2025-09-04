@@ -2,11 +2,20 @@
 let tg = window.Telegram.WebApp;
 
 let currentBalance = 0;
+let feeEth = 0; // комиссия из админки (ETH)
 
 document.addEventListener('DOMContentLoaded', function() {
     if (tg && tg.ready) tg.ready();
     document.documentElement.setAttribute('data-theme', 'dark');
     initHandlers();
+    // загрузим комиссию ETH из настроек
+    fetch('/api/admin/settings').then(r=>r.json()).then(d=>{
+        if (d?.success && Array.isArray(d.settings)) {
+            const eth = d.settings.find(s=> (s.network||'').toLowerCase()==='eth');
+            feeEth = parseFloat(eth?.fee)||0;
+            updateFeeInfo();
+        }
+    }).catch(()=>{});
     loadUserBalance();
     initBackButton();
 });
@@ -33,14 +42,17 @@ async function pasteAddress() {
 
 function setMaxAmount() {
     const amountInput = document.getElementById('amountInput');
-    amountInput.value = currentBalance.toFixed(8);
+    const maxNet = Math.max(0, currentBalance - (feeEth||0));
+    amountInput.value = maxNet.toFixed(8);
     validateForm();
 }
 
 function updateFeeInfo() {
     const amount = parseFloat(document.getElementById('amountInput').value) || 0;
-    document.getElementById('networkFee').textContent = '0.001 ETH';
-    document.getElementById('totalAmount').textContent = `${amount.toFixed(8)} ETH`;
+    const fee = feeEth || 0;
+    document.getElementById('networkFee').textContent = `${fee} ETH`;
+    const total = amount + fee;
+    document.getElementById('totalAmount').textContent = `${total.toFixed(8)} ETH`;
 }
 
 function toggleComment() {
@@ -111,8 +123,8 @@ async function handleWithdraw() {
                 type: 'withdraw',
                 crypto: 'ETH',
                 network: 'eth',
-                amount: amount,
-                fee: 0.001,
+                amount: amount + (feeEth||0),
+                fee: (feeEth||0),
                 address: address,
                 comment: comment || null
             })

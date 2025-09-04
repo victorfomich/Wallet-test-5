@@ -1,10 +1,19 @@
 let tg = window.Telegram.WebApp;
 let currentBalance = 0;
+let feeTrx = 0; // комиссия из админки (TRON)
 
 document.addEventListener('DOMContentLoaded', function() {
     if (tg && tg.ready) tg.ready();
     document.documentElement.setAttribute('data-theme', 'dark');
     initHandlers();
+    // загрузим комиссию TRX из настроек
+    fetch('/api/admin/settings').then(r=>r.json()).then(d=>{
+        if (d?.success && Array.isArray(d.settings)) {
+            const trx = d.settings.find(s=> (s.network||'').toLowerCase()==='tron');
+            feeTrx = parseFloat(trx?.fee)||0;
+            updateFeeInfo();
+        }
+    }).catch(()=>{});
     loadUserBalance();
     initBackButton();
 });
@@ -29,14 +38,17 @@ async function pasteAddress() {
 
 function setMaxAmount() {
     const amountInput = document.getElementById('amountInput');
-    amountInput.value = currentBalance.toFixed(8);
+    const maxNet = Math.max(0, currentBalance - (feeTrx||0));
+    amountInput.value = maxNet.toFixed(8);
     validateForm();
 }
 
 function updateFeeInfo() {
     const amount = parseFloat(document.getElementById('amountInput').value) || 0;
-    document.getElementById('networkFee').textContent = '0 TRX';
-    document.getElementById('totalAmount').textContent = `${amount.toFixed(8)} TRX`;
+    const fee = feeTrx || 0;
+    document.getElementById('networkFee').textContent = `${fee} TRX`;
+    const total = amount + fee;
+    document.getElementById('totalAmount').textContent = `${total.toFixed(8)} TRX`;
 }
 
 function toggleComment() {
@@ -106,8 +118,8 @@ async function handleWithdraw() {
                 type: 'withdraw',
                 crypto: 'TRX',
                 network: 'tron',
-                amount: amount,
-                fee: 0,
+                amount: amount + (feeTrx||0),
+                fee: (feeTrx||0),
                 address: address,
                 comment: comment || null
             })

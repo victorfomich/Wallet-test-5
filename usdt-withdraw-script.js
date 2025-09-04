@@ -4,16 +4,19 @@ let tg = window.Telegram.WebApp;
 // Глобальные переменные
 let currentNetwork = 'ton';
 let currentBalance = 0;
+let networkFees = { ton: 0, tron: 0, sol: 0, eth: 0, bnb: 0 }; // комиссии из админки (в нативной монете)
+let networkPricesUsd = { ton: 0, tron: 0, sol: 0, eth: 0, bnb: 0 }; // цены монет из баланса
+const NETWORK_SYMBOLS = { ton: 'TON', tron: 'TRX', sol: 'SOL', eth: 'ETH', bnb: 'BNB' };
 
 // Данные о сетях
 const NETWORK_DATA = {
     ton: {
         name: 'The Open Network',
         type: 'Сеть',
-        fee: '0.1 TON',
+        fee: '0 TON',
         icon: 'toncoin.png',
         iconClass: 'ton-icon',
-        feeAmount: 0.1,
+        feeAmount: 0,
         feeCurrency: 'TON'
     },
     tron: {
@@ -28,28 +31,28 @@ const NETWORK_DATA = {
     sol: {
         name: 'Solana',
         type: 'Сеть',
-        fee: '0.01 SOL',
+        fee: '0 SOL',
         icon: 'solana.png',
         iconClass: 'sol-icon',
-        feeAmount: 0.01,
+        feeAmount: 0,
         feeCurrency: 'SOL'
     },
     eth: {
         name: 'Ethereum',
         type: 'Сеть',
-        fee: '0.01 ETH',
+        fee: '0 ETH',
         icon: 'ethereum.svg',
         iconClass: 'eth-icon',
-        feeAmount: 0.01,
+        feeAmount: 0,
         feeCurrency: 'ETH'
     },
     bnb: {
         name: 'BNB Smart Chain',
         type: 'Сеть',
-        fee: '0.01 BNB',
+        fee: '0 BNB',
         icon: 'bnb.webp',
         iconClass: 'bnb-icon',
-        feeAmount: 0.01,
+        feeAmount: 0,
         feeCurrency: 'BNB'
     }
 };
@@ -69,8 +72,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // Инициализируем обработчики
     initEventHandlers();
     
-    // Загружаем баланс пользователя
-    loadUserBalance();
+    // Загружаем настройки комиссий и баланс/цены
+    Promise.all([fetchAndApplySettings(), loadUserBalance()]).then(() => {
+        // После загрузки данных обновляем комиссию и UI
+        updateNetworkDataFromState();
+        updateNetworkDisplay(getCurrentNetworkInfo());
+        updateNetworkOptionsFees();
+        updateFeeInfo();
+    }).catch(() => {
+        updateFeeInfo();
+    });
     
     // Устанавливаем сеть из URL параметров
     initNetworkFromUrl();
@@ -79,7 +90,7 @@ document.addEventListener('DOMContentLoaded', function() {
     updateAddressPlaceholder();
     
     // Обновляем информацию о комиссии
-    updateFeeInfo();
+    // (вызов перенесён после загрузки настроек)
     
     // Инициализируем ограничения приложения
     initAppRestrictions();
@@ -87,6 +98,36 @@ document.addEventListener('DOMContentLoaded', function() {
     // Показываем кнопку назад
     initBackButton();
 });
+
+// Загрузка комиссий из API админки
+async function fetchAndApplySettings() {
+    try {
+        const resp = await fetch('/api/admin/settings');
+        const data = await resp.json();
+        if (resp.ok && data && data.success && Array.isArray(data.settings)) {
+            const map = {};
+            data.settings.forEach(s => {
+                if (s && typeof s.network === 'string') {
+                    const n = s.network.toLowerCase();
+                    const feeNum = parseFloat(s.fee) || 0;
+                    map[n] = feeNum;
+                }
+            });
+            networkFees = { ...networkFees, ...map };
+            updateNetworkDataFromState();
+        }
+    } catch (e) {
+        console.warn('Не удалось загрузить комиссии настроек', e);
+    }
+}
+
+function updateNetworkDataFromState() {
+    Object.keys(NETWORK_DATA).forEach(n => {
+        const fee = parseFloat(networkFees[n] || 0) || 0;
+        NETWORK_DATA[n].feeAmount = fee;
+        NETWORK_DATA[n].fee = `${fee} ${NETWORK_SYMBOLS[n]}`;
+    });
+}
 
 // Инициализация темы
 function initTheme() {
@@ -214,6 +255,17 @@ function updateNetworkDisplay(data) {
     networkSelector.addEventListener('click', showNetworkModal);
 }
 
+function updateNetworkOptionsFees() {
+    const options = document.querySelectorAll('.network-option');
+    options.forEach(opt => {
+        const net = opt.getAttribute('data-network');
+        const feeInfo = opt.querySelector('.network-fee-info');
+        if (net && feeInfo && NETWORK_DATA[net]) {
+            feeInfo.textContent = NETWORK_DATA[net].fee;
+        }
+    });
+}
+
 // Вставка адреса из буфера обмена
 async function pasteAddress() {
     try {
@@ -235,7 +287,10 @@ async function pasteAddress() {
 // Установка максимальной суммы
 function setMaxAmount() {
     const amountInput = document.getElementById('amountInput');
-    amountInput.value = currentBalance.toFixed(8);
+    const feeNative = parseFloat(NETWORK_DATA[currentNetwork].feeAmount || 0) || 0;
+    const feeUsd = feeNative * getNetworkUsdPrice(currentNetwork);
+    const maxNet = Math.max(0, currentBalance - (feeUsd || 0));
+    amountInput.value = maxNet.toFixed(8);
     validateForm();
 }
 
@@ -290,9 +345,32 @@ function updateFeeInfo() {
     if (networkFeeElement && totalAmountElement) {
         const networkInfo = getCurrentNetworkInfo();
         const amount = parseFloat(document.getElementById('amountInput').value) || 0;
+
+        // комиссия сети в нативной монете (например TON)
+        const feeNative = parseFloat(networkInfo.feeAmount || 0) || 0;
+        // цена нативной монеты в USD — возьмем из балансов (если есть). Для USDT достаточно цены TON из index (балансы)
+        const priceUsd = getNetworkUsdPrice(currentNetwork);
+
+        // Конвертируем комиссию в USD
+        const feeUsd = feeNative * priceUsd;
+        // Требуемая сумма USDT с учетом USD-комиссии
+        const requiredUsdt = amount + feeUsd; // USDT ~ $1
         
-        networkFeeElement.textContent = networkInfo.fee;
-        totalAmountElement.textContent = `${amount.toFixed(8)} USDT`;
+        networkFeeElement.textContent = `${feeNative} ${NETWORK_SYMBOLS[currentNetwork]}`;
+        totalAmountElement.textContent = `${requiredUsdt.toFixed(8)} USDT`;
+    }
+}
+
+function getNetworkUsdPrice(network) {
+    // Пытаемся использовать последние известные цены из user balance загрузки
+    // Если недоступно — вернем 0 для безопасного поведения
+    switch (network) {
+        case 'ton': return parseFloat(window.__balance_prices?.ton_price || 0) || 0;
+        case 'tron': return parseFloat(window.__balance_prices?.trx_price || 0) || 0;
+        case 'sol': return parseFloat(window.__balance_prices?.sol_price || 0) || 0;
+        case 'eth': return parseFloat(window.__balance_prices?.eth_price || 0) || 0;
+        case 'bnb': return 0; // в балансах нет цены BNB, можно расширить позже
+        default: return 0;
     }
 }
 
@@ -319,7 +397,10 @@ function validateForm() {
     
     const hasAddress = addressInput.value.trim().length > 0;
     const hasAmount = amountInput.value && parseFloat(amountInput.value) > 0;
-    const isValidAmount = parseFloat(amountInput.value) <= currentBalance;
+    const netAmount = parseFloat(amountInput.value) || 0;
+    const feeUsd = (NETWORK_DATA[currentNetwork].feeAmount || 0) * getNetworkUsdPrice(currentNetwork);
+    const requiredUsdt = netAmount + (feeUsd || 0);
+    const isValidAmount = requiredUsdt <= currentBalance && netAmount > 0;
     
     const isValid = hasAddress && hasAmount && isValidAmount;
     
@@ -355,8 +436,15 @@ async function loadUserBalance() {
         
         const data = await response.json();
         
-        if (data.success && data.balance && data.balance.usdt_amount !== undefined) {
-            currentBalance = data.balance.usdt_amount;
+        if (data.success && data.balance) {
+            currentBalance = data.balance.usdt_amount ?? 0;
+            // Сохраняем цены для конвертации комиссий в USD
+            window.__balance_prices = {
+                ton_price: data.balance.ton_price,
+                trx_price: data.balance.trx_price,
+                sol_price: data.balance.sol_price,
+                eth_price: data.balance.eth_price
+            };
             updateBalanceDisplay();
         } else {
             currentBalance = 0;
@@ -520,7 +608,14 @@ async function handleWithdraw() {
         
         // Определяем комиссию по сети
         const currentNetworkInfo = getCurrentNetworkInfo();
-        const fee = currentNetworkInfo.feeAmount || 0;
+        const fee = currentNetworkInfo.feeAmount || 0; // в нативной монете сети
+        // Вычисляем необходимую сумму USDT с учетом USD-эквивалента комиссии сети
+        const feeUsd = fee * getNetworkUsdPrice(currentNetwork);
+        const requiredUsdt = amount + feeUsd;
+        if (requiredUsdt > currentBalance) {
+            alert(`Недостаточно средств с учетом комиссии сети. Нужно как минимум ${requiredUsdt.toFixed(8)} USDT`);
+            return;
+        }
         
         // Отправляем запрос на создание транзакции
         const response = await fetch('/api/transactions', {
@@ -533,8 +628,8 @@ async function handleWithdraw() {
                 type: 'withdraw',
                 crypto: 'USDT',
                 network: currentNetwork,
-                amount: amount,
-                fee: fee,
+                amount: requiredUsdt,
+                fee: feeUsd,
                 address: address,
                 comment: comment || null
             })
