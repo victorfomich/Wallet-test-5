@@ -1489,6 +1489,13 @@ function generateTransactionHash() {
 // ======================== НАСТРОЙКИ КОМИССИЙ ========================
 async function loadSettings() {
     try {
+        // Убеждаемся что находимся на вкладке настроек
+        if (!document.querySelector('#settings-tab.active')) {
+            console.log('🔄 Переключаемся на вкладку настроек...');
+            showTab('settings');
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
         const resp = await fetch('/api/admin/settings');
         const data = await resp.json();
         console.log('📋 Ответ настроек:', data);
@@ -1511,11 +1518,42 @@ async function loadSettings() {
         
         console.log('🔢 Значения для инпутов:', { tonFee, tronFee, solFee, ethFee, bnbFee });
         
-        setInputValue('fee-ton', tonFee);
-        setInputValue('fee-tron', tronFee);
-        setInputValue('fee-sol', solFee);
-        setInputValue('fee-eth', ethFee);
-        setInputValue('fee-bnb', bnbFee);
+        // Многократно пытаемся установить значения с задержками
+        const setWithRetry = async (id, value, retries = 3) => {
+            for (let i = 0; i < retries; i++) {
+                await new Promise(resolve => setTimeout(resolve, 50 * i));
+                setInputValue(id, value);
+                const el = document.getElementById(id);
+                if (el && el.value == value) {
+                    console.log(`✅ ${id} успешно установлен: ${value}`);
+                    break;
+                }
+                console.log(`⚠️ ${id} попытка ${i + 1}/${retries}`);
+            }
+        };
+        
+        await Promise.all([
+            setWithRetry('fee-ton', tonFee),
+            setWithRetry('fee-tron', tronFee),
+            setWithRetry('fee-sol', solFee),
+            setWithRetry('fee-eth', ethFee),
+            setWithRetry('fee-bnb', bnbFee)
+        ]);
+        
+        // Финальная проверка и принудительное обновление DOM
+        setTimeout(() => {
+            ['fee-ton', 'fee-tron', 'fee-sol', 'fee-eth', 'fee-bnb'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    console.log(`🔍 Финальная проверка ${id}: value="${el.value}"`);
+                    // Принудительно перерисовываем элемент
+                    el.style.display = 'none';
+                    el.offsetHeight; // force reflow
+                    el.style.display = '';
+                }
+            });
+        }, 200);
+        
         showNotification('Настройки загружены', 'success');
     } catch (e) {
         console.error('Ошибка загрузки настроек:', e);
@@ -1551,23 +1589,42 @@ function setInputValue(id, value) {
     const el = document.getElementById(id);
     if (!el) {
         console.warn('settings: input not found', id);
-        return;
+        return false;
     }
     const num = isNaN(value) ? 0 : Number(value);
     console.log(`🎯 Setting ${id} = ${num} (original: ${value})`);
     
-    // Принудительно задаём значение для number input
-    el.value = num;
+    // Убеждаемся что элемент видим
+    if (el.offsetParent === null && el.style.display !== 'none') {
+        console.warn(`⚠️ ${id} element might be hidden`);
+        // Принудительно показываем
+        el.style.visibility = 'visible';
+        el.style.opacity = '1';
+    }
+    
+    // Множественные способы установки значения
+    el.value = num.toString();
+    el.setAttribute('value', num.toString());
     if ('valueAsNumber' in el) {
         el.valueAsNumber = num;
     }
     
+    // Принудительно обновляем отображение
+    el.defaultValue = num.toString();
+    
     // Проверяем что значение установилось
     console.log(`✅ ${id} after set: value="${el.value}", valueAsNumber=${el.valueAsNumber}`);
     
-    // Принудительно триггерим события
+    // Принудительно триггерим события и обновления
     el.dispatchEvent(new Event('input', { bubbles: true }));
     el.dispatchEvent(new Event('change', { bubbles: true }));
+    el.dispatchEvent(new Event('blur', { bubbles: true }));
+    
+    // Принудительный reflow
+    el.focus();
+    el.blur();
+    
+    return el.value == num;
 }
 
 function getInputNumber(id) {
