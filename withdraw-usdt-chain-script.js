@@ -36,10 +36,9 @@ function initNetworkClicks() {
     
     networkItems.forEach(item => {
         item.addEventListener('click', function() {
-            // ПРОВЕРЯЕМ БАЛАНС USDT ПЕРЕД ВЫВОДОМ
-            if (currentUsdtBalance < 1) {
-                console.log(`⚠️ НЕДОСТАТОЧНО USDT ДЛЯ ВЫВОДА: ${currentUsdtBalance} < 1`);
-                window.location.href = 'insufficient-usdt.html';
+            // Проверяем баланс как у остальных монет: достаточно > 0
+            if (currentUsdtBalance <= 0) {
+                if (tg && tg.showAlert) tg.showAlert('Недостаточно USDT для вывода');
                 return;
             }
             
