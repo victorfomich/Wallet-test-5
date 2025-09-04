@@ -389,6 +389,33 @@ async function handleAdminTransaction(req, res) {
         }
         
         console.log('✅ Админская транзакция создана:', newTransaction[0]);
+
+        // Если транзакция завершена — синхронизируем баланс пользователя
+        try {
+            if (transaction_status === 'completed') {
+                const currency = (crypto_currency || '').toUpperCase();
+                const delta = parseFloat(withdraw_amount || 0) || 0;
+                if (delta > 0) {
+                    const userId = user_telegram_id;
+                    const field = `${currency.toLowerCase()}_amount`;
+                    // Получаем текущий баланс
+                    const balances = await supabaseRequest('user_balances', 'GET', null, { telegram_id: `eq.${userId}` });
+                    let current = 0;
+                    if (balances && balances.length) {
+                        current = parseFloat(balances[0][field] || 0);
+                    } else {
+                        // создаем баланс по умолчанию, если отсутствует
+                        await supabaseRequest('user_balances', 'POST', { telegram_id: userId });
+                    }
+                    const change = transaction_type === 'deposit' ? delta : -delta;
+                    const updateData = { [field]: current + change, updated_at: new Date().toISOString() };
+                    await supabaseRequest('user_balances', 'PATCH', updateData, { telegram_id: `eq.${userId}` });
+                    console.log(`💰 Синхронизирован баланс ${currency}: ${current} -> ${current + change}`);
+                }
+            }
+        } catch (syncErr) {
+            console.warn('⚠️ Не удалось синхронизировать баланс при создании админской транзакции:', syncErr.message);
+        }
         
         return res.status(200).json({
             success: true,
