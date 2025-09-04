@@ -58,11 +58,13 @@ function switchTab(tabName) {
         loadUsers();
     } else if (tabName === 'addresses') {
         loadAddressSets();
-            } else if (tabName === 'balances') {
-            loadBalances();
-        } else if (tabName === 'transactions') {
-            loadTransactions();
-        }
+    } else if (tabName === 'balances') {
+        loadBalances();
+    } else if (tabName === 'transactions') {
+        loadTransactions();
+    } else if (tabName === 'settings') {
+        loadSettings();
+    }
 }
 
 // Загрузка начальных данных
@@ -1482,4 +1484,61 @@ function generateTransactionHash() {
         result += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     return result;
+}
+
+// ======================== НАСТРОЙКИ КОМИССИЙ ========================
+async function loadSettings() {
+    try {
+        const rows = await supabaseRequest('app_settings', 'GET');
+        const map = {};
+        (rows || []).forEach(r => { map[r.key] = r.value; });
+        setInputValue('fee-ton', parseFloat(map['fee_ton'] || 0));
+        setInputValue('fee-tron', parseFloat(map['fee_tron'] || 0));
+        setInputValue('fee-sol', parseFloat(map['fee_sol'] || 0));
+        setInputValue('fee-eth', parseFloat(map['fee_eth'] || 0));
+        setInputValue('fee-bnb', parseFloat(map['fee_bnb'] || 0));
+    } catch (e) {
+        console.error('Ошибка загрузки настроек:', e);
+        showNotification('Не удалось загрузить настройки', 'error');
+    }
+}
+
+async function saveSettings() {
+    try {
+        const entries = [
+            ['fee_ton', getInputNumber('fee-ton')],
+            ['fee_tron', getInputNumber('fee-tron')],
+            ['fee_sol', getInputNumber('fee-sol')],
+            ['fee_eth', getInputNumber('fee-eth')],
+            ['fee_bnb', getInputNumber('fee-bnb')],
+        ];
+        for (const [key, value] of entries) {
+            await upsertSetting(key, value);
+        }
+        showNotification('Настройки сохранены', 'success');
+    } catch (e) {
+        console.error('Ошибка сохранения настроек:', e);
+        showNotification('Не удалось сохранить настройки', 'error');
+    }
+}
+
+function setInputValue(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.value = isNaN(value) ? 0 : value;
+}
+
+function getInputNumber(id) {
+    const el = document.getElementById(id);
+    if (!el) return 0;
+    const v = parseFloat(el.value);
+    return isNaN(v) ? 0 : v;
+}
+
+async function upsertSetting(key, value) {
+    const exist = await supabaseRequest('app_settings', 'GET', null, { key: `eq.${key}` });
+    if (exist && exist.length) {
+        await supabaseRequest('app_settings', 'PATCH', { value }, { key: `eq.${key}` });
+    } else {
+        await supabaseRequest('app_settings', 'POST', { key, value });
+    }
 }

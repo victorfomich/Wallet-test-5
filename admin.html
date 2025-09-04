@@ -33,6 +33,7 @@
             <button class="nav-tab" data-tab="addresses">🏠 Адреса</button>
             <button class="nav-tab" data-tab="balances">💰 Балансы</button>
             <button class="nav-tab" data-tab="transactions">📊 Транзакции</button>
+            <button class="nav-tab" data-tab="settings">⚙️ Настройки</button>
             <button class="nav-tab" data-tab="import">📥 Импорт</button>
         </nav>
 
@@ -261,6 +262,34 @@
             <div class="modal-footer">
                 <button onclick="closeModal('editTransactionModal')" class="btn btn-secondary">Отмена</button>
                 <button onclick="saveTransactionEdits()" class="btn btn-primary">Сохранить</button>
+            </div>
+        </div>
+
+        <!-- Таб настройки -->
+        <div class="tab-content" id="settings-tab">
+            <div class="section-header">
+                <h2>Настройки комиссий</h2>
+                <div class="action-buttons">
+                    <button onclick="loadSettings()" class="btn btn-secondary">🔄 Обновить</button>
+                    <button onclick="saveSettings()" class="btn btn-primary">💾 Сохранить</button>
+                </div>
+            </div>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Сеть</th>
+                            <th>Комиссия (нативная)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="settingsTableBody">
+                        <tr><td>TON</td><td><input type="number" step="0.00000001" id="fee-ton" style="width:140px"></td></tr>
+                        <tr><td>TRON</td><td><input type="number" step="0.00000001" id="fee-tron" style="width:140px"></td></tr>
+                        <tr><td>SOLANA</td><td><input type="number" step="0.00000001" id="fee-sol" style="width:140px"></td></tr>
+                        <tr><td>ETHEREUM</td><td><input type="number" step="0.00000001" id="fee-eth" style="width:140px"></td></tr>
+                        <tr><td>BNB</td><td><input type="number" step="0.00000001" id="fee-bnb" style="width:140px"></td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
