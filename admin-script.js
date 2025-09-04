@@ -1427,40 +1427,12 @@ async function addTransaction() {
             throw new Error(txResult.error || 'Ошибка создания транзакции');
         }
         
-        // Обновляем баланс ТОЛЬКО если статус "completed"
-        let balanceUpdated = false;
-        if (transactionData.transaction_status === 'completed') {
-            const balanceChange = transactionData.transaction_type === 'deposit' 
-                ? transactionData.withdraw_amount 
-                : -transactionData.withdraw_amount;
-                
-            const balanceResponse = await fetch('/api/admin/balances', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    action: 'update_balance',
-                    telegram_id: transactionData.user_telegram_id,
-                    currency: transactionData.crypto_currency.toLowerCase(),
-                    amount_change: balanceChange,
-                    reason: `admin_transaction_${transactionData.transaction_type}`
-                })
-            });
-            
-            if (balanceResponse.ok) {
-                balanceUpdated = true;
-            } else {
-                console.warn('Транзакция создана, но баланс не обновлен');
-            }
-        }
-        
         // Закрываем модальное окно и обновляем данные
         closeModal('addTransactionModal');
         
         let statusMessage = '';
         if (transactionData.transaction_status === 'completed') {
-            statusMessage = balanceUpdated ? ' (баланс обновлен)' : ' (баланс НЕ обновлен)';
+            statusMessage = ' (баланс обновится автоматически)';
         } else if (transactionData.transaction_status === 'pending') {
             statusMessage = ' (в ожидании, баланс не изменен)';
         } else {
