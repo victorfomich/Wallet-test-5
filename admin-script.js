@@ -1554,11 +1554,20 @@ function setInputValue(id, value) {
         return;
     }
     const num = isNaN(value) ? 0 : Number(value);
+    console.log(`🎯 Setting ${id} = ${num} (original: ${value})`);
+    
     // Принудительно задаём значение для number input
     el.value = num;
     if ('valueAsNumber' in el) {
         el.valueAsNumber = num;
     }
+    
+    // Проверяем что значение установилось
+    console.log(`✅ ${id} after set: value="${el.value}", valueAsNumber=${el.valueAsNumber}`);
+    
+    // Принудительно триггерим события
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
 function getInputNumber(id) {
