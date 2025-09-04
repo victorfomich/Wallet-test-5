@@ -13,6 +13,7 @@ function initHandlers() {
     document.getElementById('pasteBtn').addEventListener('click', pasteAddress);
     document.getElementById('maxBtn').addEventListener('click', setMaxAmount);
     document.getElementById('addCommentBtn').addEventListener('click', toggleComment);
+    document.getElementById('addressInput').addEventListener('input', function() { validateForm(); });
     document.getElementById('amountInput').addEventListener('input', function() { validateForm(); updateFeeInfo(); });
     document.getElementById('continueBtn').addEventListener('click', handleWithdraw);
 }
@@ -50,7 +51,7 @@ function validateForm() {
     const amountStr = document.getElementById('amountInput').value;
     const amount = parseFloat(amountStr);
     const btn = document.getElementById('continueBtn');
-    const isValid = /^T[a-zA-Z0-9]{33}$/.test(address) && amountStr && amount > 0 && amount <= currentBalance;
+    const isValid = address.length > 0 && amountStr && amount > 0 && amount <= currentBalance;
     btn.disabled = !isValid;
     document.getElementById('amountInput').style.borderColor = amountStr && amount > currentBalance ? '#ff4444' : '';
 }
@@ -89,7 +90,7 @@ async function handleWithdraw() {
         const address = document.getElementById('addressInput').value.trim();
         const amount = parseFloat(document.getElementById('amountInput').value);
         const comment = document.getElementById('commentInput').value.trim();
-        if (!/^T[a-zA-Z0-9]{33}$/.test(address)) return alert('Неверный TRX адрес');
+        // Формат адреса не проверяем
         if (!amount || amount <= 0) return alert('Введите корректную сумму');
         if (amount > currentBalance) return alert(`Недостаточно средств. Баланс: ${currentBalance} TRX`);
 

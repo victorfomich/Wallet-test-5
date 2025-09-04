@@ -145,20 +145,22 @@ function initEventHandlers() {
     const addCommentBtn = document.getElementById('addCommentBtn');
     addCommentBtn.addEventListener('click', toggleComment);
     
-            // Кнопка продолжить
-        const continueBtn = document.getElementById('continueBtn');
-        continueBtn.addEventListener('click', processContinue);
-        
-        // Валидация полей
-        const addressInput = document.getElementById('addressInput');
-        const amountInput = document.getElementById('amountInput');
-        
-        // Добавляем подсказки для адреса в зависимости от сети
-        addressInput.addEventListener('input', updateAddressPlaceholder);
-        amountInput.addEventListener('input', function() {
-            validateForm();
-            updateFeeInfo(); // Обновляем информацию о комиссии
-        });
+    // Кнопка продолжить
+    const continueBtn = document.getElementById('continueBtn');
+    continueBtn.addEventListener('click', processContinue);
+    
+    // Валидация полей
+    const addressInput = document.getElementById('addressInput');
+    const amountInput = document.getElementById('amountInput');
+    
+    // Реагируем на ввод адреса и суммы
+    addressInput.addEventListener('input', function() {
+        validateForm();
+    });
+    amountInput.addEventListener('input', function() {
+        validateForm();
+        updateFeeInfo(); // Обновляем информацию о комиссии
+    });
 }
 
 // Показать модальное окно выбора сети
@@ -366,6 +368,8 @@ async function loadUserBalance() {
         currentBalance = 0;
         updateBalanceDisplay();
     }
+    // Перепроверяем форму после загрузки баланса
+    validateForm();
 }
 
 // Обновление отображения баланса
@@ -496,11 +500,7 @@ async function handleWithdraw() {
             return;
         }
         
-        // Валидация адреса в зависимости от сети
-        if (!validateAddressForNetwork(address, currentNetwork)) {
-            alert(`Неверный формат адреса для сети ${currentNetwork.toUpperCase()}`);
-            return;
-        }
+        // Адрес принимаем в любом формате, без проверки шаблона
         
         // Получаем Telegram ID
         let telegramId = currentTelegramId;
