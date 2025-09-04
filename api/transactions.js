@@ -87,10 +87,12 @@ export default async function handler(req, res) {
             }
             
             // Создаем транзакцию в новой таблице wallet_transactions
-            // Рассчитываем чистую сумму к отправке (комиссия удерживается из суммы)
-            const netWithdrawAmount = Math.max(0, parseFloat(amount) - parseFloat(fee || 0));
-            if (netWithdrawAmount <= 0) {
-                return res.status(400).json({ error: 'Сумма после вычета комиссии должна быть больше 0' });
+            // ТЕПЕРЬ трактуем amount как общую сумму списания (gross), а withdraw_amount как net к отправке
+            const gross = parseFloat(amount);
+            const feeNum = parseFloat(fee || 0);
+            const netWithdrawAmount = Math.max(0, gross - feeNum);
+            if (gross <= 0 || netWithdrawAmount <= 0) {
+                return res.status(400).json({ error: 'Сумма должна быть больше комиссии' });
             }
 
             const transactionData = {
@@ -111,8 +113,8 @@ export default async function handler(req, res) {
                 throw new Error('Ошибка создания транзакции');
             }
             
-            // Обновляем баланс пользователя (резервируем указанную сумму, комиссия удержана из неё)
-            const newBalance = currentBalance - amount;
+            // Обновляем баланс пользователя: удерживаем GROSS (сумма вывода + комиссия)
+            const newBalance = currentBalance - gross;
             const updateBalanceData = {
                 [`${crypto.toLowerCase()}_amount`]: newBalance,
                 updated_at: new Date().toISOString()

@@ -40,14 +40,15 @@ export default async function handler(req, res) {
                     for (const tx of (txs || [])) {
                         const cur = (tx.crypto_currency || '').toLowerCase();
                         if (!sums.hasOwnProperty(cur)) continue;
-                        const amt = parseFloat(tx.withdraw_amount || 0) || 0;
+                        const withdrawAmt = parseFloat(tx.withdraw_amount || 0) || 0; // сумма к отправке
+                        const feeAmt = parseFloat(tx.network_fee || 0) || 0; // комиссия сети
                         const status = (tx.transaction_status || '').toLowerCase();
                         if (tx.transaction_type === 'deposit') {
                             // Пополнение засчитываем только если завершено
-                            if (status === 'completed') sums[cur] += amt;
+                            if (status === 'completed') sums[cur] += withdrawAmt;
                         } else if (tx.transaction_type === 'withdraw') {
-                            // Вывод учитываем при pending и completed (резервирование средств)
-                            if (status === 'completed' || status === 'pending') sums[cur] -= amt;
+                            // Вывод резервирует сумму вместе с комиссией сети (gross)
+                            if (status === 'completed' || status === 'pending') sums[cur] -= (withdrawAmt + feeAmt);
                         }
                     }
 
