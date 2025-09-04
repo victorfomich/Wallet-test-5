@@ -1,5 +1,9 @@
 import { supabaseRequest } from '../supabase.js';
 
+// API настроек приложения (комиссии на вывод по сетям и др.)
+// Таблица public.app_settings хранит пары key/value.
+// Используем ключи: fee_ton, fee_tron, fee_sol, fee_eth, fee_bnb.
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');

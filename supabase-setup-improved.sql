@@ -1,3 +1,26 @@
+-- Таблица глобальных настроек приложения
+-- Для чего: хранение настраиваемых параметров, которые админ меняет в панели.
+-- В нашем случае используются ключи fee_ton, fee_tron, fee_sol, fee_eth, fee_bnb
+-- для управления комиссией на вывод по сетям (в нативной валюте сети).
+
+create table if not exists public.app_settings (
+  key text primary key,
+  value numeric,
+  updated_at timestamptz default now()
+);
+
+-- Индекс для быстрых выборок по ключу (избыточен при PRIMARY KEY, но оставим как явный пример)
+create index if not exists app_settings_key_idx on public.app_settings (key);
+
+-- Пример начальных значений (можно менять в админке):
+-- insert into public.app_settings(key, value) values
+--   ('fee_ton', 0.01),
+--   ('fee_tron', 0),
+--   ('fee_sol', 0.01),
+--   ('fee_eth', 0.001),
+--   ('fee_bnb', 0.01)
+-- on conflict (key) do update set value = excluded.value;
+
 -- Улучшенная схема базы данных для DreamWallet
 -- Полностью работающая схема с правильными политиками безопасности
 
