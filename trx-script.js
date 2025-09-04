@@ -317,7 +317,7 @@ async function loadTrxTransactions() {
         
         if (data.success && data.transactions) {
             const trxTransactions = data.transactions.filter(tx => 
-                tx.crypto_currency === 'TRX' || tx.blockchain_network === 'tron'
+                tx.crypto_currency === 'TRX'
             );
             
             if (trxTransactions.length > 0) {

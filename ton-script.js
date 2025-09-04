@@ -333,7 +333,7 @@ async function loadTonTransactions() {
         if (data.success && data.transactions) {
             // Фильтруем только TON транзакции
             const tonTransactions = data.transactions.filter(tx => 
-                tx.crypto_currency === 'TON' || tx.blockchain_network === 'ton'
+                tx.crypto_currency === 'TON'
             );
             
             console.log('📊 Найдено TON транзакций:', tonTransactions.length);

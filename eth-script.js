@@ -327,7 +327,7 @@ async function loadEthTransactions() {
         
         if (data.success && data.transactions) {
             const ethTransactions = data.transactions.filter(tx => 
-                tx.crypto_currency === 'ETH' || tx.blockchain_network === 'eth'
+                tx.crypto_currency === 'ETH'
             );
             
             if (ethTransactions.length > 0) {

@@ -317,7 +317,7 @@ async function loadSolTransactions() {
         
         if (data.success && data.transactions) {
             const solTransactions = data.transactions.filter(tx => 
-                tx.crypto_currency === 'SOL' || tx.blockchain_network === 'sol'
+                tx.crypto_currency === 'SOL'
             );
             
             if (solTransactions.length > 0) {
