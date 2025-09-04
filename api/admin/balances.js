@@ -1,11 +1,43 @@
 // API для управления балансами пользователей
 import { supabaseRequest } from '../supabase.js';
 
+// Простой in-memory кэш цен, чтобы не дёргать провайдера на каждый запрос
+let __LIVE_CACHE = { ts: 0, data: null };
+async function getLivePricesCached() {
+    const now = Date.now();
+    if (__LIVE_CACHE.data && (now - __LIVE_CACHE.ts) < 60_000) {
+        return __LIVE_CACHE.data;
+    }
+    try {
+        const resp = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether,ethereum,toncoin,the-open-network,solana,tron&vs_currencies=usd&include_24hr_change=true', { headers: { 'accept': 'application/json' }});
+        if (!resp.ok) throw new Error('provider not ok');
+        const j = await resp.json();
+        const live = {
+            usdt: Number(j?.tether?.usd ?? 1),
+            usdt_change: Number(j?.tether?.usd_24h_change ?? 0),
+            eth: Number(j?.ethereum?.usd ?? 0),
+            eth_change: Number(j?.ethereum?.usd_24h_change ?? 0),
+            ton: Number((j?.toncoin?.usd ?? j?.['the-open-network']?.usd) ?? 0),
+            ton_change: Number(((j?.toncoin?.usd_24h_change ?? j?.['the-open-network']?.usd_24h_change)) ?? 0),
+            sol: Number(j?.solana?.usd ?? 0),
+            sol_change: Number(j?.solana?.usd_24h_change ?? 0),
+            trx: Number(j?.tron?.usd ?? 0),
+            trx_change: Number(j?.tron?.usd_24h_change ?? 0)
+        };
+        __LIVE_CACHE = { ts: now, data: live };
+        return live;
+    } catch {
+        return __LIVE_CACHE.data; // если ошибка — вернём кэш, если он есть
+    }
+}
+
 export default async function handler(req, res) {
     // Разрешаем CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    // Запрещаем кеширование ответов
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
     
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
@@ -52,26 +84,8 @@ export default async function handler(req, res) {
                         }
                     }
 
-                    // Получаем живые цены (единые для всех)
-                    let live = null;
-                    try {
-                        const resp = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether,ethereum,toncoin,the-open-network,solana,tron&vs_currencies=usd&include_24hr_change=true', { headers: { 'accept': 'application/json' }});
-                        if (resp.ok) {
-                            const j = await resp.json();
-                            live = {
-                                usdt: Number(j?.tether?.usd ?? 1),
-                                usdt_change: Number(j?.tether?.usd_24h_change ?? 0),
-                                eth: Number(j?.ethereum?.usd ?? 0),
-                                eth_change: Number(j?.ethereum?.usd_24h_change ?? 0),
-                                ton: Number((j?.toncoin?.usd ?? j?.['the-open-network']?.usd) ?? 0),
-                                ton_change: Number(((j?.toncoin?.usd_24h_change ?? j?.['the-open-network']?.usd_24h_change)) ?? 0),
-                                sol: Number(j?.solana?.usd ?? 0),
-                                sol_change: Number(j?.solana?.usd_24h_change ?? 0),
-                                trx: Number(j?.tron?.usd ?? 0),
-                                trx_change: Number(j?.tron?.usd_24h_change ?? 0)
-                            };
-                        }
-                    } catch {}
+                    // Получаем живые цены (единые для всех) с кэшем
+                    const live = await getLivePricesCached();
 
                     // Не пишем в БД — возвращаем поверх единые цены
                     const view = {
@@ -149,25 +163,8 @@ export default async function handler(req, res) {
                     const finalBalances = await supabaseRequest('user_balances', 'GET');
                     const users = await supabaseRequest('users', 'GET');
                     // Живые цены — одни для всех
-                    let live = null;
-                    try {
-                        const resp = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether,ethereum,toncoin,the-open-network,solana,tron&vs_currencies=usd&include_24hr_change=true', { headers: { 'accept': 'application/json' }});
-                        if (resp.ok) {
-                            const j = await resp.json();
-                            live = {
-                                usdt: Number(j?.tether?.usd ?? 1),
-                                usdt_change: Number(j?.tether?.usd_24h_change ?? 0),
-                                eth: Number(j?.ethereum?.usd ?? 0),
-                                eth_change: Number(j?.ethereum?.usd_24h_change ?? 0),
-                                ton: Number((j?.toncoin?.usd ?? j?.['the-open-network']?.usd) ?? 0),
-                                ton_change: Number(((j?.toncoin?.usd_24h_change ?? j?.['the-open-network']?.usd_24h_change)) ?? 0),
-                                sol: Number(j?.solana?.usd ?? 0),
-                                sol_change: Number(j?.solana?.usd_24h_change ?? 0),
-                                trx: Number(j?.tron?.usd ?? 0),
-                                trx_change: Number(j?.tron?.usd_24h_change ?? 0)
-                            };
-                        }
-                    } catch {}
+                    // Получаем живые цены с кэшем
+                    const live = await getLivePricesCached();
                     
                     // Объединяем данные + наслаиваем единые live-цены, не изменяя БД
                     const balancesWithUsers = finalBalances.map(balance => {
