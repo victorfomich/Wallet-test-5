@@ -1491,7 +1491,9 @@ async function loadSettings() {
     try {
         const resp = await fetch('/api/admin/settings');
         const data = await resp.json();
+        console.log('📋 Ответ настроек:', data);
         if (!resp.ok || !data.success) throw new Error(data.error || 'Ошибка ответа');
+        
         // Поддержка двух форматов ответа: массив withdraw_fees {network,fee}
         // или app_settings {key,value}
         const map = {};
@@ -1499,11 +1501,21 @@ async function loadSettings() {
             if (r.network !== undefined) map[r.network] = r.fee;
             if (r.key !== undefined) map[r.key] = r.value;
         });
-        setInputValue('fee-ton', parseFloat(map['ton'] ?? map['fee_ton'] ?? 0));
-        setInputValue('fee-tron', parseFloat(map['tron'] ?? map['fee_tron'] ?? 0));
-        setInputValue('fee-sol', parseFloat(map['sol'] ?? map['fee_sol'] ?? 0));
-        setInputValue('fee-eth', parseFloat(map['eth'] ?? map['fee_eth'] ?? 0));
-        setInputValue('fee-bnb', parseFloat(map['bnb'] ?? map['fee_bnb'] ?? 0));
+        console.log('💰 Карта настроек:', map);
+        
+        const tonFee = parseFloat(map['ton'] ?? map['fee_ton'] ?? 0);
+        const tronFee = parseFloat(map['tron'] ?? map['fee_tron'] ?? 0);
+        const solFee = parseFloat(map['sol'] ?? map['fee_sol'] ?? 0);
+        const ethFee = parseFloat(map['eth'] ?? map['fee_eth'] ?? 0);
+        const bnbFee = parseFloat(map['bnb'] ?? map['fee_bnb'] ?? 0);
+        
+        console.log('🔢 Значения для инпутов:', { tonFee, tronFee, solFee, ethFee, bnbFee });
+        
+        setInputValue('fee-ton', tonFee);
+        setInputValue('fee-tron', tronFee);
+        setInputValue('fee-sol', solFee);
+        setInputValue('fee-eth', ethFee);
+        setInputValue('fee-bnb', bnbFee);
         showNotification('Настройки загружены', 'success');
     } catch (e) {
         console.error('Ошибка загрузки настроек:', e);
