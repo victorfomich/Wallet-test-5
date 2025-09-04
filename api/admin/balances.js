@@ -52,12 +52,30 @@ export default async function handler(req, res) {
                         }
                     }
 
+                    // Подтягиваем живые цены
+                    let live = null;
+                    try {
+                        const p = await fetch(`${req.headers.origin || ''}/api/prices`);
+                        if (p.ok) {
+                            const j = await p.json();
+                            if (j?.success) live = j.prices;
+                        }
+                    } catch {}
+
                     const updateData = {
                         usdt_amount: sums.usdt,
                         eth_amount: sums.eth,
                         ton_amount: sums.ton,
                         sol_amount: sums.sol,
                         trx_amount: sums.trx,
+                        // Если есть живые цены — обновим price поля
+                        ...(live ? {
+                            usdt_price: live.usdt ?? undefined,
+                            eth_price: live.eth ?? undefined,
+                            ton_price: live.ton ?? undefined,
+                            sol_price: live.sol ?? undefined,
+                            trx_price: live.trx ?? undefined,
+                        } : {}),
                         updated_at: new Date().toISOString()
                     };
                     const updated = await supabaseRequest('user_balances', 'PATCH', updateData, {
