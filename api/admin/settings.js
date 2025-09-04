@@ -14,9 +14,9 @@ export default async function handler(req, res) {
     const { method } = req;
     if (method === 'GET') {
       // Пытаемся читать из withdraw_fees, если пусто — fallback на app_settings
-      let settings = await supabaseRequest('withdraw_fees', 'GET');
+      let settings = await supabaseRequest('withdraw_fees', 'GET', null, { select: '*' });
       if (!settings || settings.length === 0) {
-        const rows = await supabaseRequest('app_settings', 'GET');
+        const rows = await supabaseRequest('app_settings', 'GET', null, { select: '*' });
         // Преобразуем пары key/value в формат network/fee, если ключи подходят
         const map = {};
         (rows || []).forEach(r => { map[r.key] = r.value; });

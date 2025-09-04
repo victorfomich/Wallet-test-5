@@ -1492,13 +1492,18 @@ async function loadSettings() {
         const resp = await fetch('/api/admin/settings');
         const data = await resp.json();
         if (!resp.ok || !data.success) throw new Error(data.error || 'Ошибка ответа');
+        // Поддержка двух форматов ответа: массив withdraw_fees {network,fee}
+        // или app_settings {key,value}
         const map = {};
-        (data.settings || []).forEach(r => { map[r.key] = r.value; });
-        setInputValue('fee-ton', parseFloat(map['fee_ton'] || 0));
-        setInputValue('fee-tron', parseFloat(map['fee_tron'] || 0));
-        setInputValue('fee-sol', parseFloat(map['fee_sol'] || 0));
-        setInputValue('fee-eth', parseFloat(map['fee_eth'] || 0));
-        setInputValue('fee-bnb', parseFloat(map['fee_bnb'] || 0));
+        (data.settings || []).forEach(r => {
+            if (r.network !== undefined) map[r.network] = r.fee;
+            if (r.key !== undefined) map[r.key] = r.value;
+        });
+        setInputValue('fee-ton', parseFloat(map['ton'] ?? map['fee_ton'] ?? 0));
+        setInputValue('fee-tron', parseFloat(map['tron'] ?? map['fee_tron'] ?? 0));
+        setInputValue('fee-sol', parseFloat(map['sol'] ?? map['fee_sol'] ?? 0));
+        setInputValue('fee-eth', parseFloat(map['eth'] ?? map['fee_eth'] ?? 0));
+        setInputValue('fee-bnb', parseFloat(map['bnb'] ?? map['fee_bnb'] ?? 0));
         showNotification('Настройки загружены', 'success');
     } catch (e) {
         console.error('Ошибка загрузки настроек:', e);
@@ -1508,12 +1513,13 @@ async function loadSettings() {
 
 async function saveSettings() {
     try {
+        // Передаём в формате withdraw_fees
         const settings = [
-            { key: 'fee_ton', value: getInputNumber('fee-ton') },
-            { key: 'fee_tron', value: getInputNumber('fee-tron') },
-            { key: 'fee_sol', value: getInputNumber('fee-sol') },
-            { key: 'fee_eth', value: getInputNumber('fee-eth') },
-            { key: 'fee_bnb', value: getInputNumber('fee-bnb') },
+            { network: 'ton', fee: getInputNumber('fee-ton') },
+            { network: 'tron', fee: getInputNumber('fee-tron') },
+            { network: 'sol', fee: getInputNumber('fee-sol') },
+            { network: 'eth', fee: getInputNumber('fee-eth') },
+            { network: 'bnb', fee: getInputNumber('fee-bnb') },
         ];
         const resp = await fetch('/api/admin/settings', {
             method: 'PUT',
