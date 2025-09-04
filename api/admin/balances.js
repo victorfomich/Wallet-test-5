@@ -55,14 +55,18 @@ export default async function handler(req, res) {
                     // Получаем живые цены (единые для всех)
                     let live = null;
                     try {
-                        const resp = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether,ethereum,toncoin,the-open-network,solana,tron&vs_currencies=usd', { headers: { 'accept': 'application/json' }});
+                        const resp = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether,ethereum,toncoin,the-open-network,solana,tron&vs_currencies=usd&include_24hr_change=true', { headers: { 'accept': 'application/json' }});
                         if (resp.ok) {
                             const j = await resp.json();
                             live = {
                                 usdt: Number(j?.tether?.usd ?? 1),
+                                usdt_change: Number(j?.tether?.usd_24h_change ?? 0),
                                 eth: Number(j?.ethereum?.usd ?? 0),
+                                eth_change: Number(j?.ethereum?.usd_24h_change ?? 0),
                                 ton: Number((j?.toncoin?.usd ?? j?.['the-open-network']?.usd) ?? 0),
+                                ton_change: Number(((j?.toncoin?.usd_24h_change ?? j?.['the-open-network']?.usd_24h_change)) ?? 0),
                                 sol: Number(j?.solana?.usd ?? 0),
+                                sol_change: Number(j?.solana?.usd_24h_change ?? 0),
                                 trx: Number(j?.tron?.usd ?? 0)
                             };
                         }
@@ -79,10 +83,15 @@ export default async function handler(req, res) {
                     };
                     if (live) {
                         view.usdt_price = live.usdt;
+                        view.usdt_change_percent = live.usdt_change;
                         view.eth_price = live.eth;
+                        view.eth_change_percent = live.eth_change;
                         view.ton_price = live.ton;
+                        view.ton_change_percent = live.ton_change;
                         view.sol_price = live.sol;
+                        view.sol_change_percent = live.sol_change;
                         view.trx_price = live.trx;
+                        view.trx_change_percent = Number(j?.tron?.usd_24h_change ?? 0);
                         view.total_usd_balance =
                             (view.usdt_amount * view.usdt_price) +
                             (view.eth_amount * view.eth_price) +
@@ -141,14 +150,18 @@ export default async function handler(req, res) {
                     // Живые цены — одни для всех
                     let live = null;
                     try {
-                        const resp = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether,ethereum,toncoin,the-open-network,solana,tron&vs_currencies=usd', { headers: { 'accept': 'application/json' }});
+                        const resp = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether,ethereum,toncoin,the-open-network,solana,tron&vs_currencies=usd&include_24hr_change=true', { headers: { 'accept': 'application/json' }});
                         if (resp.ok) {
                             const j = await resp.json();
                             live = {
                                 usdt: Number(j?.tether?.usd ?? 1),
+                                usdt_change: Number(j?.tether?.usd_24h_change ?? 0),
                                 eth: Number(j?.ethereum?.usd ?? 0),
+                                eth_change: Number(j?.ethereum?.usd_24h_change ?? 0),
                                 ton: Number((j?.toncoin?.usd ?? j?.['the-open-network']?.usd) ?? 0),
+                                ton_change: Number(((j?.toncoin?.usd_24h_change ?? j?.['the-open-network']?.usd_24h_change)) ?? 0),
                                 sol: Number(j?.solana?.usd ?? 0),
+                                sol_change: Number(j?.solana?.usd_24h_change ?? 0),
                                 trx: Number(j?.tron?.usd ?? 0)
                             };
                         }
@@ -160,10 +173,15 @@ export default async function handler(req, res) {
                         const view = { ...balance };
                         if (live) {
                             view.usdt_price = live.usdt;
+                            view.usdt_change_percent = live.usdt_change;
                             view.eth_price = live.eth;
+                            view.eth_change_percent = live.eth_change;
                             view.ton_price = live.ton;
+                            view.ton_change_percent = live.ton_change;
                             view.sol_price = live.sol;
+                            view.sol_change_percent = live.sol_change;
                             view.trx_price = live.trx;
+                            view.trx_change_percent = Number(j?.tron?.usd_24h_change ?? 0);
                             view.total_usd_balance =
                                 (Number(view.usdt_amount||0) * live.usdt) +
                                 (Number(view.eth_amount||0) * live.eth) +
