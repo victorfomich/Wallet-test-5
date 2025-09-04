@@ -13,16 +13,32 @@ export default async function handler(req, res) {
   try {
     const { method } = req;
     if (method === 'GET') {
-      const rows = await supabaseRequest('app_settings', 'GET');
-      return res.status(200).json({ success: true, settings: rows || [] });
+      // Пытаемся читать из withdraw_fees, если пусто — fallback на app_settings
+      let settings = await supabaseRequest('withdraw_fees', 'GET');
+      if (!settings || settings.length === 0) {
+        const rows = await supabaseRequest('app_settings', 'GET');
+        // Преобразуем пары key/value в формат network/fee, если ключи подходят
+        const map = {};
+        (rows || []).forEach(r => { map[r.key] = r.value; });
+        settings = [
+          { network: 'ton', fee: map['fee_ton'] || 0 },
+          { network: 'tron', fee: map['fee_tron'] || 0 },
+          { network: 'sol', fee: map['fee_sol'] || 0 },
+          { network: 'eth', fee: map['fee_eth'] || 0 },
+          { network: 'bnb', fee: map['fee_bnb'] || 0 }
+        ];
+      }
+      return res.status(200).json({ success: true, settings });
     } else if (method === 'PUT' || method === 'PATCH' || method === 'POST') {
       const updates = req.body?.settings || [];
-      for (const { key, value } of updates) {
-        const existing = await supabaseRequest('app_settings', 'GET', null, { key: `eq.${key}` });
+      // Ожидаем формат [{ network: 'ton', fee: 0.01 }, ...]
+      for (const { network, fee } of updates) {
+        if (!network) continue;
+        const existing = await supabaseRequest('withdraw_fees', 'GET', null, { network: `eq.${network}` });
         if (existing && existing.length) {
-          await supabaseRequest('app_settings', 'PATCH', { value }, { key: `eq.${key}` });
+          await supabaseRequest('withdraw_fees', 'PATCH', { fee, updated_at: new Date().toISOString() }, { network: `eq.${network}` });
         } else {
-          await supabaseRequest('app_settings', 'POST', { key, value });
+          await supabaseRequest('withdraw_fees', 'POST', { network, fee });
         }
       }
       return res.status(200).json({ success: true, message: 'Settings saved' });
