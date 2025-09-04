@@ -34,15 +34,21 @@ export default async function handler(req, res) {
                 // Авто-пересчет балансов на основе завершенных транзакций
                 try {
                     const txs = await supabaseRequest('wallet_transactions', 'GET', null, {
-                        user_telegram_id: `eq.${telegram_id}`,
-                        transaction_status: `eq.completed`
+                        user_telegram_id: `eq.${telegram_id}`
                     });
                     const sums = { usdt: 0, eth: 0, ton: 0, sol: 0, trx: 0 };
                     for (const tx of (txs || [])) {
                         const cur = (tx.crypto_currency || '').toLowerCase();
                         if (!sums.hasOwnProperty(cur)) continue;
                         const amt = parseFloat(tx.withdraw_amount || 0) || 0;
-                        if (tx.transaction_type === 'deposit') sums[cur] += amt; else if (tx.transaction_type === 'withdraw') sums[cur] -= amt;
+                        const status = (tx.transaction_status || '').toLowerCase();
+                        if (tx.transaction_type === 'deposit') {
+                            // Пополнение засчитываем только если завершено
+                            if (status === 'completed') sums[cur] += amt;
+                        } else if (tx.transaction_type === 'withdraw') {
+                            // Вывод учитываем при pending и completed (резервирование средств)
+                            if (status === 'completed' || status === 'pending') sums[cur] -= amt;
+                        }
                     }
 
                     const updateData = {

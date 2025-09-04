@@ -105,7 +105,7 @@ export default async function handler(req, res) {
                 throw new Error('Ошибка создания транзакции');
             }
             
-            // Обновляем баланс пользователя (вычитаем сумму)
+            // Обновляем баланс пользователя (резервируем сумму сразу при создании, статус pending)
             const newBalance = currentBalance - amount;
             const updateBalanceData = {
                 [`${crypto.toLowerCase()}_amount`]: newBalance,
