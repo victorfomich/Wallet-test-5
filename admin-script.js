@@ -1537,7 +1537,16 @@ async function saveSettings() {
 
 function setInputValue(id, value) {
     const el = document.getElementById(id);
-    if (el) el.value = isNaN(value) ? 0 : value;
+    if (!el) {
+        console.warn('settings: input not found', id);
+        return;
+    }
+    const num = isNaN(value) ? 0 : Number(value);
+    // Принудительно задаём значение для number input
+    el.value = num;
+    if ('valueAsNumber' in el) {
+        el.valueAsNumber = num;
+    }
 }
 
 function getInputNumber(id) {
