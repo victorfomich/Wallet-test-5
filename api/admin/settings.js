@@ -13,10 +13,21 @@ export default async function handler(req, res) {
   try {
     const { method } = req;
     if (method === 'GET') {
+      console.log('🔍 Settings API: Trying to read withdraw_fees...');
       // Пытаемся читать из withdraw_fees, если пусто — fallback на app_settings
-      let settings = await supabaseRequest('withdraw_fees', 'GET', null, { select: '*' });
+      let settings;
+      try {
+        settings = await supabaseRequest('withdraw_fees', 'GET', null, { select: '*' });
+        console.log('📊 withdraw_fees result:', settings);
+      } catch (err) {
+        console.error('❌ withdraw_fees error:', err);
+        settings = null;
+      }
+      
       if (!settings || settings.length === 0) {
+        console.log('⚠️ withdraw_fees empty, trying app_settings fallback...');
         const rows = await supabaseRequest('app_settings', 'GET', null, { select: '*' });
+        console.log('📊 app_settings result:', rows);
         // Преобразуем пары key/value в формат network/fee, если ключи подходят
         const map = {};
         (rows || []).forEach(r => { map[r.key] = r.value; });
@@ -27,7 +38,9 @@ export default async function handler(req, res) {
           { network: 'eth', fee: map['fee_eth'] || 0 },
           { network: 'bnb', fee: map['fee_bnb'] || 0 }
         ];
+        console.log('🔄 Fallback settings:', settings);
       }
+      console.log('✅ Final settings response:', settings);
       return res.status(200).json({ success: true, settings });
     } else if (method === 'PUT' || method === 'PATCH' || method === 'POST') {
       const updates = req.body?.settings || [];
