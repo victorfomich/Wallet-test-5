@@ -1118,7 +1118,7 @@ function renderTransactionsTable(transactions) {
     if (!transactions || transactions.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="11" class="no-data">Транзакции не найдены</td>
+                <td colspan="12" class="no-data">Транзакции не найдены</td>
             </tr>
         `;
         return;
@@ -1130,6 +1130,7 @@ function renderTransactionsTable(transactions) {
         
         return `
             <tr>
+                <td><input type="checkbox" class="tx-select" data-id="${transaction.id}" onchange="updateTxSelectionState()"></td>
                 <td>${transaction.id}</td>
                 <td>
                     <strong>${userInfo.first_name || 'Unknown'}</strong><br>
@@ -1177,6 +1178,11 @@ function renderTransactionsTable(transactions) {
             </tr>
         `;
     }).join('');
+
+    // Сбрасываем чекбокс "выбрать все"
+    const selectAll = document.getElementById('selectAllTx');
+    if (selectAll) selectAll.checked = false;
+    updateTxSelectionState();
 }
 
 function getStatusBadgeClass(status) {
@@ -1301,6 +1307,48 @@ async function deleteTransaction(id) {
 
 function refreshTransactions() {
     loadTransactions();
+}
+
+// ======================== BULK DELETE ========================
+
+function toggleSelectAllTx(master) {
+    const checks = document.querySelectorAll('.tx-select');
+    checks.forEach(c => c.checked = master.checked);
+    updateTxSelectionState();
+}
+
+function getSelectedTransactionIds() {
+    return Array.from(document.querySelectorAll('.tx-select:checked')).map(el => el.dataset.id);
+}
+
+function updateTxSelectionState() {
+    const selected = getSelectedTransactionIds();
+    const btn = document.getElementById('bulkDeleteBtn');
+    if (btn) btn.disabled = selected.length === 0;
+}
+
+async function deleteSelectedTransactions() {
+    const ids = getSelectedTransactionIds();
+    if (ids.length === 0) return;
+    if (!confirm(`Удалить выбранные транзакции (${ids.length} шт.)? Это действие нельзя отменить.`)) return;
+    try {
+        // Удаляем последовательно (Supabase REST не поддерживает массив id через один параметр здесь)
+        for (const id of ids) {
+            const response = await fetch(`/api/transactions?admin=true&id=${id}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(`ID ${id}: ${text}`);
+            }
+        }
+        showNotification(`✅ Удалено транзакций: ${ids.length}`, 'success');
+        loadTransactions();
+    } catch (e) {
+        console.error('Bulk delete error:', e);
+        showNotification('❌ Ошибка массового удаления: ' + e.message, 'error');
+    }
 }
 
 // ======================== ДОБАВЛЕНИЕ ТРАНЗАКЦИИ ========================
