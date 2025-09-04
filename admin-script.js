@@ -67,6 +67,11 @@ function switchTab(tabName) {
     }
 }
 
+// Совместимость: обёртка для возможных вызовов showTab
+function showTab(tabName) {
+    switchTab(tabName);
+}
+
 // Загрузка начальных данных
 async function loadInitialData() {
     await Promise.all([
