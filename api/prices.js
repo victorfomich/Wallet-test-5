@@ -7,8 +7,8 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
-    // CoinGecko simple price
-    const ids = ['tether', 'ethereum', 'toncoin', 'solana', 'tron'];
+    // CoinGecko simple price (TON может называться toncoin или the-open-network)
+    const ids = ['tether', 'ethereum', 'solana', 'tron', 'toncoin', 'the-open-network'];
     const url = `https://api.coingecko.com/api/v3/simple/price?ids=${ids.join(',')}&vs_currencies=usd`;
     const resp = await fetch(url, { headers: { 'accept': 'application/json' } });
     if (!resp.ok) {
@@ -19,7 +19,7 @@ export default async function handler(req, res) {
     const prices = {
       usdt: Number(data?.tether?.usd ?? 1),
       eth: Number(data?.ethereum?.usd ?? 0),
-      ton: Number(data?.toncoin?.usd ?? 0),
+      ton: Number((data?.toncoin?.usd ?? data?.['the-open-network']?.usd) ?? 0),
       sol: Number(data?.solana?.usd ?? 0),
       trx: Number(data?.tron?.usd ?? 0)
     };

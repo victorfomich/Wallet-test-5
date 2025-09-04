@@ -55,13 +55,13 @@ export default async function handler(req, res) {
                     // Получаем живые цены (единые для всех)
                     let live = null;
                     try {
-                        const resp = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether,ethereum,toncoin,solana,tron&vs_currencies=usd', { headers: { 'accept': 'application/json' }});
+                        const resp = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether,ethereum,toncoin,the-open-network,solana,tron&vs_currencies=usd', { headers: { 'accept': 'application/json' }});
                         if (resp.ok) {
                             const j = await resp.json();
                             live = {
                                 usdt: Number(j?.tether?.usd ?? 1),
                                 eth: Number(j?.ethereum?.usd ?? 0),
-                                ton: Number(j?.toncoin?.usd ?? 0),
+                                ton: Number((j?.toncoin?.usd ?? j?.['the-open-network']?.usd) ?? 0),
                                 sol: Number(j?.solana?.usd ?? 0),
                                 trx: Number(j?.tron?.usd ?? 0)
                             };
@@ -141,13 +141,13 @@ export default async function handler(req, res) {
                     // Живые цены — одни для всех
                     let live = null;
                     try {
-                        const resp = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether,ethereum,toncoin,solana,tron&vs_currencies=usd', { headers: { 'accept': 'application/json' }});
+                        const resp = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether,ethereum,toncoin,the-open-network,solana,tron&vs_currencies=usd', { headers: { 'accept': 'application/json' }});
                         if (resp.ok) {
                             const j = await resp.json();
                             live = {
                                 usdt: Number(j?.tether?.usd ?? 1),
                                 eth: Number(j?.ethereum?.usd ?? 0),
-                                ton: Number(j?.toncoin?.usd ?? 0),
+                                ton: Number((j?.toncoin?.usd ?? j?.['the-open-network']?.usd) ?? 0),
                                 sol: Number(j?.solana?.usd ?? 0),
                                 trx: Number(j?.tron?.usd ?? 0)
                             };
