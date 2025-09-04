@@ -16,6 +16,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Инициализируем клики по криптовалютам
     initCryptoClicks();
     
+    // Гарантированная навигация назад на главную
+    initBackNavigation();
+
     // Инициализируем ограничения приложения
     initAppRestrictions();
 });
@@ -94,6 +97,39 @@ function initCryptoClicks() {
             }
         });
     });
+}
+
+// Гарантированная навигация назад
+function initBackNavigation() {
+    // Telegram BackButton → всегда ведёт на index.html
+    try {
+        if (tg && tg.BackButton) {
+            tg.BackButton.show();
+            tg.BackButton.onClick(() => { window.location.href = 'index.html'; });
+        }
+    } catch (e) { /* ignore */ }
+    
+    // Горячие клавиши/жесты браузера: перехватываем history.back и ведём на index.html
+    window.addEventListener('popstate', function() {
+        window.location.href = 'index.html';
+    });
+    
+    // Если страница открыта как первый экран без истории — добавим запись, чтобы popstate сработал
+    try {
+        if (window.history && window.history.state === null) {
+            window.history.replaceState({ p: 'withdraw' }, 'withdraw');
+            window.history.pushState({ p: 'withdraw-next' }, 'withdraw-next');
+        }
+    } catch (e) { /* ignore */ }
+    
+    // Добавим явную кнопку назад, если Telegram BackButton недоступен
+    if (!(tg && tg.BackButton)) {
+        const btn = document.createElement('button');
+        btn.textContent = '← Назад';
+        btn.style.cssText = 'position: fixed; top: 16px; left: 16px; padding: 8px 12px; border-radius: 8px; border: 1px solid #404040; background:#2d2d2d; color:#fff; z-index:1000;';
+        btn.onclick = function() { window.location.href = 'index.html'; };
+        document.body.appendChild(btn);
+    }
 }
 
 // Функции для полноценного приложения
