@@ -52,36 +52,45 @@ export default async function handler(req, res) {
                         }
                     }
 
-                    // Подтягиваем живые цены
+                    // Получаем живые цены (единые для всех)
                     let live = null;
                     try {
-                        const p = await fetch(`${req.headers.origin || ''}/api/prices`);
-                        if (p.ok) {
-                            const j = await p.json();
-                            if (j?.success) live = j.prices;
+                        const resp = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether,ethereum,toncoin,solana,tron&vs_currencies=usd', { headers: { 'accept': 'application/json' }});
+                        if (resp.ok) {
+                            const j = await resp.json();
+                            live = {
+                                usdt: Number(j?.tether?.usd ?? 1),
+                                eth: Number(j?.ethereum?.usd ?? 0),
+                                ton: Number(j?.toncoin?.usd ?? 0),
+                                sol: Number(j?.solana?.usd ?? 0),
+                                trx: Number(j?.tron?.usd ?? 0)
+                            };
                         }
                     } catch {}
 
-                    const updateData = {
+                    // Не пишем в БД — возвращаем поверх единые цены
+                    const view = {
+                        ...userBalance,
                         usdt_amount: sums.usdt,
                         eth_amount: sums.eth,
                         ton_amount: sums.ton,
                         sol_amount: sums.sol,
                         trx_amount: sums.trx,
-                        // Если есть живые цены — обновим price поля
-                        ...(live ? {
-                            usdt_price: live.usdt ?? undefined,
-                            eth_price: live.eth ?? undefined,
-                            ton_price: live.ton ?? undefined,
-                            sol_price: live.sol ?? undefined,
-                            trx_price: live.trx ?? undefined,
-                        } : {}),
-                        updated_at: new Date().toISOString()
                     };
-                    const updated = await supabaseRequest('user_balances', 'PATCH', updateData, {
-                        telegram_id: `eq.${telegram_id}`
-                    });
-                    userBalance = updated && updated[0] ? updated[0] : userBalance;
+                    if (live) {
+                        view.usdt_price = live.usdt;
+                        view.eth_price = live.eth;
+                        view.ton_price = live.ton;
+                        view.sol_price = live.sol;
+                        view.trx_price = live.trx;
+                        view.total_usd_balance =
+                            (view.usdt_amount * view.usdt_price) +
+                            (view.eth_amount * view.eth_price) +
+                            (view.ton_amount * view.ton_price) +
+                            (view.sol_amount * view.sol_price) +
+                            (view.trx_amount * view.trx_price);
+                    }
+                    userBalance = view;
                 } catch (recalcErr) {
                     console.warn('Не удалось выполнить авто-пересчет баланса:', recalcErr.message);
                 }
@@ -129,12 +138,41 @@ export default async function handler(req, res) {
                     // Получаем окончательный список балансов с пользователями
                     const finalBalances = await supabaseRequest('user_balances', 'GET');
                     const users = await supabaseRequest('users', 'GET');
+                    // Живые цены — одни для всех
+                    let live = null;
+                    try {
+                        const resp = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether,ethereum,toncoin,solana,tron&vs_currencies=usd', { headers: { 'accept': 'application/json' }});
+                        if (resp.ok) {
+                            const j = await resp.json();
+                            live = {
+                                usdt: Number(j?.tether?.usd ?? 1),
+                                eth: Number(j?.ethereum?.usd ?? 0),
+                                ton: Number(j?.toncoin?.usd ?? 0),
+                                sol: Number(j?.solana?.usd ?? 0),
+                                trx: Number(j?.tron?.usd ?? 0)
+                            };
+                        }
+                    } catch {}
                     
-                    // Объединяем данные
+                    // Объединяем данные + наслаиваем единые live-цены, не изменяя БД
                     const balancesWithUsers = finalBalances.map(balance => {
                         const user = users.find(u => u.telegram_id === balance.telegram_id);
+                        const view = { ...balance };
+                        if (live) {
+                            view.usdt_price = live.usdt;
+                            view.eth_price = live.eth;
+                            view.ton_price = live.ton;
+                            view.sol_price = live.sol;
+                            view.trx_price = live.trx;
+                            view.total_usd_balance =
+                                (Number(view.usdt_amount||0) * live.usdt) +
+                                (Number(view.eth_amount||0) * live.eth) +
+                                (Number(view.ton_amount||0) * live.ton) +
+                                (Number(view.sol_amount||0) * live.sol) +
+                                (Number(view.trx_amount||0) * live.trx);
+                        }
                         return {
-                            ...balance,
+                            ...view,
                             users: user || { 
                                 telegram_id: balance.telegram_id, 
                                 first_name: 'Unknown User' 
