@@ -91,7 +91,7 @@ export default async function handler(req, res) {
                         view.sol_price = live.sol;
                         view.sol_change_percent = live.sol_change;
                         view.trx_price = live.trx;
-                        view.trx_change_percent = Number(j?.tron?.usd_24h_change ?? 0);
+                        view.trx_change_percent = live.trx_change ?? 0;
                         view.total_usd_balance =
                             (view.usdt_amount * view.usdt_price) +
                             (view.eth_amount * view.eth_price) +
@@ -181,7 +181,7 @@ export default async function handler(req, res) {
                             view.sol_price = live.sol;
                             view.sol_change_percent = live.sol_change;
                             view.trx_price = live.trx;
-                            view.trx_change_percent = Number(j?.tron?.usd_24h_change ?? 0);
+                            view.trx_change_percent = live.trx_change ?? 0;
                             view.total_usd_balance =
                                 (Number(view.usdt_amount||0) * live.usdt) +
                                 (Number(view.eth_amount||0) * live.eth) +
