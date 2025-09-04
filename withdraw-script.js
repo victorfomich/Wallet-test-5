@@ -73,7 +73,20 @@ function initCryptoClicks() {
                 return;
             }
             
-            // Для других криптовалют пока что показываем уведомление
+            // Для ETH, TON, SOL, TRX сразу открываем страницу вывода
+            const withdrawPages = {
+                'ETH': 'eth-withdraw.html',
+                'TON': 'ton-withdraw.html',
+                'SOL': 'sol-withdraw.html',
+                'TRX': 'trx-withdraw.html'
+            };
+            const targetPage = withdrawPages[cryptoTicker];
+            if (targetPage) {
+                console.log(`Переходим на ${targetPage}`);
+                window.location.href = targetPage;
+                return;
+            }
+            // Фолбэк
             if (tg && tg.showAlert) {
                 tg.showAlert(`Выбрана криптовалюта для вывода: ${cryptoTicker} (${cryptoName})`);
             } else {

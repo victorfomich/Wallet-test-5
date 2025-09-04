@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>Вывод TON - DreamWallet</title>
+    <link rel="stylesheet" href="usdt-withdraw-styles.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="balance-section">
+            <div class="crypto-balance-item">
+                <div class="crypto-left">
+                    <div class="crypto-icon ton-icon">
+                        <img src="toncoin.png" alt="TON" class="crypto-logo">
+                    </div>
+                    <div class="crypto-info">
+                        <div class="crypto-name">TON</div>
+                        <div class="crypto-action" onclick="window.location.href='withdraw.html'">Изменить монету ›</div>
+                    </div>
+                </div>
+                <div class="crypto-balance">
+                    <div class="balance-amount">0.00000000 TON</div>
+                    <div class="balance-usd">$0.000</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="withdraw-form">
+            <div class="input-group">
+                <div class="input-container">
+                    <input type="text" id="addressInput" class="address-input" placeholder="EQD..." />
+                    <button class="paste-btn" id="pasteBtn">
+                        <img src="copy.png" alt="Paste" class="paste-icon paste-light">
+                        <img src="copy_white.png" alt="Paste" class="paste-icon paste-dark" style="display: none;">
+                    </button>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <div class="input-container">
+                    <input type="number" id="amountInput" class="amount-input" placeholder="Сумма TON" step="0.00000001">
+                    <button class="max-btn" id="maxBtn">Макс</button>
+                </div>
+            </div>
+
+            <div class="fee-info" id="feeInfo">
+                <div class="fee-item">
+                    <span class="fee-label">Комиссия сети:</span>
+                    <span class="fee-value" id="networkFee">0.01 TON</span>
+                </div>
+                <div class="fee-item">
+                    <span class="fee-label">К вычету:</span>
+                    <span class="fee-value" id="totalAmount">0.00000000 TON</span>
+                </div>
+            </div>
+
+            <div class="comment-section">
+                <button class="add-comment-btn" id="addCommentBtn">+ Добавить комментарий</button>
+                <div class="comment-input-container" id="commentContainer" style="display: none;">
+                    <textarea id="commentInput" class="comment-input" placeholder="Введите комментарий..."></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="continue-section">
+            <button class="continue-btn" id="continueBtn">Продолжить</button>
+        </div>
+    </div>
+
+    <script src="ton-withdraw-script.js"></script>
+</body>
+</html>
+
