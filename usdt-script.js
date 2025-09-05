@@ -354,7 +354,7 @@ async function loadUsdtTransactions() {
     }
 }
 
-// ОТОБРАЖЕНИЕ ТРАНЗАКЦИЙ
+// ОТОБРАЖЕНИЕ ТРАНЗАКЦИЙ С ГРУППИРОВКОЙ ПО ДАТАМ
 function displayTransactions(transactions) {
     const loadingMessage = document.getElementById('loadingMessage');
     const noTransactions = document.getElementById('noTransactions');
@@ -367,16 +367,72 @@ function displayTransactions(transactions) {
     // Очищаем список
     transactionsList.innerHTML = '';
     
-    // Создаем элементы транзакций
-    transactions.forEach(transaction => {
-        const transactionElement = createTransactionElement(transaction);
-        transactionsList.appendChild(transactionElement);
+    // Группируем транзакции по датам
+    const groupedTransactions = groupTransactionsByDate(transactions);
+    
+    // Создаем группы с заголовками дат
+    Object.keys(groupedTransactions).forEach(dateKey => {
+        const dateGroup = document.createElement('div');
+        dateGroup.className = 'transaction-date-group';
+        
+        // Заголовок даты
+        const dateHeader = document.createElement('div');
+        dateHeader.className = 'transaction-date-header';
+        dateHeader.textContent = dateKey;
+        dateGroup.appendChild(dateHeader);
+        
+        // Транзакции этой даты
+        groupedTransactions[dateKey].forEach(transaction => {
+            const transactionElement = createTransactionElement(transaction);
+            dateGroup.appendChild(transactionElement);
+        });
+        
+        transactionsList.appendChild(dateGroup);
     });
     
     console.log('📊 Отображено транзакций:', transactions.length);
 }
 
-// СОЗДАНИЕ ЭЛЕМЕНТА ТРАНЗАКЦИИ
+// ГРУППИРОВКА ТРАНЗАКЦИЙ ПО ДАТАМ
+function groupTransactionsByDate(transactions) {
+    const groups = {};
+    
+    transactions.forEach(transaction => {
+        const date = new Date(transaction.created_timestamp);
+        const dateKey = formatDateHeader(date);
+        
+        if (!groups[dateKey]) {
+            groups[dateKey] = [];
+        }
+        groups[dateKey].push(transaction);
+    });
+    
+    return groups;
+}
+
+// ФОРМАТИРОВАНИЕ ЗАГОЛОВКА ДАТЫ
+function formatDateHeader(date) {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const transactionDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    
+    const diffTime = today - transactionDate;
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) {
+        return 'СЕГОДНЯ';
+    } else if (diffDays === 1) {
+        return 'ВЧЕРА';
+    } else {
+        const months = [
+            'ЯНВАРЯ', 'ФЕВРАЛЯ', 'МАРТА', 'АПРЕЛЯ', 'МАЯ', 'ИЮНЯ',
+            'ИЮЛЯ', 'АВГУСТА', 'СЕНТЯБРЯ', 'ОКТЯБРЯ', 'НОЯБРЯ', 'ДЕКАБРЯ'
+        ];
+        return `${date.getDate()} ${months[date.getMonth()]}`;
+    }
+}
+
+// СОЗДАНИЕ ЭЛЕМЕНТА ТРАНЗАКЦИИ В НОВОМ СТИЛЕ
 function createTransactionElement(transaction) {
     const div = document.createElement('div');
     div.className = 'transaction-item';
@@ -385,15 +441,25 @@ function createTransactionElement(transaction) {
     const type = (transaction.transaction_type || '').toLowerCase();
     const isDeposit = type === 'deposit' || type === 'exchange_credit';
     const isExchange = type.startsWith('exchange_');
-    const iconClass = isDeposit ? 'deposit' : 'withdraw';
-    const iconSymbol = isExchange ? '↔' : (isDeposit ? '↓' : '↑');
-    const typeText = isExchange ? (isDeposit ? 'Обмен (зачисление)' : 'Обмен (списание)') : (isDeposit ? 'Пополнение' : 'Вывод');
     
-    // Форматируем дату
+    // Определяем класс иконки и символ
+    let iconClass = 'withdraw';
+    let iconSymbol = '↗';
+    let typeText = 'Вывод';
+    
+    if (isExchange) {
+        iconClass = 'exchange';
+        iconSymbol = '↔';
+        typeText = isDeposit ? 'Обмен USDT на TON' : 'Обмен USDT на TON';
+    } else if (isDeposit) {
+        iconClass = 'deposit';
+        iconSymbol = '↙';
+        typeText = 'Пополнение';
+    }
+    
+    // Форматируем время
     const date = new Date(transaction.created_timestamp);
-    const dateStr = date.toLocaleDateString('ru-RU', {
-        day: 'numeric',
-        month: 'short',
+    const timeStr = date.toLocaleTimeString('ru-RU', {
         hour: '2-digit',
         minute: '2-digit'
     });
@@ -403,23 +469,8 @@ function createTransactionElement(transaction) {
     const amountClass = isDeposit ? 'positive' : 'negative';
     const amountSign = isDeposit ? '+' : '-';
     
-    // Статус транзакции
-    const status = transaction.transaction_status || 'pending';
-    const statusText = {
-        'pending': 'В ожидании',
-        'completed': 'Завершено',
-        'failed': 'Ошибка',
-        'cancelled': 'Отменено'
-    }[status] || status;
-    
-    // Сеть для USDT может быть разной
-    const networkName = {
-        'ton': 'TON',
-        'tron': 'TRON', 
-        'eth': 'ETH',
-        'sol': 'SOL',
-        'bnb': 'BNB'
-    }[transaction.blockchain_network] || transaction.blockchain_network?.toUpperCase() || 'USDT';
+    // Рассчитываем USD эквивалент (примерно $1 = 1 USDT)
+    const usdAmount = amount * 1.00; // для USDT курс примерно 1:1
     
     div.innerHTML = `
         <div class="transaction-icon ${iconClass}">
@@ -427,17 +478,14 @@ function createTransactionElement(transaction) {
         </div>
         <div class="transaction-info">
             <div class="transaction-type">${typeText}</div>
-            <div class="transaction-details">
-                <span class="transaction-network">${networkName}</span>
-                <span>${dateStr}</span>
-            </div>
+            <div class="transaction-time">${timeStr}</div>
         </div>
         <div class="transaction-amount">
             <div class="transaction-crypto ${amountClass}">
-                ${amountSign}${amount.toFixed(6)} USDT
+                ${amountSign}${amount.toFixed(2)} USDT
             </div>
-            <div class="transaction-status ${status}">
-                ${statusText}
+            <div class="transaction-usd">
+                $${usdAmount.toFixed(2)}
             </div>
         </div>
     `;

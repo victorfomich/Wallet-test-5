@@ -289,14 +289,12 @@ body {
 /* Транзакции */
 .transactions-section {
     margin-top: 30px;
-    background-color: var(--bg-card);
-    border-radius: 16px;
-    padding: 20px;
-    border: 1px solid var(--border-color);
+    width: 100%;
 }
 
 .transactions-header {
     margin-bottom: 20px;
+    text-align: center;
 }
 
 .transactions-title {
@@ -309,7 +307,21 @@ body {
 .transactions-list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 0;
+}
+
+/* Группы транзакций по датам */
+.transaction-date-group {
+    margin-bottom: 24px;
+}
+
+.transaction-date-header {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .loading-message {
@@ -359,19 +371,26 @@ body {
     opacity: 0.7;
 }
 
+/* Карточки транзакций в новом стиле */
 .transaction-item {
-    background-color: var(--bg-secondary);
-    border-radius: 12px;
+    background-color: var(--bg-card);
+    border-radius: 16px;
     padding: 16px;
+    margin-bottom: 8px;
     display: flex;
     align-items: center;
     gap: 12px;
     border: 1px solid var(--border-color);
-    transition: background-color 0.2s ease;
+    transition: all 0.2s ease;
 }
 
 .transaction-item:hover {
     background-color: rgba(255, 255, 255, 0.02);
+    transform: translateY(-1px);
+}
+
+.transaction-item:last-child {
+    margin-bottom: 0;
 }
 
 .transaction-icon {
@@ -382,60 +401,57 @@ body {
     align-items: center;
     justify-content: center;
     font-size: 18px;
+    font-weight: 600;
     flex-shrink: 0;
 }
 
 .transaction-icon.deposit {
-    background-color: rgba(34, 197, 94, 0.15);
+    background-color: rgba(34, 197, 94, 0.2);
     color: #22c55e;
 }
 
 .transaction-icon.withdraw {
-    background-color: rgba(239, 68, 68, 0.15);
-    color: #ef4444;
+    background-color: rgba(156, 163, 175, 0.2);
+    color: #9ca3af;
+}
+
+.transaction-icon.exchange {
+    background-color: rgba(59, 130, 246, 0.2);
+    color: #3b82f6;
 }
 
 .transaction-info {
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
 }
 
 .transaction-type {
     font-size: 16px;
     font-weight: 500;
     color: var(--text-primary);
+    line-height: 1.2;
 }
 
-.transaction-details {
+.transaction-time {
     font-size: 14px;
     color: var(--text-tertiary);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.transaction-network {
-    font-size: 12px;
-    padding: 2px 8px;
-    background-color: var(--accent-color);
-    color: white;
-    border-radius: 12px;
-    font-weight: 500;
+    line-height: 1.2;
 }
 
 .transaction-amount {
     text-align: right;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
     flex-shrink: 0;
 }
 
 .transaction-crypto {
     font-size: 16px;
     font-weight: 600;
+    line-height: 1.2;
 }
 
 .transaction-crypto.positive {
@@ -446,30 +462,16 @@ body {
     color: #ef4444;
 }
 
-.transaction-date {
-    font-size: 12px;
+.transaction-usd {
+    font-size: 14px;
     color: var(--text-tertiary);
+    line-height: 1.2;
 }
 
+/* Убираем старые стили статусов и сетей */
+.transaction-details,
+.transaction-network,
+.transaction-date,
 .transaction-status {
-    font-size: 12px;
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-weight: 500;
-    margin-top: 4px;
-}
-
-.transaction-status.pending {
-    background-color: rgba(251, 191, 36, 0.15);
-    color: #fbbf24;
-}
-
-.transaction-status.completed {
-    background-color: rgba(34, 197, 94, 0.15);
-    color: #22c55e;
-}
-
-.transaction-status.failed {
-    background-color: rgba(239, 68, 68, 0.15);
-    color: #ef4444;
+    display: none;
 }
