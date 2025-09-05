@@ -28,7 +28,11 @@ async function loadContext() {
     ]);
     try {
       const sj = await settingsResp.json();
-      if (sj.success && sj.app) state.settings = sj.app;
+      if (sj && sj.success) {
+        const appPart = sj.app || {};
+        const exchangePart = sj.exchange || {};
+        state.settings = { ...appPart, ...exchangePart };
+      }
     } catch {}
     try {
       const pj = await pricesResp.json();
