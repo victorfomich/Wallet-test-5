@@ -6,6 +6,8 @@
 .row-title{font-size:14px;color:#e0e0e0;margin:4px 0 6px}
 .asset-row{display:flex;align-items:center;justify-content:space-between;background:#242424;border:1px solid #404040;border-radius:12px;padding:12px}
 .asset-select{background:#2381cc;border:none;border-radius:10px;color:#fff;padding:8px 12px;font-weight:600;cursor:pointer}
+.select{appearance:none;-webkit-appearance:none;-moz-appearance:none;background:#2381cc;color:#fff}
+.rate-line{margin-top:6px;color:#b0b0b0;font-size:12px;text-align:right}
 .amount-input{flex:1;margin-left:10px;background:transparent;border:none;outline:none;color:#fff;font-size:22px;font-weight:700;text-align:right}
 .amount-output{flex:1;margin-left:10px;text-align:right;font-size:22px;font-weight:700;color:#bfbfbf}
 .hint{margin-top:6px;color:#ff6b6b;font-size:12px}

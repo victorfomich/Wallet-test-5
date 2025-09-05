@@ -18,13 +18,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function loadContext() {
   try {
-    // цены и настройки
-    const resp = await fetch('/api/exchange');
-    const j = await resp.json();
-    if (j.success) {
-      state.prices = j.prices || state.prices;
-      state.settings = j.settings || state.settings;
-    }
+    // берём настройки из admin/settings и цены из balances (как на главной)
+    const [settingsResp, pricesResp] = await Promise.all([
+      fetch('/api/admin/settings'),
+      fetch('/api/admin/balances' + (state.telegramId ? `?telegram_id=${state.telegramId}` : ''))
+    ]);
+    try {
+      const sj = await settingsResp.json();
+      if (sj.success && sj.app) state.settings = sj.app;
+    } catch {}
+    try {
+      const pj = await pricesResp.json();
+      const b = pj.balance || {};
+      // те же live цены, что и на index (берём из ответа балансов)
+      state.prices = {
+        usdt: Number(b.usdt_price||1),
+        eth: Number(b.eth_price||0),
+        ton: Number(b.ton_price||0),
+        sol: Number(b.sol_price||0),
+        trx: Number(b.trx_price||0)
+      };
+      state.balances = b;
+    } catch {}
   } catch {}
   try {
     // баланс
@@ -44,34 +59,29 @@ function setupUI() {
   const switchBtn = document.getElementById('switchBtn');
   const btn = document.getElementById('exchangeBtn');
 
-  fromSel.addEventListener('click', () => chooseAsset('from'));
-  toSel.addEventListener('click', () => chooseAsset('to'));
+  fromSel.addEventListener('change', () => { state.from = fromSel.value.toUpperCase(); syncPair(); });
+  toSel.addEventListener('change', () => { state.to = toSel.value.toUpperCase(); syncPair(); });
   fromAmount.addEventListener('input', recalc);
   switchBtn.addEventListener('click', () => {
     const tmp = state.from; state.from = state.to; state.to = tmp;
-    fromSel.textContent = state.from; toSel.textContent = state.to; recalc(); updateMinHint();
+    fromSel.value = state.from; toSel.value = state.to; recalc(); updateMinHint(); updateRateLine();
   });
   btn.addEventListener('click', submitExchange);
 
   updateMinHint();
+  updateRateLine();
   recalc();
 }
 
-function chooseAsset(side) {
-  const options = ['USDT','ETH','TON','SOL','TRX'];
-  const next = prompt(`Выберите валюту (${options.join(', ')}):`, side === 'from' ? state.from : state.to);
-  if (!next) return;
-  const up = next.toUpperCase();
-  if (!options.includes(up)) return alert('Неверная валюта');
-  if (side === 'from') state.from = up; else state.to = up;
+function syncPair() {
   if (state.from === state.to) {
-    // автоматически поменяем вторую
-    const alt = options.find(s => s !== up) || 'USDT';
-    if (side === 'from') state.to = alt; else state.from = alt;
+    const all = ['USDT','ETH','TON','SOL','TRX'];
+    const alt = all.find(s => s !== state.from) || 'USDT';
+    state.to = alt;
+    document.getElementById('toSelect').value = alt;
   }
-  document.getElementById('fromSelect').textContent = state.from;
-  document.getElementById('toSelect').textContent = state.to;
   updateMinHint();
+  updateRateLine();
   recalc();
 }
 
@@ -90,6 +100,7 @@ function recalc() {
   const input = Number(document.getElementById('fromAmount').value || 0);
   const outEl = document.getElementById('toAmount');
   const feeLine = document.getElementById('feeLine');
+  updateRateLine();
   const btn = document.getElementById('exchangeBtn');
   const pFrom = priceUSD(state.from);
   const pTo = priceUSD(state.to);
@@ -124,6 +135,19 @@ function updateMinHint() {
   const min = Number(state.settings[minKey]||0);
   const el = document.getElementById('minHint');
   if (min > 0) el.textContent = `Мин. сумма: ${min} ${state.from}`; else el.textContent = '';
+}
+
+function updateRateLine() {
+  const pFrom = priceUSD(state.from);
+  const pTo = priceUSD(state.to);
+  const el = document.getElementById('rateLine');
+  if (!el) return;
+  if (pFrom > 0 && pTo > 0) {
+    const rate = pFrom / pTo;
+    el.textContent = `Курс: 1 ${state.from} ≈ ${(rate).toFixed(6)} ${state.to}`;
+  } else {
+    el.textContent = '';
+  }
 }
 
 function getBalance(sym) {

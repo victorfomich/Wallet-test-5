@@ -21,6 +21,17 @@ create index if not exists app_settings_key_idx on public.app_settings (key);
 --   ('fee_bnb', 0.01)
 -- on conflict (key) do update set value = excluded.value;
 
+-- КЛЮЧИ ДЛЯ ОБМЕНА (используются админкой и фронтом):
+-- Минимальные суммы и комиссия на обмен в процентах
+insert into public.app_settings(key, value) values
+  ('exchange_fee_percent', 0),
+  ('exchange_min_usdt', 0),
+  ('exchange_min_eth', 0),
+  ('exchange_min_ton', 0),
+  ('exchange_min_sol', 0),
+  ('exchange_min_trx', 0)
+on conflict (key) do nothing;
+
 -- Улучшенная схема базы данных для DreamWallet
 -- Полностью работающая схема с правильными политиками безопасности
 
