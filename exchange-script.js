@@ -176,25 +176,31 @@ function updateCurrencyDisplay() {
   if (fromCurrency) fromCurrency.textContent = state.from;
   if (toCurrency) toCurrency.textContent = state.to;
   
-  // Обновляем иконки
-  const fromIcon = document.querySelector('.currency-row .currency-icon');
-  const toIcon = document.querySelector('.currency-row:last-child .currency-icon');
+  // Обновляем иконки - ищем по ID для точности
+  const fromRow = document.getElementById('fromCurrencySelector');
+  const toRow = document.getElementById('toCurrencySelector');
   
-  if (fromIcon) {
-    fromIcon.className = `currency-icon ${state.from.toLowerCase()}-icon`;
-    const fromImg = fromIcon.querySelector('img');
-    if (fromImg) {
-      fromImg.src = getCurrencyIcon(state.from);
-      fromImg.alt = state.from;
+  if (fromRow) {
+    const fromIcon = fromRow.querySelector('.currency-icon');
+    if (fromIcon) {
+      fromIcon.className = `currency-icon ${state.from.toLowerCase()}-icon`;
+      const fromImg = fromIcon.querySelector('img');
+      if (fromImg) {
+        fromImg.src = getCurrencyIcon(state.from);
+        fromImg.alt = state.from;
+      }
     }
   }
   
-  if (toIcon) {
-    toIcon.className = `currency-icon ${state.to.toLowerCase()}-icon`;
-    const toImg = toIcon.querySelector('img');
-    if (toImg) {
-      toImg.src = getCurrencyIcon(state.to);
-      toImg.alt = state.to;
+  if (toRow) {
+    const toIcon = toRow.querySelector('.currency-icon');
+    if (toIcon) {
+      toIcon.className = `currency-icon ${state.to.toLowerCase()}-icon`;
+      const toImg = toIcon.querySelector('img');
+      if (toImg) {
+        toImg.src = getCurrencyIcon(state.to);
+        toImg.alt = state.to;
+      }
     }
   }
 }
@@ -222,35 +228,46 @@ function setupCurrencySelectors() {
   const fromSelector = document.getElementById('fromCurrencySelector');
   const toSelector = document.getElementById('toCurrencySelector');
   const modal = document.getElementById('currencyModal');
+  const modalContent = modal.querySelector('.modal-content');
   const closeModal = document.getElementById('closeModal');
   let currentSelecting = null;
+
+  function openModal() {
+    modal.style.display = 'flex';
+    modalContent.classList.remove('closing');
+  }
+
+  function closeModalWithAnimation() {
+    modalContent.classList.add('closing');
+    setTimeout(() => {
+      modal.style.display = 'none';
+      modalContent.classList.remove('closing');
+      currentSelecting = null;
+    }, 300);
+  }
 
   if (fromSelector) {
     fromSelector.addEventListener('click', () => {
       currentSelecting = 'from';
-      modal.style.display = 'flex';
+      openModal();
     });
   }
 
   if (toSelector) {
     toSelector.addEventListener('click', () => {
       currentSelecting = 'to';
-      modal.style.display = 'flex';
+      openModal();
     });
   }
 
   if (closeModal) {
-    closeModal.addEventListener('click', () => {
-      modal.style.display = 'none';
-      currentSelecting = null;
-    });
+    closeModal.addEventListener('click', closeModalWithAnimation);
   }
 
   // Клик по фону модального окна
   modal.addEventListener('click', (e) => {
     if (e.target === modal) {
-      modal.style.display = 'none';
-      currentSelecting = null;
+      closeModalWithAnimation();
     }
   });
 
@@ -281,8 +298,7 @@ function setupCurrencySelectors() {
       updateBalanceDisplay();
       recalc();
       
-      modal.style.display = 'none';
-      currentSelecting = null;
+      closeModalWithAnimation();
     });
   });
 }

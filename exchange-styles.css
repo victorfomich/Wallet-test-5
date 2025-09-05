@@ -196,8 +196,12 @@ body {
 }
 
 .continue-btn {
-    width: 100%;
-    margin-top: 24px;
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 32px);
+    max-width: 368px;
     background: #007AFF;
     border: none;
     color: white;
@@ -237,6 +241,10 @@ body {
     max-height: 70vh;
     overflow-y: auto;
     animation: slideUp 0.3s ease-out;
+}
+
+.modal-content.closing {
+    animation: slideDown 0.3s ease-out;
 }
 
 .modal-header {
@@ -309,13 +317,22 @@ body {
     color: #8E8E93;
 }
 
-/* Анимация */
+/* Анимации */
 @keyframes slideUp {
     from {
         transform: translateY(100%);
     }
     to {
         transform: translateY(0);
+    }
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(0);
+    }
+    to {
+        transform: translateY(100%);
     }
 }
 
