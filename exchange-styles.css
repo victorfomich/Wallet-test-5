@@ -25,8 +25,8 @@ body {
 }
 
 .exchange-container {
-    background: transparent;
-    border-radius: 0;
+    background: #fff;
+    border-radius: 12px;
     padding: 0;
     overflow: hidden;
     border: none;
@@ -46,18 +46,15 @@ body {
     justify-content: space-between;
     padding: 12px 16px;
     border-bottom: 0.5px solid #E5E5EA;
-    background: #fff;
+    background: transparent;
 }
 
 .currency-row:last-child {
     border-bottom: none;
-    border-bottom-left-radius: 12px;
-    border-bottom-right-radius: 12px;
 }
 
 .currency-row:first-child {
-    border-top-left-radius: 12px;
-    border-top-right-radius: 12px;
+    /* Remove individual border radius since container has it */
 }
 
 .currency-info {
