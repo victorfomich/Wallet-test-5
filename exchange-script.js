@@ -78,6 +78,9 @@ function setupUI() {
   
   btn.addEventListener('click', submitExchange);
 
+  // Селекторы валют
+  setupCurrencySelectors();
+
   updateCurrencyDisplay();
   updateBalanceDisplay();
   recalc();
@@ -213,6 +216,75 @@ function getCurrencyIcon(currency) {
     'TRX': 'tron.png'
   };
   return icons[currency] || 'usdt.png';
+}
+
+function setupCurrencySelectors() {
+  const fromSelector = document.getElementById('fromCurrencySelector');
+  const toSelector = document.getElementById('toCurrencySelector');
+  const modal = document.getElementById('currencyModal');
+  const closeModal = document.getElementById('closeModal');
+  let currentSelecting = null;
+
+  if (fromSelector) {
+    fromSelector.addEventListener('click', () => {
+      currentSelecting = 'from';
+      modal.style.display = 'flex';
+    });
+  }
+
+  if (toSelector) {
+    toSelector.addEventListener('click', () => {
+      currentSelecting = 'to';
+      modal.style.display = 'flex';
+    });
+  }
+
+  if (closeModal) {
+    closeModal.addEventListener('click', () => {
+      modal.style.display = 'none';
+      currentSelecting = null;
+    });
+  }
+
+  // Клик по фону модального окна
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.style.display = 'none';
+      currentSelecting = null;
+    }
+  });
+
+  // Выбор валюты
+  const currencyOptions = document.querySelectorAll('.currency-option');
+  currencyOptions.forEach(option => {
+    option.addEventListener('click', () => {
+      const currency = option.dataset.currency;
+      
+      if (currentSelecting === 'from') {
+        state.from = currency;
+      } else if (currentSelecting === 'to') {
+        state.to = currency;
+      }
+
+      // Проверяем, чтобы from и to не были одинаковыми
+      if (state.from === state.to) {
+        const all = ['USDT', 'ETH', 'TON', 'SOL', 'TRX'];
+        const alt = all.find(s => s !== state.from) || 'USDT';
+        if (currentSelecting === 'from') {
+          state.to = alt;
+        } else {
+          state.from = alt;
+        }
+      }
+
+      updateCurrencyDisplay();
+      updateBalanceDisplay();
+      recalc();
+      
+      modal.style.display = 'none';
+      currentSelecting = null;
+    });
+  });
 }
 
 function renderBalancesInfo() {

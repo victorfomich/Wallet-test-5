@@ -24,32 +24,6 @@ body {
     background-color: #f0f0f0;
 }
 
-.header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 20px;
-}
-
-.page-title {
-    font-size: 17px;
-    font-weight: 600;
-    color: #000;
-}
-
-.back {
-    width: 30px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: transparent;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 18px;
-    color: #007AFF;
-}
-
 .exchange-container {
     background: #fff;
     border-radius: 12px;
@@ -238,6 +212,111 @@ body {
     background: #E5E5EA;
     color: #8E8E93;
     cursor: not-allowed;
+}
+
+/* Модальное окно выбора валюты */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: flex;
+    align-items: flex-end;
+}
+
+.modal-content {
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+    background-color: #fff;
+    border-radius: 16px 16px 0 0;
+    padding: 0;
+    max-height: 70vh;
+    overflow-y: auto;
+    animation: slideUp 0.3s ease-out;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 16px 0 16px;
+    margin-bottom: 12px;
+}
+
+.modal-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #000;
+}
+
+.modal-close {
+    background: transparent;
+    border: none;
+    color: #8E8E93;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 4px;
+}
+
+.currency-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.currency-option {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 0.5px solid #E5E5EA;
+}
+
+.currency-option:last-child {
+    border-bottom: none;
+}
+
+.currency-option:active {
+    background-color: #E5E5EA;
+}
+
+.currency-info-modal {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+}
+
+.currency-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.currency-details .currency-name {
+    font-size: 17px;
+    font-weight: 400;
+    color: #000;
+}
+
+.currency-fullname {
+    font-size: 15px;
+    color: #8E8E93;
+}
+
+/* Анимация */
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+    }
+    to {
+        transform: translateY(0);
+    }
 }
 
 

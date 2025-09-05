@@ -13,16 +13,11 @@
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <div class="back" onclick="history.back()">‹</div>
-            <h1 class="page-title">ОБМЕН</h1>
-            <div style="width:20px"></div>
-        </div>
 
         <div class="exchange-container">
             <div class="section-title">Вы отправляете</div>
             <div class="currency-row">
-                <div class="currency-info">
+                <div class="currency-info" id="fromCurrencySelector">
                     <div class="currency-icon ton-icon">
                         <img src="toncoin.png" alt="TON" class="currency-logo">
                     </div>
@@ -44,7 +39,7 @@
             
             <div class="section-title">Вы получаете</div>
             <div class="currency-row">
-                <div class="currency-info">
+                <div class="currency-info" id="toCurrencySelector">
                     <div class="currency-icon usdt-icon">
                         <img src="usdt.png" alt="USDT" class="currency-logo">
                     </div>
@@ -57,6 +52,73 @@
             </div>
             
             <button id="exchangeBtn" class="continue-btn" disabled>Продолжить</button>
+        </div>
+
+        <!-- Модальное окно выбора валюты -->
+        <div class="modal-overlay" id="currencyModal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Выбор валюты</h3>
+                    <button class="modal-close" id="closeModal">×</button>
+                </div>
+                <div class="currency-list">
+                    <div class="currency-option" data-currency="USDT">
+                        <div class="currency-info-modal">
+                            <div class="currency-icon usdt-icon">
+                                <img src="usdt.png" alt="USDT" class="currency-logo">
+                            </div>
+                            <div class="currency-details">
+                                <div class="currency-name">USDT</div>
+                                <div class="currency-fullname">Tether USD</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="currency-option" data-currency="ETH">
+                        <div class="currency-info-modal">
+                            <div class="currency-icon eth-icon">
+                                <img src="ethereum.svg" alt="ETH" class="currency-logo">
+                            </div>
+                            <div class="currency-details">
+                                <div class="currency-name">ETH</div>
+                                <div class="currency-fullname">Ethereum</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="currency-option" data-currency="TON">
+                        <div class="currency-info-modal">
+                            <div class="currency-icon ton-icon">
+                                <img src="toncoin.png" alt="TON" class="currency-logo">
+                            </div>
+                            <div class="currency-details">
+                                <div class="currency-name">TON</div>
+                                <div class="currency-fullname">The Open Network</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="currency-option" data-currency="SOL">
+                        <div class="currency-info-modal">
+                            <div class="currency-icon sol-icon">
+                                <img src="solana.png" alt="SOL" class="currency-logo">
+                            </div>
+                            <div class="currency-details">
+                                <div class="currency-name">SOL</div>
+                                <div class="currency-fullname">Solana</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="currency-option" data-currency="TRX">
+                        <div class="currency-info-modal">
+                            <div class="currency-icon trx-icon">
+                                <img src="tron.png" alt="TRX" class="currency-logo">
+                            </div>
+                            <div class="currency-details">
+                                <div class="currency-name">TRX</div>
+                                <div class="currency-fullname">TRON</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
