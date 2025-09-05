@@ -108,6 +108,13 @@ body {
     padding: 0 16px;
 }
 
+.paste-hint {
+    margin-top: 10px;
+    color: var(--text-tertiary);
+    font-size: 13px;
+    line-height: 1.4;
+}
+
 .btn {
     flex: 1;
     border: none;
