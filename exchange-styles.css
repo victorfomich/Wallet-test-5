@@ -25,10 +25,10 @@ body {
 }
 
 .exchange-container {
-    background: #fff;
-    border-radius: 12px;
+    background: transparent;
+    border-radius: 0;
     padding: 0;
-    overflow: hidden;
+    overflow: visible;
     border: none;
     box-shadow: none;
 }
@@ -45,16 +45,13 @@ body {
     align-items: center;
     justify-content: space-between;
     padding: 12px 16px;
-    border-bottom: 0.5px solid #E5E5EA;
-    background: transparent;
+    background: #fff;
+    margin-bottom: 8px;
+    border-radius: 12px;
 }
 
 .currency-row:last-child {
-    border-bottom: none;
-}
-
-.currency-row:first-child {
-    /* Remove individual border radius since container has it */
+    margin-bottom: 0;
 }
 
 .currency-info {
@@ -168,17 +165,6 @@ body {
     position: relative;
 }
 
-.swap-button-container::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 0;
-    right: 0;
-    height: 0.5px;
-    background-color: #E5E5EA;
-    z-index: 0;
-}
-
 .swap-button {
     width: 32px;
     height: 32px;
@@ -191,8 +177,6 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    position: relative;
-    z-index: 1;
 }
 
 .continue-btn {
