@@ -292,17 +292,6 @@ body {
     width: 100%;
 }
 
-.transactions-header {
-    margin-bottom: 20px;
-    text-align: center;
-}
-
-.transactions-title {
-    font-size: 20px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin: 0;
-}
 
 .transactions-list {
     display: flex;
