@@ -333,55 +333,143 @@ async function loadTrxTransactions() {
     }
 }
 
+// ОТОБРАЖЕНИЕ ТРАНЗАКЦИЙ С ГРУППИРОВКОЙ ПО ДАТАМ
 function displayTransactions(transactions) {
     const loadingMessage = document.getElementById('loadingMessage');
     const noTransactions = document.getElementById('noTransactions');
     const transactionsList = document.getElementById('transactionsList');
     
+    // Скрываем загрузку и "нет транзакций"
     if (loadingMessage) loadingMessage.style.display = 'none';
     if (noTransactions) noTransactions.style.display = 'none';
     
+    // Очищаем список
     transactionsList.innerHTML = '';
     
-    transactions.forEach(transaction => {
-        const transactionElement = createTransactionElement(transaction);
-        transactionsList.appendChild(transactionElement);
+    // Группируем транзакции по датам
+    const groupedTransactions = groupTransactionsByDate(transactions);
+    
+    // Создаем группы с заголовками дат
+    Object.keys(groupedTransactions).forEach(dateKey => {
+        const dateGroup = document.createElement('div');
+        dateGroup.className = 'transaction-date-group';
+        
+        // Заголовок даты
+        const dateHeader = document.createElement('div');
+        dateHeader.className = 'transaction-date-header';
+        dateHeader.textContent = dateKey;
+        dateGroup.appendChild(dateHeader);
+        
+        // Транзакции этой даты
+        groupedTransactions[dateKey].forEach(transaction => {
+            const transactionElement = createTransactionElement(transaction);
+            dateGroup.appendChild(transactionElement);
+        });
+        
+        transactionsList.appendChild(dateGroup);
     });
+    
+    console.log('📊 Отображено транзакций:', transactions.length);
 }
 
+// ГРУППИРОВКА ТРАНЗАКЦИЙ ПО ДАТАМ
+function groupTransactionsByDate(transactions) {
+    const groups = {};
+    
+    transactions.forEach(transaction => {
+        const date = new Date(transaction.created_timestamp);
+        const dateKey = formatDateHeader(date);
+        
+        if (!groups[dateKey]) {
+            groups[dateKey] = [];
+        }
+        groups[dateKey].push(transaction);
+    });
+    
+    return groups;
+}
+
+// ФОРМАТИРОВАНИЕ ЗАГОЛОВКА ДАТЫ
+function formatDateHeader(date) {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const transactionDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    
+    const diffTime = today - transactionDate;
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) {
+        return 'СЕГОДНЯ';
+    } else if (diffDays === 1) {
+        return 'ВЧЕРА';
+    } else {
+        const months = [
+            'ЯНВАРЯ', 'ФЕВРАЛЯ', 'МАРТА', 'АПРЕЛЯ', 'МАЯ', 'ИЮНЯ',
+            'ИЮЛЯ', 'АВГУСТА', 'СЕНТЯБРЯ', 'ОКТЯБРЯ', 'НОЯБРЯ', 'ДЕКАБРЯ'
+        ];
+        return `${date.getDate()} ${months[date.getMonth()]}`;
+    }
+}
+
+// СОЗДАНИЕ ЭЛЕМЕНТА ТРАНЗАКЦИИ В НОВОМ СТИЛЕ
 function createTransactionElement(transaction) {
     const div = document.createElement('div');
     div.className = 'transaction-item';
-
+    
+    // Определяем тип транзакции (учитываем обмен)
     const type = (transaction.transaction_type || '').toLowerCase();
     const isDeposit = type === 'deposit' || type === 'exchange_credit';
     const isExchange = type.startsWith('exchange_');
-    const iconClass = isDeposit ? 'deposit' : 'withdraw';
-    const iconSymbol = isExchange ? '↔' : (isDeposit ? '↓' : '↑');
-    const typeText = isExchange ? (isDeposit ? 'Обмен (зачисление)' : 'Обмен (списание)') : (isDeposit ? 'Пополнение' : 'Вывод');
-
+    
+    // Определяем класс иконки и символ
+    let iconClass = 'withdraw';
+    let iconSymbol = '↗';
+    let typeText = 'Вывод';
+    
+    if (isExchange) {
+        iconClass = 'exchange';
+        iconSymbol = '↔';
+        typeText = isDeposit ? 'Обмен (зачисление)' : 'Обмен (списание)';
+    } else if (isDeposit) {
+        iconClass = 'deposit';
+        iconSymbol = '↙';
+        typeText = 'Пополнение';
+    }
+    
+    // Форматируем время
     const date = new Date(transaction.created_timestamp);
-    const dateStr = date.toLocaleDateString('ru-RU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
-
+    const timeStr = date.toLocaleTimeString('ru-RU', {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    
+    // Определяем сумму и знак
     const amount = parseFloat(transaction.withdraw_amount || 0);
     const amountClass = isDeposit ? 'positive' : 'negative';
     const amountSign = isDeposit ? '+' : '-';
-
-    const status = transaction.transaction_status || 'pending';
-    const statusText = { pending:'В ожидании', completed:'Завершено', failed:'Ошибка', cancelled:'Отменено' }[status] || status;
-
+    
+    // Рассчитываем USD эквивалент (используем примерный курс TRX)
+    const trxPrice = 0.12; // примерная цена TRX в USD
+    const usdAmount = amount * trxPrice;
+    
     div.innerHTML = `
-        <div class="transaction-icon ${iconClass}">${iconSymbol}</div>
+        <div class="transaction-icon ${iconClass}">
+            ${iconSymbol}
+        </div>
         <div class="transaction-info">
             <div class="transaction-type">${typeText}</div>
-            <div class="transaction-details"><span class="transaction-network">TRX</span><span>${dateStr}</span></div>
+            <div class="transaction-time">${timeStr}</div>
         </div>
         <div class="transaction-amount">
-            <div class="transaction-crypto ${amountClass}">${amountSign}${amount.toFixed(6)} TRX</div>
-            <div class="transaction-status ${status}">${statusText}</div>
+            <div class="transaction-crypto ${amountClass}">
+                ${amountSign}${amount.toFixed(2)} TRX
+            </div>
+            <div class="transaction-usd">
+                $${usdAmount.toFixed(2)}
+            </div>
         </div>
     `;
-
+    
     return div;
 }
 
