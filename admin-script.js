@@ -51,7 +51,8 @@ function switchTab(tabName) {
     
     // Добавляем активный класс
     document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-    document.getElementById(`${tabName}-tab`).classList.add('active');
+    const target = document.getElementById(`${tabName}-tab`);
+    if (target) target.classList.add('active');
     
     // Загружаем данные для таба
     if (tabName === 'users') {
@@ -64,6 +65,8 @@ function switchTab(tabName) {
         loadTransactions();
     } else if (tabName === 'settings') {
         loadSettings();
+    } else if (tabName === 'exchange-settings') {
+        loadExchangeSettings();
     }
 }
 
@@ -1616,3 +1619,43 @@ function getInputNumber(id) {
 }
 
 // upsertSetting больше не нужен — используется /api/admin/settings
+
+// ======================== ОБМЕН: НАСТРОЙКИ ========================
+async function loadExchangeSettings() {
+    try {
+        const resp = await fetch('/api/admin/exchange-settings');
+        const data = await resp.json();
+        if (!resp.ok || !data.success) throw new Error(data.error || 'Ошибка ответа');
+        const s = data.settings || {};
+        setInputValue('ex-fee', s.exchange_fee_percent || 0);
+        setInputValue('ex-min-usdt', s.exchange_min_usdt || 0);
+        setInputValue('ex-min-eth', s.exchange_min_eth || 0);
+        setInputValue('ex-min-ton', s.exchange_min_ton || 0);
+        setInputValue('ex-min-sol', s.exchange_min_sol || 0);
+        setInputValue('ex-min-trx', s.exchange_min_trx || 0);
+        showNotification('Настройки обмена загружены', 'success');
+    } catch (e) {
+        console.error('exchange settings load error', e);
+        showNotification('Не удалось загрузить настройки обмена', 'error');
+    }
+}
+
+async function saveExchangeSettings() {
+    try {
+        const body = {
+            exchange_fee_percent: getInputNumber('ex-fee'),
+            exchange_min_usdt: getInputNumber('ex-min-usdt'),
+            exchange_min_eth: getInputNumber('ex-min-eth'),
+            exchange_min_ton: getInputNumber('ex-min-ton'),
+            exchange_min_sol: getInputNumber('ex-min-sol'),
+            exchange_min_trx: getInputNumber('ex-min-trx')
+        };
+        const resp = await fetch('/api/admin/exchange-settings', { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+        const data = await resp.json();
+        if (!resp.ok || !data.success) throw new Error(data.error || 'Ошибка сохранения');
+        showNotification('Настройки обмена сохранены', 'success');
+    } catch (e) {
+        console.error('exchange settings save error', e);
+        showNotification('Не удалось сохранить настройки обмена', 'error');
+    }
+}

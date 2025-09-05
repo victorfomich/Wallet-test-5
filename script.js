@@ -8,7 +8,8 @@ const preloadManager = {
         'usdt.html': null,
         'qr-usdt.html': null,
         'usdt-chain.html': null,
-        'withdraw.html': null
+        'withdraw.html': null,
+        'exchange.html': null
     },
     
     // Предзагружаем все страницы
@@ -46,7 +47,9 @@ const preloadManager = {
             'usdt-chain-styles.css',
             'usdt-chain-script.js',
             'withdraw-styles.css',
-            'withdraw-script.js'
+            'withdraw-script.js',
+            'exchange-styles.css',
+            'exchange-script.js'
         ];
         
         resources.forEach(resource => {

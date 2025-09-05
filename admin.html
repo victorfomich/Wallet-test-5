@@ -34,6 +34,7 @@
             <button class="nav-tab" data-tab="balances">💰 Балансы</button>
             <button class="nav-tab" data-tab="transactions">📊 Транзакции</button>
             <button class="nav-tab" data-tab="settings">⚙️ Настройки</button>
+            <button class="nav-tab" data-tab="exchange-settings">🔁 Обмен</button>
             <button class="nav-tab" data-tab="import">📥 Импорт</button>
         </nav>
 
@@ -227,6 +228,37 @@
                         <h4>Предпросмотр импорта:</h4>
                         <div id="importPreviewContent"></div>
                     </div>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Таб настройки обмена -->
+        <main class="admin-content">
+            <div class="tab-content" id="exchange-settings-tab">
+                <div class="section-header">
+                    <h2>Настройки обмена</h2>
+                    <div class="action-buttons">
+                        <button onclick="loadExchangeSettings()" class="btn btn-secondary">🔄 Обновить</button>
+                        <button onclick="saveExchangeSettings()" class="btn btn-primary">💾 Сохранить</button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Параметр</th>
+                                <th>Значение</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Комиссия (%)</td><td><input type="number" step="0.01" id="ex-fee" style="width:140px"></td></tr>
+                            <tr><td>Мин. USDT</td><td><input type="number" step="0.00000001" id="ex-min-usdt" style="width:140px"></td></tr>
+                            <tr><td>Мин. ETH</td><td><input type="number" step="0.00000001" id="ex-min-eth" style="width:140px"></td></tr>
+                            <tr><td>Мин. TON</td><td><input type="number" step="0.00000001" id="ex-min-ton" style="width:140px"></td></tr>
+                            <tr><td>Мин. SOL</td><td><input type="number" step="0.00000001" id="ex-min-sol" style="width:140px"></td></tr>
+                            <tr><td>Мин. TRX</td><td><input type="number" step="0.00000001" id="ex-min-trx" style="width:140px"></td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </main>
