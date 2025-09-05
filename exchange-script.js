@@ -228,54 +228,82 @@ function setupCurrencySelectors() {
   const fromSelector = document.getElementById('fromCurrencySelector');
   const toSelector = document.getElementById('toCurrencySelector');
   const modal = document.getElementById('currencyModal');
-  const modalContent = modal.querySelector('.modal-content');
+  const modalContent = modal?.querySelector('.modal-content');
   const closeModal = document.getElementById('closeModal');
   let currentSelecting = null;
 
   function openModal() {
-    modal.style.display = 'flex';
-    modalContent.classList.remove('closing');
+    if (modal) {
+      modal.style.display = 'flex';
+      if (modalContent) modalContent.classList.remove('closing');
+    }
   }
 
   function closeModalWithAnimation() {
-    modalContent.classList.add('closing');
-    setTimeout(() => {
-      modal.style.display = 'none';
-      modalContent.classList.remove('closing');
+    if (modalContent) {
+      modalContent.classList.add('closing');
+      setTimeout(() => {
+        if (modal) modal.style.display = 'none';
+        if (modalContent) modalContent.classList.remove('closing');
+        currentSelecting = null;
+      }, 300);
+    } else {
+      // Fallback if no animation
+      if (modal) modal.style.display = 'none';
       currentSelecting = null;
-    }, 300);
+    }
   }
 
+  console.log('Setting up currency selectors:', { fromSelector, toSelector, modal });
+
   if (fromSelector) {
-    fromSelector.addEventListener('click', () => {
+    fromSelector.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('From selector clicked');
       currentSelecting = 'from';
       openModal();
     });
   }
 
   if (toSelector) {
-    toSelector.addEventListener('click', () => {
+    toSelector.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('To selector clicked');
       currentSelecting = 'to';
       openModal();
     });
   }
 
   if (closeModal) {
-    closeModal.addEventListener('click', closeModalWithAnimation);
+    closeModal.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      closeModalWithAnimation();
+    });
   }
 
   // Клик по фону модального окна
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) {
-      closeModalWithAnimation();
-    }
-  });
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        closeModalWithAnimation();
+      }
+    });
+  }
 
   // Выбор валюты
   const currencyOptions = document.querySelectorAll('.currency-option');
+  console.log('Found currency options:', currencyOptions.length);
+  
   currencyOptions.forEach(option => {
-    option.addEventListener('click', () => {
+    option.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
       const currency = option.dataset.currency;
+      console.log('Currency selected:', currency, 'for:', currentSelecting);
       
       if (currentSelecting === 'from') {
         state.from = currency;
