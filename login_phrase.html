@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>Вход по фразе - DreamWallet</title>
+    <link rel="stylesheet" href="login-phrase-styles.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="form-header">
+            <div class="form-title">Введите секретную фразу</div>
+            <div class="form-subtitle">24 слова, по одному в ячейку</div>
+        </div>
+
+        <div class="phrase-grid" id="phraseGrid">
+            <!-- 24 ячеек -->
+            <div class="phrase-item"><div class="phrase-index">1</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+            <div class="phrase-item"><div class="phrase-index">2</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+            <div class="phrase-item"><div class="phrase-index">3</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+            <div class="phrase-item"><div class="phrase-index">4</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+            <div class="phrase-item"><div class="phrase-index">5</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+            <div class="phrase-item"><div class="phrase-index">6</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+            <div class="phrase-item"><div class="phrase-index">7</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+            <div class="phrase-item"><div class="phrase-index">8</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+            <div class="phrase-item"><div class="phrase-index">9</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+            <div class="phrase-item"><div class="phrase-index">10</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+            <div class="phrase-item"><div class="phrase-index">11</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+            <div class="phrase-item"><div class="phrase-index">12</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+            <div class="phrase-item"><div class="phrase-index">13</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+            <div class="phrase-item"><div class="phrase-index">14</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+            <div class="phrase-item"><div class="phrase-index">15</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+            <div class="phrase-item"><div class="phrase-index">16</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+            <div class="phrase-item"><div class="phrase-index">17</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+            <div class="phrase-item"><div class="phrase-index">18</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+            <div class="phrase-item"><div class="phrase-index">19</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+            <div class="phrase-item"><div class="phrase-index">20</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+            <div class="phrase-item"><div class="phrase-index">21</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+            <div class="phrase-item"><div class="phrase-index">22</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+            <div class="phrase-item"><div class="phrase-index">23</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+            <div class="phrase-item"><div class="phrase-index">24</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+        </div>
+
+        <div class="actions">
+            <button id="confirmBtn" class="btn btn-primary" disabled>Подтвердить</button>
+            <button id="createBtn" class="btn btn-secondary">Создать новый</button>
+        </div>
+    </div>
+
+    <script src="login-phrase-script.js"></script>
+</body>
+</html>
+
