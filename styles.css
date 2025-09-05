@@ -75,12 +75,12 @@ body {
 /* Профиль карточка */
 .profile-card {
     background-color: var(--bg-card);
-    border-radius: 20px;
-    padding: 8px 12px;
+    border-radius: 22px;
+    padding: 10px 14px;
     display: flex;
     align-items: center;
-    gap: 8px;
-    box-shadow: 0 2px 6px var(--shadow-color);
+    gap: 10px;
+    box-shadow: 0 3px 8px var(--shadow-color);
     width: fit-content;
     position: relative;
     z-index: 2;
@@ -88,8 +88,8 @@ body {
 
 /* Контейнер аватара */
 .avatar-container {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
     overflow: hidden;
     flex-shrink: 0;
@@ -107,8 +107,8 @@ body {
 }
 
 .user-name span {
-    font-size: 14px;
-    font-weight: 500;
+    font-size: 15px;
+    font-weight: 600;
     color: var(--text-primary);
 }
 
