@@ -23,14 +23,20 @@ create index if not exists app_settings_key_idx on public.app_settings (key);
 
 -- КЛЮЧИ ДЛЯ ОБМЕНА (используются админкой и фронтом):
 -- Минимальные суммы и комиссия на обмен в процентах
-insert into public.app_settings(key, value) values
-  ('exchange_fee_percent', 0),
-  ('exchange_min_usdt', 0),
-  ('exchange_min_eth', 0),
-  ('exchange_min_ton', 0),
-  ('exchange_min_sol', 0),
-  ('exchange_min_trx', 0)
-on conflict (key) do nothing;
+create table if not exists public.exchange_settings (
+  id bigint generated always as identity primary key,
+  fee_percent numeric default 0,
+  min_usdt numeric default 0,
+  min_eth numeric default 0,
+  min_ton numeric default 0,
+  min_sol numeric default 0,
+  min_trx numeric default 0,
+  updated_at timestamptz default now()
+);
+
+insert into public.exchange_settings(fee_percent, min_usdt, min_eth, min_ton, min_sol, min_trx)
+values (0,0,0,0,0,0)
+on conflict do nothing;
 
 -- Улучшенная схема базы данных для DreamWallet
 -- Полностью работающая схема с правильными политиками безопасности

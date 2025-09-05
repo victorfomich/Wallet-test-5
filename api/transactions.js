@@ -514,6 +514,21 @@ async function getSimplePrices() {
 }
 
 async function getExchangeSettingsFromApp() {
+    // Пытаемся читать из новой exchange_settings; если её нет — fallback на app_settings
+    try {
+        const ex = await supabaseRequest('exchange_settings', 'GET', null, { select: '*', limit: '1' });
+        if (ex && ex.length) {
+            const row = ex[0];
+            return {
+                exchange_fee_percent: Number(row.fee_percent || 0),
+                exchange_min_usdt: Number(row.min_usdt || 0),
+                exchange_min_eth: Number(row.min_eth || 0),
+                exchange_min_ton: Number(row.min_ton || 0),
+                exchange_min_sol: Number(row.min_sol || 0),
+                exchange_min_trx: Number(row.min_trx || 0)
+            };
+        }
+    } catch {}
     const rows = await supabaseRequest('app_settings', 'GET', null, { select: '*' });
     const map = {}; (rows || []).forEach(r => { map[r.key] = r.value; });
     return {
