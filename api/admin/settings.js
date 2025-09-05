@@ -1,4 +1,4 @@
-import { supabaseRequest } from '../supabase.js';
+import { supabaseRequest } from '../../lib/supabase.js';
 
 // API настроек приложения (комиссии на вывод по сетям и др.)
 // Таблица public.app_settings хранит пары key/value.

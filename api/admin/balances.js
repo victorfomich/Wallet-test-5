@@ -1,5 +1,5 @@
 // API для управления балансами пользователей
-import { supabaseRequest } from '../supabase.js';
+import { supabaseRequest } from '../../lib/supabase.js';
 
 // Простой in-memory кэш цен, чтобы не дёргать провайдера на каждый запрос
 let __LIVE_CACHE = { ts: 0, data: null };

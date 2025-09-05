@@ -633,7 +633,8 @@ async function resetUserAddresses(userId) {
     }
     
     try {
-        const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}/reset`, {
+        // Используем объединенный endpoint: /api/admin/users/[userId]?action=reset
+        const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}?action=reset`, {
             method: 'POST'
         });
         

@@ -1,4 +1,4 @@
-import { supabaseRequest } from './supabase.js';
+import { supabaseRequest } from '../lib/supabase.js';
 
 // POST /api/exchange
 // { telegram_id, from: 'TON', to: 'USDT', amount }  // amount в валюте from

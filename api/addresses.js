@@ -1,6 +1,6 @@
 // API endpoints для работы с адресами через Vercel
 import { getUserByTelegramId, getOrCreateUser, getUserAddressesByTelegramId } from './users.js';
-import { supabaseRequest } from './supabase.js';
+import { supabaseRequest } from '../lib/supabase.js';
 
 // Получить адреса пользователя по Telegram ID
 export default async function handler(req, res) {

@@ -1,5 +1,5 @@
 // API для работы с пользователями и их адресами
-import { supabaseRequest } from './supabase.js';
+import { supabaseRequest } from '../lib/supabase.js';
 
 // Получить пользователя по Telegram ID
 async function getUserByTelegramId(telegramId) {

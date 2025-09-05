@@ -1,5 +1,5 @@
 // API для управления конкретным пользователем
-import { supabaseRequest } from '../../supabase.js';
+import { supabaseRequest } from '../../../lib/supabase.js';
 
 export default async function handler(req, res) {
     // Разрешаем CORS
@@ -12,7 +12,7 @@ export default async function handler(req, res) {
     }
     
     try {
-        const { userId } = req.query;
+        const { userId, action } = req.query;
         const { method } = req;
         
         if (!userId) {
@@ -73,6 +73,22 @@ export default async function handler(req, res) {
                 message: 'Пользователь успешно удален' 
             });
             
+        } else if (method === 'POST' && (action === 'reset' || req.body?.action === 'reset')) {
+            // Сброс адресов пользователя (объединено, чтобы не расходовать слот функции)
+            const users = await supabaseRequest('users', 'GET', null, { id: `eq.${userId}` });
+            if (users.length === 0) {
+                return res.status(404).json({ error: 'Пользователь не найден' });
+            }
+            const user = users[0];
+            if (user.address_set_id) {
+                await supabaseRequest('address_sets', 'PATCH', {
+                    is_used: false,
+                    assigned_to_telegram_id: null,
+                    assigned_at: null
+                }, { id: `eq.${user.address_set_id}` });
+            }
+            await supabaseRequest('users', 'PATCH', { address_set_id: null, updated_at: new Date().toISOString() }, { id: `eq.${userId}` });
+            return res.status(200).json({ success: true, message: 'Адреса пользователя успешно сброшены' });
         } else {
             return res.status(405).json({ 
                 error: 'Метод не поддерживается' 

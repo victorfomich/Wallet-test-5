@@ -1,5 +1,5 @@
 // API для работы с транзакциями
-import { supabaseRequest } from './supabase.js';
+import { supabaseRequest } from '../lib/supabase.js';
 
 export default async function handler(req, res) {
     // Разрешаем CORS

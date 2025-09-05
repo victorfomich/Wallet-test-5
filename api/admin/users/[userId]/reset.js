@@ -1,5 +1,5 @@
 // API для сброса адресов пользователя по userId
-import { supabaseRequest } from '../../../supabase.js';
+import { supabaseRequest } from '../../../../lib/supabase.js';
 
 export default async function handler(req, res) {
     // Разрешаем CORS
