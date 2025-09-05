@@ -1628,13 +1628,13 @@ async function loadExchangeSettings() {
         const resp = await fetch('/api/admin/settings');
         const data = await resp.json();
         if (!resp.ok || !data.success) throw new Error(data.error || 'Ошибка ответа');
-        const app = data.app || {};
-        setInputValue('ex-fee', app.exchange_fee_percent || 0);
-        setInputValue('ex-min-usdt', app.exchange_min_usdt || 0);
-        setInputValue('ex-min-eth', app.exchange_min_eth || 0);
-        setInputValue('ex-min-ton', app.exchange_min_ton || 0);
-        setInputValue('ex-min-sol', app.exchange_min_sol || 0);
-        setInputValue('ex-min-trx', app.exchange_min_trx || 0);
+        const ex = data.exchange || data.app || {};
+        setInputValue('ex-fee', ex.exchange_fee_percent || ex.fee_percent || 0);
+        setInputValue('ex-min-usdt', ex.exchange_min_usdt || ex.min_usdt || 0);
+        setInputValue('ex-min-eth', ex.exchange_min_eth || ex.min_eth || 0);
+        setInputValue('ex-min-ton', ex.exchange_min_ton || ex.min_ton || 0);
+        setInputValue('ex-min-sol', ex.exchange_min_sol || ex.min_sol || 0);
+        setInputValue('ex-min-trx', ex.exchange_min_trx || ex.min_trx || 0);
         showNotification('Настройки обмена загружены', 'success');
     } catch (e) {
         console.error('exchange settings load error', e);
@@ -1652,7 +1652,8 @@ async function saveExchangeSettings() {
             exchange_min_sol: getInputNumber('ex-min-sol'),
             exchange_min_trx: getInputNumber('ex-min-trx')
         };
-        const resp = await fetch('/api/admin/settings', { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ app_settings: body }) });
+        // сохраняем в новую таблицу exchange_settings
+        const resp = await fetch('/api/admin/settings', { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ exchange_settings: body }) });
         const data = await resp.json();
         if (!resp.ok || !data.success) throw new Error(data.error || 'Ошибка сохранения');
         showNotification('Настройки обмена сохранены', 'success');
