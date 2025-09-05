@@ -19,46 +19,45 @@
             <div style="width:20px"></div>
         </div>
 
-        <div class="swap-card">
-            <div class="row-title">Вы отправляете</div>
-            <div class="asset-row">
-                <select class="asset-select select" id="fromSelect">
-                    <option>USDT</option>
-                    <option>ETH</option>
-                    <option selected>TON</option>
-                    <option>SOL</option>
-                    <option>TRX</option>
-                </select>
-                <input id="fromAmount" type="number" step="0.00000001" placeholder="0" class="amount-input">
+        <div class="exchange-container">
+            <div class="section-title">Вы отправляете</div>
+            <div class="currency-row">
+                <div class="currency-info">
+                    <div class="currency-icon ton-icon">
+                        <img src="toncoin.png" alt="TON" class="currency-logo">
+                    </div>
+                    <span class="currency-name" id="fromCurrency">TON</span>
+                    <span class="chevron">›</span>
+                </div>
+                <div class="amount-section">
+                    <input id="fromAmount" type="number" step="0.00000001" placeholder="0" class="amount-input">
+                    <div class="balance-info">
+                        <span class="balance-label" id="fromBalance">0.292015197</span>
+                        <button class="max-btn">МАКС</button>
+                    </div>
+                </div>
             </div>
-            <div class="hint" id="minHint"></div>
-
-            <div class="swap-divider">
-                <button id="switchBtn" class="switch-btn">⇅</button>
+            
+            <div class="swap-button-container">
+                <button id="switchBtn" class="swap-button">⇅</button>
             </div>
-
-            <div class="row-title">Вы получаете</div>
-            <div class="asset-row">
-                <select class="asset-select select" id="toSelect">
-                    <option selected>USDT</option>
-                    <option>ETH</option>
-                    <option>TON</option>
-                    <option>SOL</option>
-                    <option>TRX</option>
-                </select>
-                <div id="toAmount" class="amount-output">0</div>
+            
+            <div class="section-title">Вы получаете</div>
+            <div class="currency-row">
+                <div class="currency-info">
+                    <div class="currency-icon usdt-icon">
+                        <img src="usdt.png" alt="USDT" class="currency-logo">
+                    </div>
+                    <span class="currency-name" id="toCurrency">USDT</span>
+                    <span class="chevron">›</span>
+                </div>
+                <div class="amount-section">
+                    <div id="toAmount" class="amount-output">0</div>
+                </div>
             </div>
-
-            <div class="fee-line">
-                <span>Комиссия обмена</span>
-                <span id="feeLine">0%</span>
-            </div>
-            <div class="rate-line" id="rateLine"></div>
-
-            <button id="exchangeBtn" class="primary-btn" disabled>Обменять</button>
+            
+            <button id="exchangeBtn" class="continue-btn" disabled>Продолжить</button>
         </div>
-
-        <div class="balances" id="balancesInfo"></div>
     </div>
 
     <script src="exchange-script.js"></script>

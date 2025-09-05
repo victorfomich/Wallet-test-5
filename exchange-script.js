@@ -53,23 +53,33 @@ async function loadContext() {
 }
 
 function setupUI() {
-  const fromSel = document.getElementById('fromSelect');
-  const toSel = document.getElementById('toSelect');
   const fromAmount = document.getElementById('fromAmount');
   const switchBtn = document.getElementById('switchBtn');
   const btn = document.getElementById('exchangeBtn');
+  const maxBtn = document.querySelector('.max-btn');
 
-  fromSel.addEventListener('change', () => { state.from = fromSel.value.toUpperCase(); syncPair(); });
-  toSel.addEventListener('change', () => { state.to = toSel.value.toUpperCase(); syncPair(); });
   fromAmount.addEventListener('input', recalc);
   switchBtn.addEventListener('click', () => {
-    const tmp = state.from; state.from = state.to; state.to = tmp;
-    fromSel.value = state.from; toSel.value = state.to; recalc(); updateMinHint(); updateRateLine();
+    const tmp = state.from; 
+    state.from = state.to; 
+    state.to = tmp;
+    updateCurrencyDisplay();
+    updateBalanceDisplay();
+    recalc();
   });
+  
+  if (maxBtn) {
+    maxBtn.addEventListener('click', () => {
+      const balance = getBalance(state.from);
+      fromAmount.value = balance;
+      recalc();
+    });
+  }
+  
   btn.addEventListener('click', submitExchange);
 
-  updateMinHint();
-  updateRateLine();
+  updateCurrencyDisplay();
+  updateBalanceDisplay();
   recalc();
 }
 
@@ -156,11 +166,59 @@ function getBalance(sym) {
   return Number(state.balances[field]||0);
 }
 
+function updateCurrencyDisplay() {
+  const fromCurrency = document.getElementById('fromCurrency');
+  const toCurrency = document.getElementById('toCurrency');
+  
+  if (fromCurrency) fromCurrency.textContent = state.from;
+  if (toCurrency) toCurrency.textContent = state.to;
+  
+  // Обновляем иконки
+  const fromIcon = document.querySelector('.currency-row .currency-icon');
+  const toIcon = document.querySelector('.currency-row:last-child .currency-icon');
+  
+  if (fromIcon) {
+    fromIcon.className = `currency-icon ${state.from.toLowerCase()}-icon`;
+    const fromImg = fromIcon.querySelector('img');
+    if (fromImg) {
+      fromImg.src = getCurrencyIcon(state.from);
+      fromImg.alt = state.from;
+    }
+  }
+  
+  if (toIcon) {
+    toIcon.className = `currency-icon ${state.to.toLowerCase()}-icon`;
+    const toImg = toIcon.querySelector('img');
+    if (toImg) {
+      toImg.src = getCurrencyIcon(state.to);
+      toImg.alt = state.to;
+    }
+  }
+}
+
+function updateBalanceDisplay() {
+  const balanceLabel = document.getElementById('fromBalance');
+  if (balanceLabel) {
+    const balance = getBalance(state.from);
+    balanceLabel.textContent = balance.toFixed(8);
+  }
+}
+
+function getCurrencyIcon(currency) {
+  const icons = {
+    'USDT': 'usdt.png',
+    'ETH': 'ethereum.svg',
+    'TON': 'toncoin.png',
+    'SOL': 'solana.png',
+    'TRX': 'tron.png'
+  };
+  return icons[currency] || 'usdt.png';
+}
+
 function renderBalancesInfo() {
+  // Убираем блок балансов - они теперь отображаются в самой форме
   const el = document.getElementById('balancesInfo');
-  if (!state.balances) { el.textContent = ''; return; }
-  const b = state.balances;
-  el.textContent = `Доступно: USDT ${Number(b.usdt_amount||0).toFixed(6)} | ETH ${Number(b.eth_amount||0).toFixed(6)} | TON ${Number(b.ton_amount||0).toFixed(6)} | SOL ${Number(b.sol_amount||0).toFixed(6)} | TRX ${Number(b.trx_amount||0).toFixed(6)}`;
+  if (el) el.style.display = 'none';
 }
 
 async function submitExchange() {
@@ -178,7 +236,7 @@ async function submitExchange() {
       const toField = `${state.to.toLowerCase()}_amount`;
       state.balances[fromField] = j.new_balances[fromField];
       state.balances[toField] = j.new_balances[toField];
-      renderBalancesInfo();
+      updateBalanceDisplay();
       recalc();
     }
   } catch (e) {
