@@ -470,8 +470,8 @@ function createTransactionElement(transaction) {
     const amountSign = isDeposit ? '+' : '-';
     
     // Рассчитываем USD эквивалент (используем примерный курс TON)
-    const tonPrice = 5.2; // примерная цена TON в USD
-    const usdAmount = amount * tonPrice;
+    const tonPrice = getTonLivePrice();
+    const usdAmount = amount * (tonPrice || 0);
     
     div.innerHTML = `
         <div class="transaction-icon ${iconClass}">
@@ -492,6 +492,17 @@ function createTransactionElement(transaction) {
     `;
     
     return div;
+}
+
+function getTonLivePrice() {
+  try {
+    const totalText = document.getElementById('balanceAmount')?.textContent || '';
+    const tonText = document.getElementById('tonBalance')?.textContent || '';
+    const total = Number(String(totalText).replace(/[^0-9.]/g, '')) || 0;
+    const amt = Number(String(tonText).replace(/[^0-9.]/g, '')) || 0;
+    if (total > 0 && amt > 0) return total / amt;
+  } catch {}
+  return (window.livePrices && Number(window.livePrices.ton)) || 0;
 }
 
 // ПОКАЗАТЬ "НЕТ ТРАНЗАКЦИЙ"

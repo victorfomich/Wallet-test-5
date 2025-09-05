@@ -470,7 +470,7 @@ function createTransactionElement(transaction) {
     const amountSign = isDeposit ? '+' : '-';
     
     // Рассчитываем USD эквивалент (примерно $1 = 1 USDT)
-    const usdAmount = amount * 1.00; // для USDT курс примерно 1:1
+    const usdAmount = amount * 1.00;
     
     div.innerHTML = `
         <div class="transaction-icon ${iconClass}">

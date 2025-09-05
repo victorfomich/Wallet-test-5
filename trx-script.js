@@ -449,8 +449,8 @@ function createTransactionElement(transaction) {
     const amountSign = isDeposit ? '+' : '-';
     
     // Рассчитываем USD эквивалент (используем примерный курс TRX)
-    const trxPrice = 0.12; // примерная цена TRX в USD
-    const usdAmount = amount * trxPrice;
+    const trxPrice = getTrxLivePrice();
+    const usdAmount = amount * (trxPrice || 0);
     
     div.innerHTML = `
         <div class="transaction-icon ${iconClass}">
@@ -471,6 +471,17 @@ function createTransactionElement(transaction) {
     `;
     
     return div;
+}
+
+function getTrxLivePrice() {
+  try {
+    const totalText = document.getElementById('balanceAmount')?.textContent || '';
+    const trxText = document.getElementById('trxBalance')?.textContent || '';
+    const total = Number(String(totalText).replace(/[^0-9.]/g, '')) || 0;
+    const amt = Number(String(trxText).replace(/[^0-9.]/g, '')) || 0;
+    if (total > 0 && amt > 0) return total / amt;
+  } catch {}
+  return (window.livePrices && Number(window.livePrices.trx)) || 0;
 }
 
 function showNoTransactions() {

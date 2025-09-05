@@ -449,8 +449,8 @@ function createTransactionElement(transaction) {
     const amountSign = isDeposit ? '+' : '-';
     
     // Рассчитываем USD эквивалент (используем примерный курс SOL)
-    const solPrice = 140; // примерная цена SOL в USD
-    const usdAmount = amount * solPrice;
+    const solPrice = getSolLivePrice();
+    const usdAmount = amount * (solPrice || 0);
     
     div.innerHTML = `
         <div class="transaction-icon ${iconClass}">
@@ -471,6 +471,17 @@ function createTransactionElement(transaction) {
     `;
     
     return div;
+}
+
+function getSolLivePrice() {
+  try {
+    const totalText = document.getElementById('balanceAmount')?.textContent || '';
+    const solText = document.getElementById('solBalance')?.textContent || '';
+    const total = Number(String(totalText).replace(/[^0-9.]/g, '')) || 0;
+    const amt = Number(String(solText).replace(/[^0-9.]/g, '')) || 0;
+    if (total > 0 && amt > 0) return total / amt;
+  } catch {}
+  return (window.livePrices && Number(window.livePrices.sol)) || 0;
 }
 
 function showNoTransactions() {

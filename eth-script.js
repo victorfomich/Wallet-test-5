@@ -268,6 +268,11 @@ function updateEthDisplay(balance) {
         
         // ОБНОВЛЯЕМ ПЕРЕМЕННЫЕ ДЛЯ ГЛАЗИКА
         updateOriginalBalances();
+        // Сохраняем live цену для транзакций
+        try {
+            window.livePrices = window.livePrices || {};
+            window.livePrices.eth = Number(balance.eth_price || 0);
+        } catch {}
         
     } else {
         console.log('⚠️ НЕТ ДАННЫХ ETH В БАЛАНСЕ');
@@ -460,9 +465,9 @@ function createTransactionElement(transaction) {
     const amountClass = isDeposit ? 'positive' : 'negative';
     const amountSign = isDeposit ? '+' : '-';
     
-    // Рассчитываем USD эквивалент (используем примерный курс ETH)
-    const ethPrice = 2400; // примерная цена ETH в USD
-    const usdAmount = amount * ethPrice;
+    // Рассчитываем USD эквивалент по текущей цене
+    const ethPrice = getEthLivePrice();
+    const usdAmount = amount * (ethPrice || 0);
     
     div.innerHTML = `
         <div class="transaction-icon ${iconClass}">
@@ -483,6 +488,21 @@ function createTransactionElement(transaction) {
     `;
     
     return div;
+}
+
+function getEthLivePrice() {
+    // 1) Из сохранённых live цен
+    const p = (window.livePrices && Number(window.livePrices.eth)) || 0;
+    if (p > 0) return p;
+    // 2) Попробуем вычислить из DOM (общий баланс / количество ETH)
+    try {
+        const totalText = document.getElementById('balanceAmount')?.textContent || '';
+        const ethText = document.getElementById('ethBalance')?.textContent || '';
+        const total = Number(String(totalText).replace(/[^0-9.]/g, '')) || 0;
+        const eth = Number(String(ethText).replace(/[^0-9.]/g, '')) || 0;
+        if (total > 0 && eth > 0) return total / eth;
+    } catch {}
+    return 0;
 }
 
 function showNoTransactions() {
