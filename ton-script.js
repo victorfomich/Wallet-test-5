@@ -381,11 +381,13 @@ function createTransactionElement(transaction) {
     const div = document.createElement('div');
     div.className = 'transaction-item';
     
-    // Определяем тип транзакции
-    const isDeposit = transaction.transaction_type === 'deposit';
+    // Определяем тип транзакции (учитываем обмен)
+    const type = (transaction.transaction_type || '').toLowerCase();
+    const isDeposit = type === 'deposit' || type === 'exchange_credit';
+    const isExchange = type.startsWith('exchange_');
     const iconClass = isDeposit ? 'deposit' : 'withdraw';
-    const iconSymbol = isDeposit ? '↓' : '↑';
-    const typeText = isDeposit ? 'Пополнение' : 'Вывод';
+    const iconSymbol = isExchange ? '↔' : (isDeposit ? '↓' : '↑');
+    const typeText = isExchange ? (isDeposit ? 'Обмен (зачисление)' : 'Обмен (списание)') : (isDeposit ? 'Пополнение' : 'Вывод');
     
     // Форматируем дату
     const date = new Date(transaction.created_timestamp);

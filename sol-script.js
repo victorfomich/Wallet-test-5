@@ -352,53 +352,36 @@ function displayTransactions(transactions) {
 function createTransactionElement(transaction) {
     const div = document.createElement('div');
     div.className = 'transaction-item';
-    
-    const isDeposit = transaction.transaction_type === 'deposit';
+
+    const type = (transaction.transaction_type || '').toLowerCase();
+    const isDeposit = type === 'deposit' || type === 'exchange_credit';
+    const isExchange = type.startsWith('exchange_');
     const iconClass = isDeposit ? 'deposit' : 'withdraw';
-    const iconSymbol = isDeposit ? '↓' : '↑';
-    const typeText = isDeposit ? 'Пополнение' : 'Вывод';
-    
+    const iconSymbol = isExchange ? '↔' : (isDeposit ? '↓' : '↑');
+    const typeText = isExchange ? (isDeposit ? 'Обмен (зачисление)' : 'Обмен (списание)') : (isDeposit ? 'Пополнение' : 'Вывод');
+
     const date = new Date(transaction.created_timestamp);
-    const dateStr = date.toLocaleDateString('ru-RU', {
-        day: 'numeric',
-        month: 'short',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-    
+    const dateStr = date.toLocaleDateString('ru-RU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+
     const amount = parseFloat(transaction.withdraw_amount || 0);
     const amountClass = isDeposit ? 'positive' : 'negative';
     const amountSign = isDeposit ? '+' : '-';
-    
+
     const status = transaction.transaction_status || 'pending';
-    const statusText = {
-        'pending': 'В ожидании',
-        'completed': 'Завершено',
-        'failed': 'Ошибка',
-        'cancelled': 'Отменено'
-    }[status] || status;
-    
+    const statusText = { pending:'В ожидании', completed:'Завершено', failed:'Ошибка', cancelled:'Отменено' }[status] || status;
+
     div.innerHTML = `
-        <div class="transaction-icon ${iconClass}">
-            ${iconSymbol}
-        </div>
+        <div class="transaction-icon ${iconClass}">${iconSymbol}</div>
         <div class="transaction-info">
             <div class="transaction-type">${typeText}</div>
-            <div class="transaction-details">
-                <span class="transaction-network">SOL</span>
-                <span>${dateStr}</span>
-            </div>
+            <div class="transaction-details"><span class="transaction-network">SOL</span><span>${dateStr}</span></div>
         </div>
         <div class="transaction-amount">
-            <div class="transaction-crypto ${amountClass}">
-                ${amountSign}${amount.toFixed(6)} SOL
-            </div>
-            <div class="transaction-status ${status}">
-                ${statusText}
-            </div>
+            <div class="transaction-crypto ${amountClass}">${amountSign}${amount.toFixed(6)} SOL</div>
+            <div class="transaction-status ${status}">${statusText}</div>
         </div>
     `;
-    
+
     return div;
 }
 
