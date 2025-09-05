@@ -256,7 +256,8 @@ function updateUsdtDisplay(balance) {
         // USD стоимость
         const usdValue = balance.usdt_amount * balance.usdt_price;
         if (balanceElement) {
-            balanceElement.textContent = `$${usdValue.toFixed(2)}`;
+            const formatted = Number(usdValue.toFixed(2)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            balanceElement.textContent = `$${formatted}`;
             console.log(`✅ USD СТОИМОСТЬ: $${usdValue.toFixed(2)}`);
         }
         

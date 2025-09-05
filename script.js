@@ -580,7 +580,7 @@ function updateBalanceDisplay(balance) {
             totalBalance += balance.trx_amount * balance.trx_price;
         }
         
-        balanceElement.textContent = totalBalance.toFixed(2);
+        balanceElement.textContent = Number(totalBalance.toFixed(2)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         console.log(`💵 ОБЩИЙ БАЛАНС ИЗ БАЗЫ: $${totalBalance.toFixed(2)}`);
     }
 }
