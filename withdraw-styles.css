@@ -123,6 +123,19 @@ h1.page-title {
     color: var(--text-tertiary);
 }
 
+/* Убираем стрелки у number-input (WebKit/Chromium/Safari) глобально для withdraw */
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Убираем стрелки у number-input (Firefox) */
+input[type=number] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
 /* Список криптовалют */
 .crypto-list {
     display: flex;
