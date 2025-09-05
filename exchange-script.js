@@ -305,11 +305,19 @@ function setupCurrencySelectors() {
       const currency = option.dataset.currency;
       console.log('Currency selected:', currency, 'for:', currentSelecting);
       
+      // СНАЧАЛА ОБРАБАТЫВАЕМ ВЫБОР
       if (currentSelecting === 'from') {
         state.from = currency;
       } else if (currentSelecting === 'to') {
         state.to = currency;
       }
+      
+      // СРАЗУ ЗАКРЫВАЕМ МОДАЛЬНОЕ ОКНО
+      if (modal) {
+        modal.style.display = 'none';
+        if (modalContent) modalContent.classList.remove('closing');
+      }
+      currentSelecting = null;
 
       // Проверяем, чтобы from и to не были одинаковыми
       if (state.from === state.to) {
@@ -325,8 +333,6 @@ function setupCurrencySelectors() {
       updateCurrencyDisplay();
       updateBalanceDisplay();
       recalc();
-      
-      closeModalWithAnimation();
     });
   });
 }
