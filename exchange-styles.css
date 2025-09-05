@@ -174,21 +174,12 @@ body {
 .swap-button-container::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 16px;
-    right: 16px;
+    top: 50%;
+    left: 0;
+    right: 0;
     height: 0.5px;
     background-color: #E5E5EA;
-}
-
-.swap-button-container::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 16px;
-    right: 16px;
-    height: 0.5px;
-    background-color: #E5E5EA;
+    z-index: 0;
 }
 
 .swap-button {
@@ -203,6 +194,8 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
+    z-index: 1;
 }
 
 .continue-btn {
