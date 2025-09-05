@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const user = tg?.initDataUnsafe?.user;
   if (user?.id) state.telegramId = user.id;
   await loadContext();
+  setupBackNavigation();
   setupUI();
 });
 
@@ -84,6 +85,36 @@ function setupUI() {
   updateCurrencyDisplay();
   updateBalanceDisplay();
   recalc();
+}
+
+function setupBackNavigation() {
+  // Показываем кнопку назад Telegram и вешаем обработчик
+  try {
+    if (tg && tg.BackButton) {
+      tg.BackButton.show();
+      tg.BackButton.onClick(() => safeBack());
+    }
+  } catch {}
+
+  // Страховка для браузерной кнопки «назад» внутри WebView
+  try {
+    // Если истории нет – при нажатии «назад» отправим на index.html
+    window.addEventListener('popstate', () => {
+      // Ничего не делаем: системный «назад» вернёт на предыдущую страницу
+    });
+  } catch {}
+}
+
+function safeBack() {
+  try {
+    if (window.history && window.history.length > 1) {
+      window.history.back();
+    } else {
+      window.location.href = 'index.html';
+    }
+  } catch {
+    window.location.href = 'index.html';
+  }
 }
 
 function syncPair() {
