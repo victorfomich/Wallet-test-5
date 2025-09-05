@@ -284,8 +284,12 @@ function initBalanceToggle() {
     const balanceAmount = document.getElementById('balanceAmount');
     
     if (eyeIcon && eyeIconDark && balanceAmount) {
-        // Сохраняем оригинальный баланс
+        // Сохраняем оригинальные значения
         const originalBalance = balanceAmount.textContent;
+        const assetBalances = Array.from(document.querySelectorAll('.asset-balance'));
+        const assetUsdValues = Array.from(document.querySelectorAll('.asset-usd-value'));
+        const originalAssetBalances = assetBalances.map(el => el.textContent);
+        const originalAssetUsdValues = assetUsdValues.map(el => el.textContent);
         
         // Функция для переключения иконок
         function toggleEyeIcons(isHidden) {
@@ -316,6 +320,8 @@ function initBalanceToggle() {
                 // Показываем баланс
                 balanceAmount.textContent = originalBalance;
                 balanceAmount.classList.remove('hidden');
+                assetBalances.forEach((el, i) => { el.textContent = originalAssetBalances[i]; el.classList.remove('hidden'); });
+                assetUsdValues.forEach((el, i) => { el.textContent = originalAssetUsdValues[i]; el.classList.remove('hidden'); });
                 toggleEyeIcons(false);
                 eyeIcon.classList.remove('hidden');
                 eyeIconDark.classList.remove('hidden');
@@ -323,6 +329,8 @@ function initBalanceToggle() {
                 // Скрываем баланс (показываем точки)
                 balanceAmount.textContent = '•••';
                 balanceAmount.classList.add('hidden');
+                assetBalances.forEach(el => { el.textContent = '•••'; el.classList.add('hidden'); });
+                assetUsdValues.forEach(el => { el.textContent = '•••'; el.classList.add('hidden'); });
                 toggleEyeIcons(true);
                 eyeIcon.classList.add('hidden');
                 eyeIconDark.classList.add('hidden');
