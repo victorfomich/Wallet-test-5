@@ -346,23 +346,43 @@ function renderBalancesInfo() {
 async function submitExchange() {
   const amt = Number(document.getElementById('fromAmount').value || 0);
   if (!state.telegramId) return alert('Пользователь не определён');
+  if (amt <= 0) return alert('Введите сумму для обмена');
+  
   const body = { telegram_id: state.telegramId, from: state.from, to: state.to, amount: amt };
+  console.log('Submitting exchange:', body);
+  
   try {
-    const resp = await fetch('/api/transactions?action=exchange', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    const resp = await fetch('/api/transactions?action=exchange', { 
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json' }, 
+      body: JSON.stringify(body) 
+    });
+    
     const j = await resp.json();
-    if (!resp.ok || !j.success) throw new Error(j.error || 'Ошибка обмена');
-    alert(`Успешно: получите ${j.result.amount_out} ${state.to}`);
-    // обновляем локальные данные
-    if (state.balances) {
+    console.log('Exchange response:', j);
+    
+    if (!resp.ok || !j.success) {
+      throw new Error(j.error || 'Ошибка обмена');
+    }
+    
+    alert(`Успешно обменяно!\nПолучено: ${j.result.amount_out} ${state.to}\nКомиссия: ${j.result.fee_amount || 0} ${state.to}`);
+    
+    // Обновляем локальные данные
+    if (state.balances && j.new_balances) {
       const fromField = `${state.from.toLowerCase()}_amount`;
       const toField = `${state.to.toLowerCase()}_amount`;
       state.balances[fromField] = j.new_balances[fromField];
       state.balances[toField] = j.new_balances[toField];
       updateBalanceDisplay();
+      
+      // Очищаем поле ввода
+      document.getElementById('fromAmount').value = '';
       recalc();
     }
+    
   } catch (e) {
-    alert(e.message);
+    console.error('Exchange error:', e);
+    alert(`Ошибка обмена: ${e.message}`);
   }
 }
 
