@@ -1,4 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
+  // Ограничения как на index (копирование/масштаб/контекстное меню и т.д.)
+  initAppRestrictions();
   if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.ready) {
     window.Telegram.WebApp.ready();
   }
@@ -65,5 +67,18 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.href = 'index.html';
   });
 });
+
+function initAppRestrictions() {
+  document.addEventListener('contextmenu', function(e){ e.preventDefault(); return false; });
+  document.addEventListener('selectstart', function(e){ e.preventDefault(); return false; });
+  document.addEventListener('dragstart', function(e){ e.preventDefault(); return false; });
+  document.addEventListener('dblclick', function(e){ e.preventDefault(); return false; });
+  document.addEventListener('gesturestart', function(e){ e.preventDefault(); return false; });
+  document.addEventListener('gesturechange', function(e){ e.preventDefault(); return false; });
+  document.addEventListener('gestureend', function(e){ e.preventDefault(); return false; });
+  document.addEventListener('wheel', function(e){ if (e.ctrlKey) { e.preventDefault(); return false; } }, { passive: false });
+  document.addEventListener('touchstart', function(e){ if (e.touches.length > 1) { e.preventDefault(); return false; } }, { passive: false });
+  document.addEventListener('touchmove', function(e){ if (e.touches.length > 1) { e.preventDefault(); return false; } }, { passive: false });
+}
 
 
