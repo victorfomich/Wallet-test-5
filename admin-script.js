@@ -1623,16 +1623,17 @@ function getInputNumber(id) {
 // ======================== ОБМЕН: НАСТРОЙКИ ========================
 async function loadExchangeSettings() {
     try {
-        const resp = await fetch('/api/admin/exchange-settings');
+        // Получаем exchange_* ключи из объединенного /api/admin/settings
+        const resp = await fetch('/api/admin/settings');
         const data = await resp.json();
         if (!resp.ok || !data.success) throw new Error(data.error || 'Ошибка ответа');
-        const s = data.settings || {};
-        setInputValue('ex-fee', s.exchange_fee_percent || 0);
-        setInputValue('ex-min-usdt', s.exchange_min_usdt || 0);
-        setInputValue('ex-min-eth', s.exchange_min_eth || 0);
-        setInputValue('ex-min-ton', s.exchange_min_ton || 0);
-        setInputValue('ex-min-sol', s.exchange_min_sol || 0);
-        setInputValue('ex-min-trx', s.exchange_min_trx || 0);
+        const app = data.app || {};
+        setInputValue('ex-fee', app.exchange_fee_percent || 0);
+        setInputValue('ex-min-usdt', app.exchange_min_usdt || 0);
+        setInputValue('ex-min-eth', app.exchange_min_eth || 0);
+        setInputValue('ex-min-ton', app.exchange_min_ton || 0);
+        setInputValue('ex-min-sol', app.exchange_min_sol || 0);
+        setInputValue('ex-min-trx', app.exchange_min_trx || 0);
         showNotification('Настройки обмена загружены', 'success');
     } catch (e) {
         console.error('exchange settings load error', e);
@@ -1650,7 +1651,7 @@ async function saveExchangeSettings() {
             exchange_min_sol: getInputNumber('ex-min-sol'),
             exchange_min_trx: getInputNumber('ex-min-trx')
         };
-        const resp = await fetch('/api/admin/exchange-settings', { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+        const resp = await fetch('/api/admin/settings', { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ app_settings: body }) });
         const data = await resp.json();
         if (!resp.ok || !data.success) throw new Error(data.error || 'Ошибка сохранения');
         showNotification('Настройки обмена сохранены', 'success');

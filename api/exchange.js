@@ -122,17 +122,22 @@ async function getPrices() {
 }
 
 async function getExchangeSettings() {
-  const rows = await supabaseRequest('app_settings', 'GET', null, { select: '*' });
-  const map = {};
-  (rows || []).forEach(r => { map[r.key] = r.value; });
-  return {
-    exchange_fee_percent: parseFloat(map['exchange_fee_percent'] ?? 0) || 0,
-    exchange_min_usdt: parseFloat(map['exchange_min_usdt'] ?? 0) || 0,
-    exchange_min_eth: parseFloat(map['exchange_min_eth'] ?? 0) || 0,
-    exchange_min_ton: parseFloat(map['exchange_min_ton'] ?? 0) || 0,
-    exchange_min_sol: parseFloat(map['exchange_min_sol'] ?? 0) || 0,
-    exchange_min_trx: parseFloat(map['exchange_min_trx'] ?? 0) || 0,
-  };
+  // Читаем через объединенный /api/admin/settings чтобы не плодить функции
+  try {
+    const resp = await fetch(`${process?.env?.VERCEL_URL ? '' : ''}/api/admin/settings`);
+    const j = await resp.json();
+    const app = j?.app || {};
+    return {
+      exchange_fee_percent: parseFloat(app['exchange_fee_percent'] ?? 0) || 0,
+      exchange_min_usdt: parseFloat(app['exchange_min_usdt'] ?? 0) || 0,
+      exchange_min_eth: parseFloat(app['exchange_min_eth'] ?? 0) || 0,
+      exchange_min_ton: parseFloat(app['exchange_min_ton'] ?? 0) || 0,
+      exchange_min_sol: parseFloat(app['exchange_min_sol'] ?? 0) || 0,
+      exchange_min_trx: parseFloat(app['exchange_min_trx'] ?? 0) || 0,
+    };
+  } catch {
+    return { exchange_fee_percent: 0 };
+  }
 }
 
 function getPriceUSD(prices, sym) {

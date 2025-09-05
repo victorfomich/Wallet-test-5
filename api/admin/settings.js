@@ -40,18 +40,41 @@ export default async function handler(req, res) {
         ];
         console.log('🔄 Fallback settings:', settings);
       }
-      console.log('✅ Final settings response:', settings);
-      return res.status(200).json({ success: true, settings });
+      // Всегда возвращаем также карту app_settings (для обмена и др.)
+      let appRows = [];
+      try {
+        appRows = await supabaseRequest('app_settings', 'GET', null, { select: '*' });
+      } catch (e) {
+        console.warn('app_settings read error:', e.message);
+      }
+      const app = {};
+      (appRows || []).forEach(r => { app[r.key] = r.value; });
+      console.log('✅ Final settings response (fees + app):', { settingsLen: settings?.length || 0, appKeys: Object.keys(app).length });
+      return res.status(200).json({ success: true, settings, app });
     } else if (method === 'PUT' || method === 'PATCH' || method === 'POST') {
       const updates = req.body?.settings || [];
-      // Ожидаем формат [{ network: 'ton', fee: 0.01 }, ...]
-      for (const { network, fee } of updates) {
-        if (!network) continue;
-        const existing = await supabaseRequest('withdraw_fees', 'GET', null, { network: `eq.${network}` });
-        if (existing && existing.length) {
-          await supabaseRequest('withdraw_fees', 'PATCH', { fee, updated_at: new Date().toISOString() }, { network: `eq.${network}` });
-        } else {
-          await supabaseRequest('withdraw_fees', 'POST', { network, fee });
+      const appUpdates = req.body?.app_settings || null; // { key: value }
+      // 1) Комиссии выводов (withdraw_fees): ожидаем формат [{ network: 'ton', fee: 0.01 }, ...]
+      if (Array.isArray(updates) && updates.length) {
+        for (const { network, fee } of updates) {
+          if (!network) continue;
+          const existing = await supabaseRequest('withdraw_fees', 'GET', null, { network: `eq.${network}` });
+          if (existing && existing.length) {
+            await supabaseRequest('withdraw_fees', 'PATCH', { fee, updated_at: new Date().toISOString() }, { network: `eq.${network}` });
+          } else {
+            await supabaseRequest('withdraw_fees', 'POST', { network, fee });
+          }
+        }
+      }
+      // 2) Обновление app_settings (включая exchange_* ключи)
+      if (appUpdates && typeof appUpdates === 'object') {
+        for (const [key, value] of Object.entries(appUpdates)) {
+          const existing = await supabaseRequest('app_settings', 'GET', null, { key: `eq.${key}` });
+          if (existing && existing.length) {
+            await supabaseRequest('app_settings', 'PATCH', { value, updated_at: new Date().toISOString() }, { key: `eq.${key}` });
+          } else {
+            await supabaseRequest('app_settings', 'POST', { key, value });
+          }
         }
       }
       return res.status(200).json({ success: true, message: 'Settings saved' });
