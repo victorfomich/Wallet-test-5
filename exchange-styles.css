@@ -110,12 +110,6 @@ body {
     width: 14px;
     height: 14px;
     object-fit: contain;
-    transition: opacity 0.12s ease;
-}
-
-/* Плавная смена иконки без наложения */
-.currency-icon.updating .currency-logo {
-    opacity: 0;
 }
 
 .currency-name {

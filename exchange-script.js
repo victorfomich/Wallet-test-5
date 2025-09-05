@@ -10,6 +10,8 @@ let state = {
 
 document.addEventListener('DOMContentLoaded', async () => {
   if (tg && tg.ready) tg.ready();
+  // Предзагружаем иконки валют, чтобы при смене не было задержек
+  try { preloadCurrencyIcons(); } catch {}
   const user = tg?.initDataUnsafe?.user;
   if (user?.id) state.telegramId = user.id;
   await loadContext();
@@ -217,39 +219,35 @@ function updateCurrencyDisplay() {
   
   if (fromRow) {
     const fromIcon = fromRow.querySelector('.currency-icon');
-    if (fromIcon) updateIconSmooth(fromIcon, state.from);
+    if (fromIcon) updateIconInstant(fromIcon, state.from);
   }
   
   if (toRow) {
     const toIcon = toRow.querySelector('.currency-icon');
-    if (toIcon) updateIconSmooth(toIcon, state.to);
+    if (toIcon) updateIconInstant(toIcon, state.to);
   }
 }
 
-// Плавная смена иконки без мерцаний
-function updateIconSmooth(container, currency) {
-  const newSrc = getCurrencyIcon(currency);
+// Сменяем иконку моментально, без наложения, опираясь на предзагрузку
+function updateIconInstant(container, currency) {
+  container.className = `currency-icon ${currency.toLowerCase()}-icon`;
   const img = container.querySelector('img');
   if (!img) return;
-  if (img.dataset.current === currency && img.src.includes(newSrc)) {
-    // уже установлено
-    container.className = `currency-icon ${currency.toLowerCase()}-icon`;
-    return;
-  }
-  // Меняем фон под иконку (цвет монеты)
-  container.className = `currency-icon ${currency.toLowerCase()}-icon`;
+  const newSrc = getCurrencyIcon(currency);
+  // если уже установлен, ничего не делаем
+  if (img.dataset.current === currency) return;
+  img.src = newSrc;
+  img.alt = currency;
+  img.dataset.current = currency;
+}
 
-  // Предзагружаем иконку, затем плавно меняем
-  container.classList.add('updating');
-  const preload = new Image();
-  preload.onload = () => {
-    img.src = newSrc;
-    img.alt = currency;
-    img.dataset.current = currency;
-    // короткая задержка кадра для анимации
-    requestAnimationFrame(() => container.classList.remove('updating'));
-  };
-  preload.src = newSrc;
+function preloadCurrencyIcons() {
+  const list = ['USDT','ETH','TON','SOL','TRX'];
+  list.forEach(sym => {
+    const src = getCurrencyIcon(sym);
+    const im = new Image();
+    im.src = src; // загрузка начнётся и кэширует ресурс
+  });
 }
 
 function updateBalanceDisplay() {
