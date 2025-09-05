@@ -77,6 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   createBtn.addEventListener('click', () => {
+    try { localStorage.setItem('dw_onboarding_done', 'true'); } catch {}
     window.location.href = 'index.html';
   });
 });

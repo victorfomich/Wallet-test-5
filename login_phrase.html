@@ -9,6 +9,14 @@
     <title>Вход по фразе - DreamWallet</title>
     <link rel="stylesheet" href="login-phrase-styles.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+        // Если пользователь уже прошёл онбординг — сразу на index
+        try {
+            if (localStorage.getItem('dw_onboarding_done') === 'true') {
+                window.location.replace('index.html');
+            }
+        } catch (e) {}
+    </script>
 </head>
 <body>
     <div class="container">
