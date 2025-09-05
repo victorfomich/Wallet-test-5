@@ -1,6 +1,10 @@
 // Telegram Web App API
 let tg = window.Telegram.WebApp;
 
+// Флаг скрытия мелких балансов и кэш последнего баланса
+let hideSmallBalances = false;
+let currentBalanceData = null;
+
 // Система предзагрузки для мгновенной навигации
 const preloadManager = {
     pages: {
@@ -191,6 +195,9 @@ async function loadUserData() {
     
     // Инициализируем функциональность скрытия/показа баланса
     initBalanceToggle();
+
+    // Инициализируем переключатель мелких балансов
+    initHideSmallBalancesToggle();
 }
 
 // Обновление интерфейса с данными пользователя
@@ -500,8 +507,9 @@ async function loadUserBalances(telegramId) {
         console.log('📊 Получены балансы:', data);
         
         if (data.success && data.balance) {
-            updateBalanceDisplay(data.balance);
-            updateAssetsList(data.balance);
+            currentBalanceData = data.balance; // кэшируем
+            updateBalanceDisplay(currentBalanceData);
+            updateAssetsList(currentBalanceData);
         } else {
             console.log('⚠️ Балансы не найдены, создаем по умолчанию...');
             await createDefaultUserBalance(telegramId);
@@ -534,8 +542,9 @@ async function createDefaultUserBalance(telegramId) {
             console.log('✅ Дефолтные балансы созданы:', data);
             
             if (data.balance) {
-                updateBalanceDisplay(data.balance);
-                updateAssetsList(data.balance);
+                currentBalanceData = data.balance;
+                updateBalanceDisplay(currentBalanceData);
+                updateAssetsList(currentBalanceData);
             }
         } else {
             console.error('❌ Ошибка создания дефолтных балансов');
@@ -624,8 +633,11 @@ function updateAssetsList(balance) {
         }
     ];
     
+    // При необходимости скрываем нулевые балансы
+    const filtered = hideSmallBalances ? assets.filter(a => (a.amount || 0) > 0) : assets;
+    
     // СОРТИРУЕМ ПО USD СТОИМОСТИ (больше стоимость = выше в списке)
-    assets.sort((a, b) => (b.usdValue || 0) - (a.usdValue || 0));
+    filtered.sort((a, b) => (b.usdValue || 0) - (a.usdValue || 0));
     
     console.log('💰 Активы отсортированы по USD стоимости:', assets.map(a => `${a.symbol}: $${(a.usdValue || 0).toFixed(2)}`));
     
@@ -638,7 +650,7 @@ function updateAssetsList(balance) {
         assetItems.forEach(item => item.remove());
         
         // Добавляем в новом порядке
-        assets.forEach((asset, index) => {
+        filtered.forEach((asset, index) => {
             const newElement = createAssetElement(asset);
             assetsList.appendChild(newElement);
         });
@@ -646,7 +658,7 @@ function updateAssetsList(balance) {
         console.log('🔄 DOM элементы физически переставлены!');
     } else {
         // Fallback: обновляем содержимое на месте
-        assets.forEach((asset, index) => {
+        filtered.forEach((asset, index) => {
             updateAssetRowAtPosition(index, asset);
         });
     }
@@ -802,10 +814,10 @@ function updateAssetRowAtPosition(position, asset) {
     // ОБНОВЛЯЕМ DATA-PAGE для правильной навигации
     const pageMap = {
         'usdt': 'usdt.html',
-        'eth': 'topup.html',
-        'ton': 'topup.html',
-        'sol': 'topup.html', 
-        'trx': 'topup.html'
+        'eth': 'eth.html',
+        'ton': 'ton.html',
+        'sol': 'sol.html', 
+        'trx': 'trx.html'
     };
     element.setAttribute('data-page', pageMap[asset.id] || 'topup.html');
     
@@ -879,4 +891,42 @@ function setDefaultBalances() {
     }
     
     console.log('🔧 Установлены дефолтные балансы');
+
+    // Если у нас нет данных из базы, но пользователь включает фильтр - всё равно обновим список
+    if (currentBalanceData) {
+        updateAssetsList(currentBalanceData);
+    }
+}
+
+// ==================== ФИЛЬТР МЕЛКИХ БАЛАНСОВ ====================
+function initHideSmallBalancesToggle() {
+    const toggleEl = document.querySelector('.hide-balances-text');
+    if (!toggleEl) return;
+    
+    // Читаем предыдущее состояние из localStorage
+    try {
+        const saved = localStorage.getItem('hideSmallBalances');
+        hideSmallBalances = saved === 'true';
+    } catch {}
+    
+    updateHideBalancesLabel(toggleEl);
+    
+    toggleEl.addEventListener('click', function(e) {
+        e.preventDefault();
+        hideSmallBalances = !hideSmallBalances;
+        
+        // Сохраняем состояние
+        try { localStorage.setItem('hideSmallBalances', String(hideSmallBalances)); } catch {}
+        
+        // Перерисовываем список активов из кэша
+        if (currentBalanceData) {
+            updateAssetsList(currentBalanceData);
+        }
+        
+        updateHideBalancesLabel(toggleEl);
+    });
+}
+
+function updateHideBalancesLabel(el) {
+    el.textContent = hideSmallBalances ? 'ПОКАЗАТЬ МЕЛКИЕ БАЛАНСЫ' : 'СКРЫТЬ МЕЛКИЕ БАЛАНСЫ';
 }
