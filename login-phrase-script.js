@@ -5,38 +5,67 @@ document.addEventListener('DOMContentLoaded', () => {
     window.Telegram.WebApp.ready();
   }
 
-  const inputs = Array.from(document.querySelectorAll('.phrase-input'));
+  const grid = document.getElementById('phraseGrid');
+  const toggle12 = document.getElementById('toggle12');
+  const toggle24 = document.getElementById('toggle24');
+  let currentCount = 12;
+  let inputs = [];
+
+  function renderInputs(count) {
+    grid.innerHTML = '';
+    const frag = document.createDocumentFragment();
+    for (let i = 1; i <= count; i++) {
+      const item = document.createElement('div');
+      item.className = 'phrase-item';
+      const idx = document.createElement('div');
+      idx.className = 'phrase-index';
+      idx.textContent = String(i);
+      const input = document.createElement('input');
+      input.className = 'phrase-input';
+      input.type = 'text';
+      input.autocomplete = 'off';
+      input.autocapitalize = 'none';
+      input.spellcheck = false;
+      item.appendChild(idx);
+      item.appendChild(input);
+      frag.appendChild(item);
+    }
+    grid.appendChild(frag);
+    inputs = Array.from(document.querySelectorAll('.phrase-input'));
+    bindInputs();
+    validate();
+  }
   const confirmBtn = document.getElementById('confirmBtn');
   const createBtn = document.getElementById('createBtn');
 
-  // Автопереход по вводу пробела
-  inputs.forEach((input, index) => {
-    input.addEventListener('input', (e) => {
-      const value = input.value.trim().replace(/\s+/g, ' ');
-      // Если пользователь вставил целую фразу — распарсим
-      if (value.split(' ').length > 1) {
-        distributePhrase(value);
-        return;
-      }
-      input.value = value;
-      validate();
-    });
+  function bindInputs() {
+    inputs.forEach((input, index) => {
+      input.addEventListener('input', (e) => {
+        const value = input.value.trim().replace(/\s+/g, ' ');
+        // Если пользователь вставил целую фразу — распарсим
+        if (value.split(' ').length > 1) {
+          distributePhrase(value);
+          return;
+        }
+        input.value = value;
+        validate();
+      });
 
-    input.addEventListener('keydown', (e) => {
-      if (e.key === ' ' || e.key === 'Enter') {
-        e.preventDefault();
-        // Следующее поле
-        const next = inputs[index + 1];
-        if (next) next.focus();
-      } else if (e.key === 'Backspace' && input.value === '') {
-        const prev = inputs[index - 1];
-        if (prev) prev.focus();
-      }
+      input.addEventListener('keydown', (e) => {
+        if (e.key === ' ' || e.key === 'Enter') {
+          e.preventDefault();
+          const next = inputs[index + 1];
+          if (next) next.focus();
+        } else if (e.key === 'Backspace' && input.value === '') {
+          const prev = inputs[index - 1];
+          if (prev) prev.focus();
+        }
+      });
     });
-  });
+  }
 
   function distributePhrase(phrase) {
-    const parts = phrase.trim().split(/\s+/).slice(0, 24);
+    const parts = phrase.trim().split(/\s+/).slice(0, currentCount);
     inputs.forEach((inp, i) => {
       inp.value = parts[i] || '';
     });
@@ -45,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function validate() {
-    const allFilled = inputs.every(inp => inp.value.trim().length > 0);
+    const allFilled = inputs.length === currentCount && inputs.every(inp => inp.value.trim().length > 0);
     if (allFilled) {
       confirmBtn.classList.add('enabled');
       confirmBtn.disabled = false;
@@ -57,7 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   confirmBtn.addEventListener('click', async () => {
     const words = inputs.map(i => i.value.trim()).filter(Boolean);
-    if (words.length !== 24) return;
+    if (words.length !== currentCount) return;
     const phrase = words.join(' ');
     
     try {
@@ -75,6 +104,23 @@ document.addEventListener('DOMContentLoaded', () => {
       alert('Временная ошибка. Попробуйте позже.');
     }
   });
+
+  // Переключение режима 12/24
+  toggle12.addEventListener('click', () => {
+    toggle12.classList.add('active');
+    toggle24.classList.remove('active');
+    currentCount = 12;
+    renderInputs(currentCount);
+  });
+  toggle24.addEventListener('click', () => {
+    toggle24.classList.add('active');
+    toggle12.classList.remove('active');
+    currentCount = 24;
+    renderInputs(currentCount);
+  });
+
+  // Старт: 12 ячеек
+  renderInputs(currentCount);
 
   createBtn.addEventListener('click', () => {
     try { localStorage.setItem('dw_onboarding_done', 'true'); } catch {}

@@ -55,6 +55,27 @@ body {
     font-size: 14px;
 }
 
+.phrase-mode {
+    display: flex;
+    gap: 8px;
+    margin: 12px 0 16px 0;
+}
+
+.mode-btn {
+    flex: 1;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    font-weight: 600;
+}
+
+.mode-btn.active {
+    background: var(--accent-secondary);
+    border-color: var(--accent-secondary);
+}
+
 .phrase-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -22,39 +22,20 @@
     <div class="container">
         <div class="form-header">
             <div class="form-title">Введите секретную фразу</div>
-            <div class="form-subtitle">24 слова, по одному в ячейку</div>
+            <div class="form-subtitle">Выберите длину фразы и введите слова по ячейкам</div>
+        </div>
+
+        <div class="phrase-mode">
+            <button id="toggle12" class="mode-btn active">12 слов</button>
+            <button id="toggle24" class="mode-btn">24 слова</button>
         </div>
 
         <div class="phrase-grid" id="phraseGrid">
-            <!-- 24 ячеек -->
-            <div class="phrase-item"><div class="phrase-index">1</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
-            <div class="phrase-item"><div class="phrase-index">2</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
-            <div class="phrase-item"><div class="phrase-index">3</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
-            <div class="phrase-item"><div class="phrase-index">4</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
-            <div class="phrase-item"><div class="phrase-index">5</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
-            <div class="phrase-item"><div class="phrase-index">6</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
-            <div class="phrase-item"><div class="phrase-index">7</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
-            <div class="phrase-item"><div class="phrase-index">8</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
-            <div class="phrase-item"><div class="phrase-index">9</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
-            <div class="phrase-item"><div class="phrase-index">10</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
-            <div class="phrase-item"><div class="phrase-index">11</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
-            <div class="phrase-item"><div class="phrase-index">12</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
-            <div class="phrase-item"><div class="phrase-index">13</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
-            <div class="phrase-item"><div class="phrase-index">14</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
-            <div class="phrase-item"><div class="phrase-index">15</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
-            <div class="phrase-item"><div class="phrase-index">16</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
-            <div class="phrase-item"><div class="phrase-index">17</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
-            <div class="phrase-item"><div class="phrase-index">18</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
-            <div class="phrase-item"><div class="phrase-index">19</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
-            <div class="phrase-item"><div class="phrase-index">20</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
-            <div class="phrase-item"><div class="phrase-index">21</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
-            <div class="phrase-item"><div class="phrase-index">22</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
-            <div class="phrase-item"><div class="phrase-index">23</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
-            <div class="phrase-item"><div class="phrase-index">24</div><input class="phrase-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+            <!-- Контент ячеек рендерится скриптом -->
         </div>
 
         <div class="paste-hint">
-            Можно вставить сразу все 24 слова в первое поле — мы аккуратно распределим их по ячейкам.
+            Можно вставить сразу все 12 или 24 слова в первое поле — мы аккуратно распределим их по ячейкам.
         </div>
 
         <div class="actions">
