@@ -117,12 +117,16 @@ function recalc() {
   const btn = document.getElementById('exchangeBtn');
   const pFrom = priceUSD(state.from);
   const pTo = priceUSD(state.to);
-  const feePct = Number(state.settings.exchange_fee_percent||0);
+
+  // Комиссия: поддерживаем новые и старые ключи
+  const feePct = Number(state.settings.fee_percent || state.settings.exchange_fee_percent || 0);
 
   let ok = input > 0 && pFrom > 0 && pTo > 0;
   let minOk = true;
-  const minKey = `exchange_min_${state.from.toLowerCase()}`;
-  const min = Number(state.settings[minKey]||0);
+  // Минимум: поддерживаем новые и старые ключи
+  const minKeyNew = `min_${state.from.toLowerCase()}`;
+  const minKeyOld = `exchange_min_${state.from.toLowerCase()}`;
+  const min = Number(state.settings[minKeyNew] || state.settings[minKeyOld] || 0);
   if (min > 0 && input > 0) {
     minOk = input >= min;
   }
@@ -131,16 +135,16 @@ function recalc() {
   if (ok) {
     const usd = input * pFrom;
     out = usd / pTo;
-    fee = out * (feePct/100);
+    fee = out * (feePct / 100);
     out -= fee;
   }
-  outEl.textContent = ok ? out.toFixed(8) : '0';
-  feeLine.textContent = `${feePct}%`;
+  if (outEl) outEl.textContent = ok ? out.toFixed(8) : '0';
+  if (feeLine) feeLine.textContent = `${feePct}%`;
 
   // Баланс и валидация
   const canSpend = getBalance(state.from);
   const enough = canSpend >= input && input > 0 && minOk;
-  btn.disabled = !(ok && enough);
+  if (btn) btn.disabled = !(ok && enough);
 }
 
 function updateMinHint() {
