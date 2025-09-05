@@ -183,7 +183,7 @@ async function loadUserData() {
     } else {
         console.log('Данные пользователя недоступны');
         // Показываем заглушку для тестирования
-        document.getElementById('userName').textContent = 'user';
+        document.getElementById('userName').textContent = 'username';
         
         // Пытаемся загрузить из localStorage
         const loaded = window.userManager.loadFromLocalStorage();

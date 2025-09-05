@@ -80,7 +80,6 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
-    box-shadow: 0 3px 8px var(--shadow-color);
     width: fit-content;
     position: relative;
     z-index: 2;
