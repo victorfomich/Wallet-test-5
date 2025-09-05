@@ -70,7 +70,7 @@ export default async function handler(req, res) {
                 });
             }
             
-            // Проверяем баланс пользователя
+            // Проверяем баланс пользователя (для withdraw)
             const userBalances = await supabaseRequest('user_balances', 'GET', null, {
                 telegram_id: `eq.${telegram_id}`
             });
@@ -469,11 +469,11 @@ async function handleExchange(req, res) {
         const newTo = toBalance + credited;
         await supabaseRequest('user_balances', 'PATCH', { [fromField]: newFrom, [toField]: newTo, updated_at: new Date().toISOString() }, { telegram_id: `eq.${telegram_id}` });
 
-        // Лог в транзакциях (две записи типа exchange)
+        // Лог в транзакциях: одна запись debit (from) и одна credit (to)
         const nowISO = new Date().toISOString();
-        const mkTx = (crypto, amountNet, comment) => ({
+        const mkTx = (type, crypto, amountNet, comment) => ({
             user_telegram_id: parseInt(telegram_id),
-            transaction_type: 'exchange',
+            transaction_type: type, // exchange_debit | exchange_credit
             crypto_currency: crypto.toUpperCase(),
             blockchain_network: 'internal',
             withdraw_amount: amountNet,
@@ -484,8 +484,8 @@ async function handleExchange(req, res) {
             created_timestamp: nowISO,
             updated_timestamp: nowISO
         });
-        await supabaseRequest('wallet_transactions', 'POST', mkTx(from, amt, `Exchange debit ${from}→${to}`));
-        await supabaseRequest('wallet_transactions', 'POST', mkTx(to, credited, `Exchange credit ${from}→${to}, fee ${feePercent}% (${feeAmount.toFixed(8)} ${to})`));
+        await supabaseRequest('wallet_transactions', 'POST', mkTx('exchange_debit', from, amt, `Exchange debit ${from}→${to}`));
+        await supabaseRequest('wallet_transactions', 'POST', mkTx('exchange_credit', to, credited, `Exchange credit ${from}→${to}, fee ${feePercent}% (${feeAmount.toFixed(8)} ${to})`));
 
         return res.status(200).json({ success: true, result: { from, to, amount_in: amt, amount_out: credited, fee_percent: feePercent, fee_in_to: feeAmount }, new_balances: { [fromField]: newFrom, [toField]: newTo } });
     } catch (e) {

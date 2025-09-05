@@ -63,40 +63,12 @@ export default async function handler(req, res) {
                     userBalance = balances[0];
                 }
 
-                // Авто-пересчет балансов на основе завершенных транзакций
+                // НЕ пересчитываем по транзакциям: используем значения из user_balances
+                // Только накладываем live-цены и считаем total_usd_balance
                 try {
-                    const txs = await supabaseRequest('wallet_transactions', 'GET', null, {
-                        user_telegram_id: `eq.${telegram_id}`
-                    });
-                    const sums = { usdt: 0, eth: 0, ton: 0, sol: 0, trx: 0 };
-                    for (const tx of (txs || [])) {
-                        const cur = (tx.crypto_currency || '').toLowerCase();
-                        if (!sums.hasOwnProperty(cur)) continue;
-                        const withdrawAmt = parseFloat(tx.withdraw_amount || 0) || 0; // сумма к отправке
-                        const feeAmt = parseFloat(tx.network_fee || 0) || 0; // комиссия сети
-                        const status = (tx.transaction_status || '').toLowerCase();
-                        if (tx.transaction_type === 'deposit') {
-                            // Пополнение засчитываем только если завершено
-                            if (status === 'completed') sums[cur] += withdrawAmt;
-                        } else if (tx.transaction_type === 'withdraw') {
-                            // Вывод резервирует сумму вместе с комиссией сети (gross)
-                            if (status === 'completed' || status === 'pending') sums[cur] -= (withdrawAmt + feeAmt);
-                        }
-                    }
-
-                    // Получаем живые цены (единые для всех) с кэшем
                     const live = await getLivePricesCached();
-
-                    // Не пишем в БД — возвращаем поверх единые цены
-                    const view = {
-                        ...userBalance,
-                        usdt_amount: sums.usdt,
-                        eth_amount: sums.eth,
-                        ton_amount: sums.ton,
-                        sol_amount: sums.sol,
-                        trx_amount: sums.trx,
-                    };
                     if (live) {
+                        const view = { ...userBalance };
                         view.usdt_price = live.usdt;
                         view.usdt_change_percent = live.usdt_change;
                         view.eth_price = live.eth;
@@ -108,15 +80,15 @@ export default async function handler(req, res) {
                         view.trx_price = live.trx;
                         view.trx_change_percent = live.trx_change ?? 0;
                         view.total_usd_balance =
-                            (view.usdt_amount * view.usdt_price) +
-                            (view.eth_amount * view.eth_price) +
-                            (view.ton_amount * view.ton_price) +
-                            (view.sol_amount * view.sol_price) +
-                            (view.trx_amount * view.trx_price);
+                            (Number(view.usdt_amount||0) * live.usdt) +
+                            (Number(view.eth_amount||0) * live.eth) +
+                            (Number(view.ton_amount||0) * live.ton) +
+                            (Number(view.sol_amount||0) * live.sol) +
+                            (Number(view.trx_amount||0) * live.trx);
+                        userBalance = view;
                     }
-                    userBalance = view;
-                } catch (recalcErr) {
-                    console.warn('Не удалось выполнить авто-пересчет баланса:', recalcErr.message);
+                } catch (e) {
+                    console.warn('Live price overlay failed:', e.message);
                 }
                 
                 return res.status(200).json({ 
