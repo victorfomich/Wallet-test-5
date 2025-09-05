@@ -144,7 +144,7 @@ async function submitExchange() {
   if (!state.telegramId) return alert('Пользователь не определён');
   const body = { telegram_id: state.telegramId, from: state.from, to: state.to, amount: amt };
   try {
-    const resp = await fetch('/api/exchange', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    const resp = await fetch('/api/transactions?action=exchange', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
     const j = await resp.json();
     if (!resp.ok || !j.success) throw new Error(j.error || 'Ошибка обмена');
     alert(`Успешно: получите ${j.result.amount_out} ${state.to}`);

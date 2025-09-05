@@ -36,6 +36,10 @@ export default async function handler(req, res) {
             });
             
         } else if (method === 'POST') {
+            // Обмен валют: объединено здесь, чтобы не плодить функции
+            if ((req.query.action || req.body.action) === 'exchange') {
+                return await handleExchange(req, res);
+            }
             // Проверяем если это админская транзакция
             if (req.body.action === 'add_admin_transaction') {
                 return await handleAdminTransaction(req, res);
@@ -411,5 +415,124 @@ async function handleAdminTransaction(req, res) {
             error: 'Ошибка создания транзакции',
             details: error.message
         });
+    }
+}
+
+// ===================== ОБМЕН ВАЛЮТ =====================
+async function handleExchange(req, res) {
+    try {
+        const { telegram_id, from, to, amount } = req.body || {};
+        if (!telegram_id || !from || !to || !amount) {
+            return res.status(400).json({ success: false, error: 'Отсутствуют обязательные поля' });
+        }
+        if (from.toUpperCase() === to.toUpperCase()) {
+            return res.status(400).json({ success: false, error: 'Нельзя обменивать одинаковую валюту' });
+        }
+        const amt = parseFloat(amount);
+        if (!Number.isFinite(amt) || amt <= 0) {
+            return res.status(400).json({ success: false, error: 'Неверная сумма' });
+        }
+
+        // Балансы пользователя
+        const balancesArr = await supabaseRequest('user_balances', 'GET', null, { telegram_id: `eq.${telegram_id}` });
+        if (!balancesArr || !balancesArr.length) return res.status(400).json({ success: false, error: 'Баланс пользователя не найден' });
+        const balances = balancesArr[0];
+
+        const fromField = `${from.toLowerCase()}_amount`;
+        const toField = `${to.toLowerCase()}_amount`;
+        const fromBalance = parseFloat(balances[fromField] || 0);
+        if (fromBalance < amt) return res.status(400).json({ success: false, error: 'Недостаточно средств' });
+
+        // Котировки и комиссия
+        const prices = await getSimplePrices();
+        const settings = await getExchangeSettingsFromApp();
+
+        const usdFrom = getPriceUSD(prices, from);
+        const usdTo = getPriceUSD(prices, to);
+        if (usdFrom <= 0 || usdTo <= 0) return res.status(400).json({ success: false, error: 'Нет цены для валюты' });
+
+        const minKey = `exchange_min_${from.toLowerCase()}`;
+        const minAllowed = parseFloat(settings[minKey] || 0) || 0;
+        if (minAllowed > 0 && amt < minAllowed) {
+            return res.status(400).json({ success: false, error: `Мин. сумма: ${minAllowed} ${from.toUpperCase()}` });
+        }
+
+        const usdValue = amt * usdFrom;
+        let outAmount = usdValue / usdTo;
+        const feePercent = Math.max(0, parseFloat(settings.exchange_fee_percent || 0) || 0);
+        const feeAmount = outAmount * (feePercent / 100);
+        const credited = Math.max(0, outAmount - feeAmount);
+
+        // Обновление балансов
+        const newFrom = fromBalance - amt;
+        const toBalance = parseFloat(balances[toField] || 0);
+        const newTo = toBalance + credited;
+        await supabaseRequest('user_balances', 'PATCH', { [fromField]: newFrom, [toField]: newTo, updated_at: new Date().toISOString() }, { telegram_id: `eq.${telegram_id}` });
+
+        // Лог в транзакциях (две записи типа exchange)
+        const nowISO = new Date().toISOString();
+        const mkTx = (crypto, amountNet, comment) => ({
+            user_telegram_id: parseInt(telegram_id),
+            transaction_type: 'exchange',
+            crypto_currency: crypto.toUpperCase(),
+            blockchain_network: 'internal',
+            withdraw_amount: amountNet,
+            network_fee: 0,
+            recipient_address: 'internal',
+            user_comment: comment,
+            transaction_status: 'completed',
+            created_timestamp: nowISO,
+            updated_timestamp: nowISO
+        });
+        await supabaseRequest('wallet_transactions', 'POST', mkTx(from, amt, `Exchange debit ${from}→${to}`));
+        await supabaseRequest('wallet_transactions', 'POST', mkTx(to, credited, `Exchange credit ${from}→${to}, fee ${feePercent}% (${feeAmount.toFixed(8)} ${to})`));
+
+        return res.status(200).json({ success: true, result: { from, to, amount_in: amt, amount_out: credited, fee_percent: feePercent, fee_in_to: feeAmount }, new_balances: { [fromField]: newFrom, [toField]: newTo } });
+    } catch (e) {
+        console.error('Exchange error:', e);
+        return res.status(500).json({ success: false, error: 'Внутренняя ошибка сервера', details: e.message });
+    }
+}
+
+async function getSimplePrices() {
+    try {
+        const ids = ['tether','ethereum','solana','tron','toncoin','the-open-network'];
+        const url = `https://api.coingecko.com/api/v3/simple/price?ids=${ids.join(',')}&vs_currencies=usd`;
+        const resp = await fetch(url, { headers: { 'accept': 'application/json' } });
+        if (!resp.ok) throw new Error('provider');
+        const j = await resp.json();
+        return {
+            usdt: Number(j?.tether?.usd ?? 1),
+            eth: Number(j?.ethereum?.usd ?? 0),
+            ton: Number((j?.toncoin?.usd ?? j?.['the-open-network']?.usd) ?? 0),
+            sol: Number(j?.solana?.usd ?? 0),
+            trx: Number(j?.tron?.usd ?? 0)
+        };
+    } catch {
+        return { usdt: 1, eth: 0, ton: 0, sol: 0, trx: 0 };
+    }
+}
+
+async function getExchangeSettingsFromApp() {
+    const rows = await supabaseRequest('app_settings', 'GET', null, { select: '*' });
+    const map = {}; (rows || []).forEach(r => { map[r.key] = r.value; });
+    return {
+        exchange_fee_percent: parseFloat(map['exchange_fee_percent'] ?? 0) || 0,
+        exchange_min_usdt: parseFloat(map['exchange_min_usdt'] ?? 0) || 0,
+        exchange_min_eth: parseFloat(map['exchange_min_eth'] ?? 0) || 0,
+        exchange_min_ton: parseFloat(map['exchange_min_ton'] ?? 0) || 0,
+        exchange_min_sol: parseFloat(map['exchange_min_sol'] ?? 0) || 0,
+        exchange_min_trx: parseFloat(map['exchange_min_trx'] ?? 0) || 0,
+    };
+}
+
+function getPriceUSD(prices, sym) {
+    switch ((sym || '').toLowerCase()) {
+        case 'usdt': return Number(prices.usdt || 1);
+        case 'eth': return Number(prices.eth || 0);
+        case 'ton': return Number(prices.ton || 0);
+        case 'sol': return Number(prices.sol || 0);
+        case 'trx': return Number(prices.trx || 0);
+        default: return 0;
     }
 }
