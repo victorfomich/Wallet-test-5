@@ -124,23 +124,25 @@ body {
 
 .balance-header {
     display: flex;
-    align-items: center;
+    align-items: baseline;
     justify-content: center;
     gap: 12px;
     margin-bottom: 8px;
 }
 
 .dollar-symbol {
-    font-size: 24px;
+    font-size: 28px;
     color: var(--text-tertiary);
     font-weight: 500;
+    line-height: 1;
 }
 
 .balance-amount {
-    font-size: 32px;
+    font-size: 36px;
     font-weight: 700;
     color: var(--text-primary);
     transition: all 0.3s ease;
+    line-height: 1;
 }
 
 .balance-amount.hidden {
