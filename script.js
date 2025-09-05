@@ -641,26 +641,17 @@ function updateAssetsList(balance) {
     
     console.log('💰 Активы отсортированы по USD стоимости:', assets.map(a => `${a.symbol}: $${(a.usdValue || 0).toFixed(2)}`));
     
-    // ФИЗИЧЕСКИ ПЕРЕСТАВЛЯЕМ DOM ЭЛЕМЕНТЫ
+    // ПОЛНОСТЬЮ ПЕРЕСОБИРАЕМ СПИСОК КАЖДЫЙ РАЗ (чтобы скрытые возвращались)
     const assetsList = document.querySelector('.assets-list');
-    const assetItems = Array.from(document.querySelectorAll('.asset-item'));
-    
-    if (assetsList && assetItems.length >= 5) {
-        // Удаляем все элементы из списка
-        assetItems.forEach(item => item.remove());
-        
-        // Добавляем в новом порядке
-        filtered.forEach((asset, index) => {
-            const newElement = createAssetElement(asset);
-            assetsList.appendChild(newElement);
+    if (assetsList) {
+        // Очищаем текущий список
+        while (assetsList.firstChild) assetsList.removeChild(assetsList.firstChild);
+        // Добавляем элементы по отфильтрованному и отсортированному списку
+        filtered.forEach(asset => {
+            const el = createAssetElement(asset);
+            assetsList.appendChild(el);
         });
-        
-        console.log('🔄 DOM элементы физически переставлены!');
-    } else {
-        // Fallback: обновляем содержимое на месте
-        filtered.forEach((asset, index) => {
-            updateAssetRowAtPosition(index, asset);
-        });
+        console.log(`🔄 Список активов пересобран. Показано: ${filtered.length}`);
     }
     
     console.log('✅ ОБНОВЛЕНО ТОЛЬКО ИЗ БАЗЫ БЕЗ ДЕФОЛТОВ!');
