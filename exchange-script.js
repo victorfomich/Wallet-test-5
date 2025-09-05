@@ -217,27 +217,39 @@ function updateCurrencyDisplay() {
   
   if (fromRow) {
     const fromIcon = fromRow.querySelector('.currency-icon');
-    if (fromIcon) {
-      fromIcon.className = `currency-icon ${state.from.toLowerCase()}-icon`;
-      const fromImg = fromIcon.querySelector('img');
-      if (fromImg) {
-        fromImg.src = getCurrencyIcon(state.from);
-        fromImg.alt = state.from;
-      }
-    }
+    if (fromIcon) updateIconSmooth(fromIcon, state.from);
   }
   
   if (toRow) {
     const toIcon = toRow.querySelector('.currency-icon');
-    if (toIcon) {
-      toIcon.className = `currency-icon ${state.to.toLowerCase()}-icon`;
-      const toImg = toIcon.querySelector('img');
-      if (toImg) {
-        toImg.src = getCurrencyIcon(state.to);
-        toImg.alt = state.to;
-      }
-    }
+    if (toIcon) updateIconSmooth(toIcon, state.to);
   }
+}
+
+// Плавная смена иконки без мерцаний
+function updateIconSmooth(container, currency) {
+  const newSrc = getCurrencyIcon(currency);
+  const img = container.querySelector('img');
+  if (!img) return;
+  if (img.dataset.current === currency && img.src.includes(newSrc)) {
+    // уже установлено
+    container.className = `currency-icon ${currency.toLowerCase()}-icon`;
+    return;
+  }
+  // Меняем фон под иконку (цвет монеты)
+  container.className = `currency-icon ${currency.toLowerCase()}-icon`;
+
+  // Предзагружаем иконку, затем плавно меняем
+  container.classList.add('updating');
+  const preload = new Image();
+  preload.onload = () => {
+    img.src = newSrc;
+    img.alt = currency;
+    img.dataset.current = currency;
+    // короткая задержка кадра для анимации
+    requestAnimationFrame(() => container.classList.remove('updating'));
+  };
+  preload.src = newSrc;
 }
 
 function updateBalanceDisplay() {
