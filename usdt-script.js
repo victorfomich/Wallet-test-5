@@ -450,7 +450,7 @@ function createTransactionElement(transaction) {
     if (isExchange) {
         iconClass = 'exchange';
         iconSymbol = '↔';
-        typeText = isDeposit ? 'Обмен USDT на TON' : 'Обмен USDT на TON';
+        typeText = isDeposit ? 'Обмен (зачисление)' : 'Обмен (списание)';
     } else if (isDeposit) {
         iconClass = 'deposit';
         iconSymbol = '↙';
