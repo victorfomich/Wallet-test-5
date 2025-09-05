@@ -316,6 +316,17 @@ body {
     color: var(--text-secondary);
 }
 
+/* Чуть крупнее иконки в модальном выборе валют */
+.currency-list .currency-icon {
+    width: 28px;
+    height: 28px;
+}
+
+.currency-list .currency-logo {
+    width: 20px;
+    height: 20px;
+}
+
 /* Анимации */
 @keyframes slideUp {
     from {
