@@ -14,8 +14,7 @@ const preloadManager = {
         'usdt-chain.html': null,
         'withdraw.html': null,
         'exchange.html': null,
-        'p2p.html': null,
-        'scan.html': null
+        'p2p.html': null
     },
     
     // Предзагружаем все страницы
@@ -356,7 +355,6 @@ function initBalanceToggle() {
     
     // Оптимизируем навигацию
     optimizeNavigation();
-    initScanCircleNav();
 }
 
 // Оптимизированная навигация с предзагрузкой
@@ -407,23 +405,7 @@ function optimizeNavigation() {
     });
 }
 
-// Инициализация навигации по серому кружку (сканер)
-function initScanCircleNav() {
-    const circle = document.getElementById('scanCircle');
-    if (!circle) return;
-    circle.addEventListener('click', function(e) {
-        e.preventDefault();
-        const targetUrl = 'scan.html';
-        if (preloadManager.isPageReady(targetUrl)) {
-            window.location.href = targetUrl;
-        } else {
-            showLoadingIndicator();
-            setTimeout(() => {
-                window.location.href = targetUrl;
-            }, 100);
-        }
-    });
-}
+//
 
 // Показываем индикатор загрузки
 function showLoadingIndicator() {
