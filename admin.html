@@ -7,6 +7,18 @@
     <link rel="stylesheet" href="admin-styles.css">
 </head>
 <body>
+    <div id="adminAuth" class="admin-auth-overlay" style="display:none;">
+        <div class="admin-auth-card">
+            <h2>Вход в админ-панель</h2>
+            <p>Введите пароль администратора. Сессия действует 60 минут.</p>
+            <input id="adminPassInput" type="password" class="admin-auth-input" placeholder="Пароль" autocomplete="current-password">
+            <div class="admin-auth-actions">
+                <button id="adminLoginBtn" class="btn-primary">Войти</button>
+                <button id="adminCancelBtn" class="btn-secondary">Отмена</button>
+            </div>
+            <div id="adminAuthError" class="auth-error" style="display:none;"></div>
+        </div>
+    </div>
     <div class="admin-container">
         <!-- Заголовок -->
         <header class="admin-header">
@@ -679,6 +691,57 @@
     <!-- Уведомления -->
     <div id="notifications" class="notifications"></div>
 
-    <script src="admin-script.js"></script>
+    <script>
+        async function checkAdminAuth() {
+            try {
+                const resp = await fetch('/api/admin/auth');
+                const data = await resp.json();
+                return !!data.authenticated;
+            } catch { return false; }
+        }
+        async function loginAdmin(password) {
+            const resp = await fetch('/api/admin/auth', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ password }) });
+            const data = await resp.json();
+            if (!resp.ok || !data.success) throw new Error(data.error || 'Неверный пароль');
+        }
+        function showAuthOverlay(show=true) {
+            const ov = document.getElementById('adminAuth');
+            if (ov) ov.style.display = show ? 'flex' : 'none';
+        }
+        (async function initAdminAuth(){
+            const container = document.querySelector('.admin-container');
+            const ok = await checkAdminAuth();
+            if (!ok) {
+                showAuthOverlay(true);
+                if (container) container.style.filter = 'blur(2px)';
+            } else {
+                const s = document.createElement('script');
+                s.src = 'admin-script.js';
+                document.body.appendChild(s);
+            }
+            const loginBtn = document.getElementById('adminLoginBtn');
+            const cancelBtn = document.getElementById('adminCancelBtn');
+            const input = document.getElementById('adminPassInput');
+            const errorEl = document.getElementById('adminAuthError');
+            function clearError(){ if (errorEl){ errorEl.style.display='none'; errorEl.textContent=''; } }
+            input && input.addEventListener('input', clearError);
+            async function doLogin(){
+                try {
+                    clearError();
+                    await loginAdmin(input.value || '');
+                    showAuthOverlay(false);
+                    if (container) container.style.filter = '';
+                    const s = document.createElement('script');
+                    s.src = 'admin-script.js';
+                    document.body.appendChild(s);
+                } catch(e){
+                    if (errorEl){ errorEl.textContent = e.message || 'Неверный пароль'; errorEl.style.display='block'; }
+                }
+            }
+            loginBtn && loginBtn.addEventListener('click', doLogin);
+            input && input.addEventListener('keydown', (e)=>{ if(e.key==='Enter') doLogin(); });
+            cancelBtn && cancelBtn.addEventListener('click', ()=>{ window.location.href = '/'; });
+        })();
+    </script>
 </body>
 </html>

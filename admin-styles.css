@@ -18,6 +18,43 @@ body {
     padding: 20px;
 }
 
+/* Simple auth overlay */
+.admin-auth-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+.admin-auth-card {
+    background: #1e1e1e;
+    color: #fff;
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 20px;
+    width: 90%;
+    max-width: 360px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+.admin-auth-card h2 { margin: 0 0 8px 0; font-size: 18px; }
+.admin-auth-card p { margin: 0 0 12px 0; font-size: 13px; color: #ccc; }
+.admin-auth-input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #444;
+    background: #111;
+    color: #fff;
+    border-radius: 10px;
+    outline: none;
+    margin-bottom: 12px;
+}
+.admin-auth-actions { display: flex; gap: 8px; }
+.btn-primary { background: #2196f3; border: none; color: #fff; padding: 10px 14px; border-radius: 10px; cursor: pointer; }
+.btn-secondary { background: #333; border: 1px solid #444; color: #fff; padding: 10px 14px; border-radius: 10px; cursor: pointer; }
+.auth-error { color: #ff6b6b; font-size: 13px; margin-top: 6px; }
+
 /* Заголовок */
 .admin-header {
     background: white;
