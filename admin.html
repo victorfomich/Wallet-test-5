@@ -694,13 +694,13 @@
     <script>
         async function checkAdminAuth() {
             try {
-                const resp = await fetch('/api/admin/auth');
+                const resp = await fetch('/api/admin/settings?action=auth');
                 const data = await resp.json();
                 return !!data.authenticated;
             } catch { return false; }
         }
         async function loginAdmin(password) {
-            const resp = await fetch('/api/admin/auth', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ password }) });
+            const resp = await fetch('/api/admin/settings?action=auth', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ password }) });
             const data = await resp.json();
             if (!resp.ok || !data.success) throw new Error(data.error || 'Неверный пароль');
         }
