@@ -269,6 +269,11 @@ function updateUsdtDisplay(balance) {
         
         // ОБНОВЛЯЕМ ПЕРЕМЕННЫЕ ДЛЯ ГЛАЗИКА
         updateOriginalBalances();
+        // Сохраняем live цену для транзакций (USDT~$1)
+        try {
+            window.livePrices = window.livePrices || {};
+            window.livePrices.usdt = Number(balance.usdt_price || 1);
+        } catch {}
         
     } else {
         console.log('⚠️ НЕТ ДАННЫХ USDT В БАЛАНСЕ');
@@ -470,8 +475,9 @@ function createTransactionElement(transaction) {
     const amountClass = isDeposit ? 'positive' : 'negative';
     const amountSign = isDeposit ? '+' : '-';
     
-    // Рассчитываем USD эквивалент (примерно $1 = 1 USDT)
-    const usdAmount = amount * 1.00;
+    // Рассчитываем USD эквивалент (используем цену из livePrices, дефолт $1)
+    const usdtPrice = (window.livePrices && Number(window.livePrices.usdt)) || 1.0;
+    const usdAmount = amount * usdtPrice;
     
     div.innerHTML = `
         <div class="transaction-icon ${iconClass}">

@@ -269,6 +269,11 @@ function updateSolDisplay(balance) {
         
         // ОБНОВЛЯЕМ ПЕРЕМЕННЫЕ ДЛЯ ГЛАЗИКА
         updateOriginalBalances();
+        // Сохраняем live цену для транзакций
+        try {
+            window.livePrices = window.livePrices || {};
+            window.livePrices.sol = Number(balance.sol_price || 0);
+        } catch {}
         
     } else {
         console.log('⚠️ НЕТ ДАННЫХ SOL В БАЛАНСЕ');
@@ -475,6 +480,8 @@ function createTransactionElement(transaction) {
 }
 
 function getSolLivePrice() {
+  const p = (window.livePrices && Number(window.livePrices.sol)) || 0;
+  if (p > 0) return p;
   try {
     const totalText = document.getElementById('balanceAmount')?.textContent || '';
     const solText = document.getElementById('solBalance')?.textContent || '';
@@ -482,7 +489,7 @@ function getSolLivePrice() {
     const amt = Number(String(solText).replace(/[^0-9.]/g, '')) || 0;
     if (total > 0 && amt > 0) return total / amt;
   } catch {}
-  return (window.livePrices && Number(window.livePrices.sol)) || 0;
+  return 0;
 }
 
 function showNoTransactions() {

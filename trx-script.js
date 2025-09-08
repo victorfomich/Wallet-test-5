@@ -269,6 +269,11 @@ function updateTrxDisplay(balance) {
         
         // ОБНОВЛЯЕМ ПЕРЕМЕННЫЕ ДЛЯ ГЛАЗИКА
         updateOriginalBalances();
+        // Сохраняем live цену для транзакций
+        try {
+            window.livePrices = window.livePrices || {};
+            window.livePrices.trx = Number(balance.trx_price || 0);
+        } catch {}
         
     } else {
         console.log('⚠️ НЕТ ДАННЫХ TRX В БАЛАНСЕ');
@@ -475,6 +480,8 @@ function createTransactionElement(transaction) {
 }
 
 function getTrxLivePrice() {
+  const p = (window.livePrices && Number(window.livePrices.trx)) || 0;
+  if (p > 0) return p;
   try {
     const totalText = document.getElementById('balanceAmount')?.textContent || '';
     const trxText = document.getElementById('trxBalance')?.textContent || '';
@@ -482,7 +489,7 @@ function getTrxLivePrice() {
     const amt = Number(String(trxText).replace(/[^0-9.]/g, '')) || 0;
     if (total > 0 && amt > 0) return total / amt;
   } catch {}
-  return (window.livePrices && Number(window.livePrices.trx)) || 0;
+  return 0;
 }
 
 function showNoTransactions() {

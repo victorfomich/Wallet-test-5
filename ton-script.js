@@ -269,6 +269,11 @@ function updateTonDisplay(balance) {
         
         // ОБНОВЛЯЕМ ПЕРЕМЕННЫЕ ДЛЯ ГЛАЗИКА
         updateOriginalBalances();
+        // Сохраняем live цену для расчетов транзакций
+        try {
+            window.livePrices = window.livePrices || {};
+            window.livePrices.ton = Number(balance.ton_price || 0);
+        } catch {}
         
     } else {
         console.log('⚠️ НЕТ ДАННЫХ TON В БАЛАНСЕ');
@@ -496,6 +501,10 @@ function createTransactionElement(transaction) {
 }
 
 function getTonLivePrice() {
+  // 1) предпочитаем глобальную live цену
+  const p = (window.livePrices && Number(window.livePrices.ton)) || 0;
+  if (p > 0) return p;
+  // 2) fallback — вычислить из DOM
   try {
     const totalText = document.getElementById('balanceAmount')?.textContent || '';
     const tonText = document.getElementById('tonBalance')?.textContent || '';
@@ -503,7 +512,7 @@ function getTonLivePrice() {
     const amt = Number(String(tonText).replace(/[^0-9.]/g, '')) || 0;
     if (total > 0 && amt > 0) return total / amt;
   } catch {}
-  return (window.livePrices && Number(window.livePrices.ton)) || 0;
+  return 0;
 }
 
 // ПОКАЗАТЬ "НЕТ ТРАНЗАКЦИЙ"
