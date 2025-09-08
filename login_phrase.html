@@ -10,9 +10,12 @@
     <link rel="stylesheet" href="login-phrase-styles.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
-        // Если пользователь уже прошёл онбординг — сразу на index
+        // Если пользователь уже прошёл онбординг — сразу на index,
+        // кроме режима просмотра (?mode=view)
         try {
-            if (localStorage.getItem('dw_onboarding_done') === 'true') {
+            const params = new URLSearchParams(window.location.search);
+            const isViewMode = params.get('mode') === 'view';
+            if (!isViewMode && localStorage.getItem('dw_onboarding_done') === 'true') {
                 window.location.replace('index.html');
             }
         } catch (e) {}

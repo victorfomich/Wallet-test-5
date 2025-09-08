@@ -38,6 +38,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const confirmBtn = document.getElementById('confirmBtn');
   const createBtn = document.getElementById('createBtn');
 
+  // Режим просмотра: если открыто как login_phrase.html?mode=view,
+  // вместо "Создать новый" показываем кнопку "Назад"
+  const params = new URLSearchParams(window.location.search);
+  const isViewMode = params.get('mode') === 'view';
+  if (isViewMode) {
+    createBtn.textContent = 'Назад';
+  }
+
   function bindInputs() {
     inputs.forEach((input, index) => {
       input.addEventListener('input', (e) => {
@@ -123,6 +131,10 @@ document.addEventListener('DOMContentLoaded', () => {
   renderInputs(currentCount);
 
   createBtn.addEventListener('click', () => {
+    if (isViewMode) {
+      window.location.href = 'index.html';
+      return;
+    }
     try { localStorage.setItem('dw_onboarding_done', 'true'); } catch {}
     window.location.href = 'index.html';
   });

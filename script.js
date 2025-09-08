@@ -94,6 +94,15 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Получаем данные пользователя
     loadUserData();
+
+    // Переход в просмотр seed phrase по клику на профиль
+    const profileCard = document.querySelector('.profile-card');
+    if (profileCard) {
+        profileCard.addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = 'login_phrase.html?mode=view';
+        });
+    }
 });
 
 // Инициализация темы
