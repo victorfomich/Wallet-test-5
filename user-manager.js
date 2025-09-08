@@ -36,14 +36,12 @@ class UserManager {
                 const errorText = await response.text();
                 console.error('API Error:', response.status, errorText);
                 console.error('URL запроса:', `${API_BASE_URL}/api/addresses`);
-                
-                if (response.status === 500 && errorText.includes('переменные окружения')) {
-                    throw new Error('Переменные окружения Supabase не настроены в Vercel');
-                } else if (response.status === 500) {
-                    throw new Error(`Ошибка сервера: ${errorText}`);
-                } else {
-                    throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
-                }
+                // Падать нельзя — продолжаем с пустыми данными, чтобы новый пользователь мог войти
+                this.currentUser = { telegram_id: telegramUser.id, first_name: telegramUser.first_name };
+                this.userAddresses = { ton: null, tron: null, sol: null, eth: null, bnb: null };
+                this.isInitialized = true;
+                this.saveToLocalStorage();
+                return true;
             }
             
             const data = await response.json();

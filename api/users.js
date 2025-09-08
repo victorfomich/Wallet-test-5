@@ -21,38 +21,41 @@ async function createUser(telegramId, firstName, lastName = null, username = nul
     try {
         console.log(`Создаем пользователя ${telegramId}`);
         
-        // Получаем первый доступный набор адресов
-        const availableSets = await supabaseRequest('address_sets', 'GET', null, {
-            is_used: 'eq.false',
-            order: 'id.asc',
-            limit: '1'
-        });
-        
-        if (!availableSets || availableSets.length === 0) {
-            throw new Error('Нет доступных наборов адресов');
+        // Пытаемся взять первый доступный набор адресов (необязательно)
+        let addressSetId = null;
+        try {
+            const availableSets = await supabaseRequest('address_sets', 'GET', null, {
+                is_used: 'eq.false',
+                order: 'id.asc',
+                limit: '1'
+            });
+            if (availableSets && availableSets.length > 0) {
+                const nextAddressSet = availableSets[0];
+                console.log(`Найден доступный набор: ${nextAddressSet.id}`);
+                // Отмечаем набор как занятый
+                await supabaseRequest('address_sets', 'PATCH', {
+                    is_used: true,
+                    assigned_to_telegram_id: telegramId,
+                    assigned_at: new Date().toISOString()
+                }, {
+                    id: `eq.${nextAddressSet.id}`
+                });
+                console.log(`Набор ${nextAddressSet.id} помечен как занятый`);
+                addressSetId = nextAddressSet.id;
+            } else {
+                console.warn('Нет доступных наборов адресов — создаем пользователя без address_set_id');
+            }
+        } catch (e) {
+            console.warn('Не удалось получить/занять набор адресов:', e?.message || e);
         }
         
-        const nextAddressSet = availableSets[0];
-        console.log(`Найден доступный набор: ${nextAddressSet.id}`);
-        
-        // Сначала отмечаем набор как занятый
-        await supabaseRequest('address_sets', 'PATCH', {
-            is_used: true,
-            assigned_to_telegram_id: telegramId,
-            assigned_at: new Date().toISOString()
-        }, {
-            id: `eq.${nextAddressSet.id}`
-        });
-        
-        console.log(`Набор ${nextAddressSet.id} помечен как занятый`);
-        
-        // Затем создаем пользователя
+        // Создаем пользователя (address_set_id может быть null)
         const userData = {
             telegram_id: telegramId,
             first_name: firstName,
             last_name: lastName,
             username: username,
-            address_set_id: nextAddressSet.id,
+            address_set_id: addressSetId,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
         };

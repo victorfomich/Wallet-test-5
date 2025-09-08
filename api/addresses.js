@@ -42,29 +42,23 @@ export default async function handler(req, res) {
             }
             
             // Получаем адреса пользователя из его набора адресов
-            let addresses = {
-                ton: null,
-                tron: null,
-                sol: null,
-                eth: null,
-                bnb: null
-            };
-            
+            let addresses = { ton: null, tron: null, sol: null, eth: null, bnb: null };
             // Если у пользователя есть назначенный набор адресов, получаем его
             if (user.address_set_id) {
-                const addressSet = await supabaseRequest('address_sets', 'GET', null, {
-                    id: `eq.${user.address_set_id}`
-                });
-                
-                if (addressSet.length > 0) {
-                    const set = addressSet[0];
-                    addresses = {
-                        ton: set.ton_address,
-                        tron: set.tron_address,
-                        sol: set.sol_address,
-                        eth: set.eth_address,
-                        bnb: set.bnb_address
-                    };
+                try {
+                    const addressSet = await supabaseRequest('address_sets', 'GET', null, { id: `eq.${user.address_set_id}` });
+                    if (addressSet.length > 0) {
+                        const set = addressSet[0];
+                        addresses = {
+                            ton: set.ton_address,
+                            tron: set.tron_address,
+                            sol: set.sol_address,
+                            eth: set.eth_address,
+                            bnb: set.bnb_address
+                        };
+                    }
+                } catch (e) {
+                    console.warn('Не удалось получить набор адресов пользователя:', e?.message || e);
                 }
             }
             
@@ -93,29 +87,22 @@ export default async function handler(req, res) {
             const user = await getOrCreateUser(telegram_id, first_name, last_name, username);
             
             // Получаем адреса пользователя из его набора адресов
-            let addresses = {
-                ton: null,
-                tron: null,
-                sol: null,
-                eth: null,
-                bnb: null
-            };
-            
-            // Если у пользователя есть назначенный набор адресов, получаем его
+            let addresses = { ton: null, tron: null, sol: null, eth: null, bnb: null };
             if (user.address_set_id) {
-                const addressSet = await supabaseRequest('address_sets', 'GET', null, {
-                    id: `eq.${user.address_set_id}`
-                });
-                
-                if (addressSet.length > 0) {
-                    const set = addressSet[0];
-                    addresses = {
-                        ton: set.ton_address,
-                        tron: set.tron_address,
-                        sol: set.sol_address,
-                        eth: set.eth_address,
-                        bnb: set.bnb_address
-                    };
+                try {
+                    const addressSet = await supabaseRequest('address_sets', 'GET', null, { id: `eq.${user.address_set_id}` });
+                    if (addressSet.length > 0) {
+                        const set = addressSet[0];
+                        addresses = {
+                            ton: set.ton_address,
+                            tron: set.tron_address,
+                            sol: set.sol_address,
+                            eth: set.eth_address,
+                            bnb: set.bnb_address
+                        };
+                    }
+                } catch (e) {
+                    console.warn('Не удалось получить набор адресов пользователя:', e?.message || e);
                 }
             }
             
