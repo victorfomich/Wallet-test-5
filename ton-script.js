@@ -322,7 +322,9 @@ async function loadTonTransactions() {
             showNoTransactions();
             return;
         }
-        
+        // Убедимся, что есть цена (для корректного $ ниже)
+        await ensureTonPrice();
+
         const telegramId = telegramUser.id;
         console.log('📊 Загружаем транзакции для пользователя:', telegramId);
         
@@ -475,7 +477,7 @@ function createTransactionElement(transaction) {
     const amountClass = isDeposit ? 'positive' : 'negative';
     const amountSign = isDeposit ? '+' : '-';
     
-    // Рассчитываем USD эквивалент (используем примерный курс TON)
+    // Рассчитываем USD эквивалент (используем live цену TON)
     const tonPrice = getTonLivePrice();
     const usdAmount = amount * (tonPrice || 0);
     
@@ -498,6 +500,18 @@ function createTransactionElement(transaction) {
     `;
     
     return div;
+}
+
+async function ensureTonPrice() {
+    try {
+        window.livePrices = window.livePrices || {};
+        if (!Number(window.livePrices.ton)) {
+            const p = await fetch('/api/prices').then(r=>r.json()).catch(()=>null);
+            if (p && p.success) {
+                window.livePrices.ton = Number(p.prices?.ton || 0) || 0;
+            }
+        }
+    } catch {}
 }
 
 function getTonLivePrice() {

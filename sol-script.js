@@ -317,7 +317,8 @@ async function loadSolTransactions() {
             showNoTransactions();
             return;
         }
-        
+        await ensureSolPrice();
+
         const response = await fetch(`/api/transactions?telegram_id=${telegramUser.id}`);
         const data = await response.json();
         
@@ -454,7 +455,7 @@ function createTransactionElement(transaction) {
     const amountClass = isDeposit ? 'positive' : 'negative';
     const amountSign = isDeposit ? '+' : '-';
     
-    // Рассчитываем USD эквивалент (используем примерный курс SOL)
+    // Рассчитываем USD эквивалент (используем live цену SOL)
     const solPrice = getSolLivePrice();
     const usdAmount = amount * (solPrice || 0);
     
@@ -479,6 +480,17 @@ function createTransactionElement(transaction) {
     return div;
 }
 
+async function ensureSolPrice() {
+  try {
+    window.livePrices = window.livePrices || {};
+    if (!Number(window.livePrices.sol)) {
+      const p = await fetch('/api/prices').then(r=>r.json()).catch(()=>null);
+      if (p && p.success) {
+        window.livePrices.sol = Number(p.prices?.sol || 0) || 0;
+      }
+    }
+  } catch {}
+}
 function getSolLivePrice() {
   const p = (window.livePrices && Number(window.livePrices.sol)) || 0;
   if (p > 0) return p;

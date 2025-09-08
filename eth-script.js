@@ -321,6 +321,8 @@ async function loadEthTransactions() {
             showNoTransactions();
             return;
         }
+        // Убедимся, что есть цена ETH
+        await ensureEthPrice();
         
         const telegramId = telegramUser.id;
         const response = await fetch(`/api/transactions?telegram_id=${telegramId}`);
@@ -489,6 +491,18 @@ function createTransactionElement(transaction) {
     `;
     
     return div;
+}
+
+async function ensureEthPrice() {
+  try {
+    window.livePrices = window.livePrices || {};
+    if (!Number(window.livePrices.eth)) {
+      const p = await fetch('/api/prices').then(r=>r.json()).catch(()=>null);
+      if (p && p.success) {
+        window.livePrices.eth = Number(p.prices?.eth || 0) || 0;
+      }
+    }
+  } catch {}
 }
 
 function getEthLivePrice() {
