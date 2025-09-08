@@ -147,9 +147,9 @@ function renderUsersTable(users) {
             <td>${user.address_set_id ? `Набор #${user.address_set_id}` : '-'}</td>
             <td>${formatDate(user.created_at)}</td>
             <td>
-                <button onclick="viewUserDetails(${user.id})" class="btn btn-secondary btn-small">👁️ Просмотр</button>
-                <button onclick="resetUserAddresses(${user.id})" class="btn btn-warning btn-small">🔄 Сброс</button>
-                <button onclick="deleteUser(${user.id})" class="btn btn-danger btn-small">🗑️ Удалить</button>
+                <button onclick="viewUserDetails(${user.id})" class="btn btn-secondary btn-small">Просмотр</button>
+                <button onclick="resetUserAddresses(${user.id})" class="btn btn-warning btn-small">Сброс</button>
+                <button onclick="deleteUser(${user.id})" class="btn btn-danger btn-small">Удалить</button>
             </td>
         </tr>
     `).join('');
