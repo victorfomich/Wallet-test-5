@@ -6,12 +6,22 @@ let allUsers = [];
 let allAddressSets = [];
 let currentTab = 'users';
 
-// Инициализация
-document.addEventListener('DOMContentLoaded', function() {
-    initializeAdmin();
-    setupEventListeners();
-    loadInitialData();
-});
+// Инициализация (работает как при обычной загрузке, так и при динамическом подключении после входа)
+function __dw_init_admin_app() {
+    try {
+        initializeAdmin();
+        setupEventListeners();
+        loadInitialData();
+    } catch (e) {
+        console.error('Admin init error:', e);
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', __dw_init_admin_app);
+} else {
+    __dw_init_admin_app();
+}
 
 // Настройка обработчиков событий
 function setupEventListeners() {
