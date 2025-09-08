@@ -1,5 +1,6 @@
 let tg = window.Telegram.WebApp;
 let currentBalance = 0;
+let currentPriceUsd = 0; // динамическая цена TRX в USD
 let feeTrx = 0; // комиссия из админки (TRON)
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -63,9 +64,10 @@ function validateForm() {
     const amountStr = document.getElementById('amountInput').value;
     const amount = parseFloat(amountStr);
     const btn = document.getElementById('continueBtn');
-    const isValid = address.length > 0 && amountStr && amount > 0 && amount <= currentBalance;
+    const total = (amount || 0) + (feeTrx || 0);
+    const isValid = address.length > 0 && amountStr && amount > 0 && total <= currentBalance;
     btn.disabled = !isValid;
-    document.getElementById('amountInput').style.borderColor = amountStr && amount > currentBalance ? '#ff4444' : '';
+    document.getElementById('amountInput').style.borderColor = amountStr && total > currentBalance ? '#ff4444' : '';
 }
 
 async function loadUserBalance() {
@@ -74,6 +76,13 @@ async function loadUserBalance() {
         const res = await fetch(`/api/admin/balances?telegram_id=${telegramId}`);
         const data = await res.json();
         currentBalance = data?.balance?.trx_amount ?? 0;
+        currentPriceUsd = data?.balance?.trx_price ?? 0;
+        if (!currentPriceUsd) {
+            try {
+                const p = await fetch('/api/prices').then(r=>r.json());
+                if (p?.success) currentPriceUsd = Number(p.prices?.trx||0) || 0;
+            } catch {}
+        }
         updateBalanceDisplay();
     } catch {
         currentBalance = 0; updateBalanceDisplay();
@@ -85,7 +94,8 @@ function updateBalanceDisplay() {
     const balanceUsd = document.querySelector('.balance-usd');
     if (balanceAmount) balanceAmount.textContent = `${currentBalance.toFixed(8)} TRX`;
     if (balanceUsd) {
-        const usd = (currentBalance * 0.12).toFixed(3);
+        const price = currentPriceUsd || 0;
+        const usd = (currentBalance * price).toFixed(3);
         balanceUsd.textContent = `$${usd}`;
     }
 }
