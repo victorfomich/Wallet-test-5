@@ -13,7 +13,8 @@ const preloadManager = {
         'qr-usdt.html': null,
         'usdt-chain.html': null,
         'withdraw.html': null,
-        'exchange.html': null
+        'exchange.html': null,
+        'p2p.html': null
     },
     
     // Предзагружаем все страницы

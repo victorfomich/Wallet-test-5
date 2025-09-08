@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>P2P - DreamWallet</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="user-manager.js"></script>
+    <!-- Lottie + pako for Telegram .tgs (gzipped Lottie JSON) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"></script>
+    <style>
+        .page-inner {
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 16px;
+            padding-bottom: 100px;
+        }
+        .emoji-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 24px 0 12px 0;
+        }
+        .emoji-box {
+            width: 200px;
+            height: 200px;
+            max-width: 60vw;
+            max-height: 60vw;
+        }
+        @media (max-width: 480px) {
+            .page-inner { padding: 16px; }
+            .emoji-box { width: 170px; height: 170px; }
+        }
+        .p2p-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 8px 0 8px 0;
+            text-align: left;
+        }
+        .p2p-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        .p2p-list {
+            padding-left: 18px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .continue-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 32px);
+            max-width: 368px;
+            background: var(--accent-color);
+            border: none;
+            color: #fff;
+            padding: 14px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 17px;
+            cursor: pointer;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const container = document.getElementById('emojiPlayer');
+            try {
+                const res = await fetch('emoji-1.tgs');
+                if (!res.ok) throw new Error('Не удалось загрузить emoji-1.tgs');
+                const buf = await res.arrayBuffer();
+                const ungzipped = window.pako.ungzip(new Uint8Array(buf));
+                const jsonStr = new TextDecoder('utf-8').decode(ungzipped);
+                const animationData = JSON.parse(jsonStr);
+
+                window.lottie.loadAnimation({
+                    container,
+                    renderer: 'svg',
+                    loop: true,
+                    autoplay: true,
+                    animationData
+                });
+            } catch (e) {
+                container.innerHTML = '<div style="color: var(--text-secondary); text-align:center;">Не удалось отобразить эмодзи</div>';
+                // eslint-disable-next-line no-console
+                console.error(e);
+            }
+
+            const backBtn = document.getElementById('backBtn');
+            if (backBtn) {
+                backBtn.addEventListener('click', () => {
+                    window.location.replace('index.html');
+                });
+            }
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="page-inner">
+            <div class="emoji-section">
+                <div class="emoji-box" id="emojiPlayer"></div>
+            </div>
+            <h1 class="p2p-title">Как пользоваться P2P</h1>
+            <p class="p2p-text">Быстрый способ обмена с другими пользователями прямо в Telegram.</p>
+            <ul class="p2p-list">
+                <li>Откройте чат с нашим ботом и нажмите «P2P».</li>
+                <li>Или просто отправьте команду <b>/p2p</b> в чате.</li>
+                <li>Создайте своё предложение или выберите из списка доступных.</li>
+                <li>Следуйте подсказкам бота: оплата, подтверждение и завершение сделки.</li>
+            </ul>
+        </div>
+        <button id="backBtn" class="continue-btn">Назад</button>
+    </div>
+</body>
+</html>
+
+
