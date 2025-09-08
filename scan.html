@@ -22,11 +22,18 @@
             color: var(--text-secondary);
             margin-bottom: 12px;
         }
-        .scan-frame-wrap {
+        .scan-stage {
+            position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 24px 0 12px 0;
+            min-height: 60vh;
+        }
+        .page-dim {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.35);
+            z-index: 1;
         }
         .scan-frame {
             width: 240px;
@@ -35,9 +42,18 @@
             max-height: 70vw;
             border-radius: 16px;
             position: relative;
-            background: rgba(255,255,255,0.02);
             border: 1px solid var(--border-color);
             overflow: hidden;
+            z-index: 2;
+        }
+        .scan-video {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 16px;
+            background: #000;
         }
         .scan-corners {
             position: absolute;
@@ -54,20 +70,6 @@
         .corner.tr { top: 0; right: 0; border-left: none; border-bottom: none; border-radius: 0 16px 0 0; }
         .corner.bl { bottom: 0; left: 0; border-right: none; border-top: none; border-radius: 0 0 0 16px; }
         .corner.br { bottom: 0; right: 0; border-left: none; border-top: none; border-radius: 0 0 16px 0; }
-        .scan-line {
-            position: absolute;
-            left: 8px;
-            right: 8px;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
-            animation: scanMove 2.2s linear infinite;
-            opacity: 0.7;
-        }
-        @keyframes scanMove {
-            0% { top: 20px; }
-            50% { top: calc(100% - 20px); }
-            100% { top: 20px; }
-        }
         .hint-text {
             font-size: 14px;
             color: var(--text-secondary);
@@ -90,16 +92,54 @@
             font-size: 17px;
             cursor: pointer;
         }
+        @media (max-width: 480px) {
+            .scan-stage { min-height: 55vh; }
+            .scan-frame { width: 200px; height: 200px; }
+        }
     </style>
     <script>
+        let cameraStream = null;
+        async function startCamera() {
+            const videoEl = document.getElementById('camera');
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: { ideal: 'environment' } },
+                    audio: false
+                });
+                cameraStream = stream;
+                videoEl.srcObject = stream;
+                await videoEl.play();
+            } catch (e) {
+                console.error('Ошибка доступа к камере:', e);
+                // Покажем сообщение в рамке
+                const fallback = document.createElement('div');
+                fallback.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text-secondary);font-size:14px;background:#000;';
+                fallback.textContent = 'Не удалось получить доступ к камере';
+                document.querySelector('.scan-frame').appendChild(fallback);
+            }
+        }
+        function stopCamera() {
+            try {
+                if (cameraStream) {
+                    cameraStream.getTracks().forEach(t => t.stop());
+                    cameraStream = null;
+                }
+            } catch {}
+        }
         document.addEventListener('DOMContentLoaded', () => {
+            // Назад
             const backBtn = document.getElementById('backBtn');
             if (backBtn) {
                 backBtn.addEventListener('click', () => {
+                    stopCamera();
                     window.location.replace('index.html');
                 });
             }
+            // Стартуем камеру
+            startCamera();
         });
+        window.addEventListener('pagehide', stopCamera);
+        window.addEventListener('beforeunload', stopCamera);
     </script>
     
 </head>
@@ -107,15 +147,16 @@
     <div class="container">
         <div class="scan-page-inner">
             <div class="scan-header">Сканирование QR</div>
-            <div class="scan-frame-wrap">
+            <div class="scan-stage">
+                <div class="page-dim"></div>
                 <div class="scan-frame">
+                    <video id="camera" class="scan-video" autoplay playsinline muted></video>
                     <div class="scan-corners">
                         <div class="corner tl"></div>
                         <div class="corner tr"></div>
                         <div class="corner bl"></div>
                         <div class="corner br"></div>
                     </div>
-                    <div class="scan-line"></div>
                 </div>
             </div>
             <div class="hint-text">Наведите камеру на QR-код для распознавания</div>
