@@ -69,19 +69,10 @@ function initCryptoClicks() {
     cryptoItems.forEach(item => {
         item.addEventListener('click', function() {
             const ticker = this.querySelector('.crypto-ticker').textContent;
-            const name = this.querySelector('.crypto-name').textContent;
-            
-            console.log(`Выбрана криптовалюта: ${ticker} (${name})`);
-            
-            // Здесь можно добавить логику для перехода на страницу пополнения конкретной криптовалюты
-            // Например, показать модальное окно или перейти на другую страницу
-            
-            // Пока что просто показываем уведомление
-            if (tg && tg.showAlert) {
-                tg.showAlert(`Выбрана криптовалюта: ${ticker}`);
-            } else {
-                alert(`Выбрана криптовалюта: ${ticker}`);
-            }
+            // без уведомлений — просто переходим на соответствующую страницу пополнения
+            const map = { USDT: 'usdt.html', ETH: 'eth.html', TON: 'ton.html', SOL: 'sol.html', TRX: 'trx.html' };
+            const target = map[ticker.toUpperCase()] || 'usdt.html';
+            window.location.href = target;
         });
     });
 }
