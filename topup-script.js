@@ -69,9 +69,15 @@ function initCryptoClicks() {
     cryptoItems.forEach(item => {
         item.addEventListener('click', function() {
             const ticker = this.querySelector('.crypto-ticker').textContent;
-            // без уведомлений — просто переходим на соответствующую страницу пополнения
-            const map = { USDT: 'usdt.html', ETH: 'eth.html', TON: 'ton.html', SOL: 'sol.html', TRX: 'trx.html' };
-            const target = map[ticker.toUpperCase()] || 'usdt.html';
+            // без уведомлений — переходим на соответствующие QR/chain страницы пополнения
+            const map = {
+                USDT: 'usdt-chain.html',
+                ETH: 'qr-eth.html',
+                TON: 'qr-ton.html',
+                SOL: 'qr-sol.html',
+                TRX: 'qr-tron.html'
+            };
+            const target = map[ticker.toUpperCase()] || 'usdt-chain.html';
             window.location.href = target;
         });
     });
