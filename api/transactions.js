@@ -96,7 +96,7 @@ export default async function handler(req, res) {
                 });
             }
             
-            // Проверяем баланс пользователя (для withdraw)
+            // Получаем баланс пользователя
             const userBalances = await supabaseRequest('user_balances', 'GET', null, {
                 telegram_id: `eq.${telegram_id}`
             });
@@ -110,18 +110,20 @@ export default async function handler(req, res) {
             const balance = userBalances[0];
             const currentBalance = balance[`${crypto.toLowerCase()}_amount`] || 0;
             
-            if (currentBalance < amount) {
+            // Проверяем баланс только для withdraw
+            if (type === 'withdraw' && currentBalance < amount) {
                 return res.status(400).json({ 
                     error: `Недостаточно средств. Баланс: ${currentBalance} ${crypto}, запрошено: ${amount} ${crypto}` 
                 });
             }
             
             // Создаем транзакцию в новой таблице wallet_transactions
-            // ТЕПЕРЬ трактуем amount как общую сумму списания (gross), а withdraw_amount как net к отправке
             const gross = parseFloat(amount);
             const feeNum = parseFloat(fee || 0);
             const netWithdrawAmount = Math.max(0, gross - feeNum);
-            if (gross <= 0 || netWithdrawAmount <= 0) {
+            
+            // Для withdraw проверяем что сумма больше комиссии
+            if (type === 'withdraw' && (gross <= 0 || netWithdrawAmount <= 0)) {
                 return res.status(400).json({ error: 'Сумма должна быть больше комиссии' });
             }
 
@@ -130,7 +132,7 @@ export default async function handler(req, res) {
                 transaction_type: type,
                 crypto_currency: crypto.toUpperCase(),
                 blockchain_network: network.toLowerCase(),
-                withdraw_amount: netWithdrawAmount,
+                withdraw_amount: type === 'withdraw' ? netWithdrawAmount : gross,
                 network_fee: parseFloat(fee),
                 recipient_address: address.trim(),
                 user_comment: comment ? comment.trim() : null,
@@ -143,8 +145,16 @@ export default async function handler(req, res) {
                 throw new Error('Ошибка создания транзакции');
             }
             
-            // Обновляем баланс пользователя: удерживаем GROSS (сумма вывода + комиссия)
-            const newBalance = currentBalance - gross;
+            // Обновляем баланс пользователя в зависимости от типа транзакции
+            let newBalance;
+            if (type === 'deposit') {
+                // Для депозита ДОБАВЛЯЕМ сумму к балансу
+                newBalance = currentBalance + gross;
+            } else {
+                // Для вывода ВЫЧИТАЕМ (сумма вывода + комиссия)
+                newBalance = currentBalance - gross;
+            }
+            
             const updateBalanceData = {
                 [`${crypto.toLowerCase()}_amount`]: newBalance,
                 updated_at: new Date().toISOString()
@@ -154,13 +164,14 @@ export default async function handler(req, res) {
                 telegram_id: `eq.${telegram_id}`
             });
             
-            console.log(`✅ ТРАНЗАКЦИЯ СОЗДАНА: ${amount} ${crypto} -> ${address} (${network})`);
+            const operationType = type === 'deposit' ? 'пополнение' : 'вывод';
+            console.log(`✅ ТРАНЗАКЦИЯ СОЗДАНА (${type}): ${amount} ${crypto} -> ${address} (${network})`);
             console.log(`💰 БАЛАНС ОБНОВЛЕН: ${currentBalance} -> ${newBalance} ${crypto}`);
             
             return res.status(201).json({ 
                 success: true, 
                 transaction: newTransaction[0],
-                message: `Транзакция на вывод ${amount} ${crypto} создана`,
+                message: `Транзакция на ${operationType} ${amount} ${crypto} создана`,
                 new_balance: newBalance
             });
             
@@ -185,6 +196,21 @@ export default async function handler(req, res) {
                 });
             }
             
+            // Получаем существующую транзакцию чтобы отследить изменение статуса
+            const existingTransactions = await supabaseRequest('wallet_transactions', 'GET', null, {
+                id: `eq.${id}`
+            });
+            
+            if (!existingTransactions || existingTransactions.length === 0) {
+                return res.status(404).json({ 
+                    error: 'Транзакция не найдена' 
+                });
+            }
+            
+            const existingTransaction = existingTransactions[0];
+            const oldStatus = existingTransaction.transaction_status;
+            const newStatus = status || oldStatus;
+            
             const updateData = {
                 updated_timestamp: new Date().toISOString()
             };
@@ -208,7 +234,50 @@ export default async function handler(req, res) {
                 id: `eq.${id}`
             });
             
-            // Баланс больше не синхронизируем здесь — он пересчитывается из таблицы транзакций
+            // Если статус изменился на completed, обновляем баланс пользователя
+            if (oldStatus !== 'completed' && newStatus === 'completed') {
+                try {
+                    const txData = updatedTransaction[0];
+                    const userId = txData.user_telegram_id;
+                    const txType = txData.transaction_type;
+                    const txCrypto = txData.crypto_currency;
+                    const txAmount = parseFloat(txData.withdraw_amount || 0);
+                    
+                    if (txAmount > 0 && (txType === 'deposit' || txType === 'withdraw')) {
+                        const field = `${txCrypto.toLowerCase()}_amount`;
+                        
+                        // Получаем текущий баланс
+                        const balances = await supabaseRequest('user_balances', 'GET', null, { 
+                            telegram_id: `eq.${userId}` 
+                        });
+                        
+                        let currentBalance = 0;
+                        if (balances && balances.length) {
+                            currentBalance = parseFloat(balances[0][field] || 0);
+                        } else {
+                            // Создаем баланс если не существует
+                            await supabaseRequest('user_balances', 'POST', { telegram_id: userId });
+                        }
+                        
+                        // Рассчитываем изменение баланса
+                        const change = txType === 'deposit' ? txAmount : -txAmount;
+                        const newBalance = currentBalance + change;
+                        
+                        // Обновляем баланс
+                        const updateBalanceData = { 
+                            [field]: newBalance, 
+                            updated_at: new Date().toISOString() 
+                        };
+                        await supabaseRequest('user_balances', 'PATCH', updateBalanceData, { 
+                            telegram_id: `eq.${userId}` 
+                        });
+                        
+                        console.log(`💰 БАЛАНС ОБНОВЛЕН при изменении статуса: ${currentBalance} -> ${newBalance} ${txCrypto} (${txType})`);
+                    }
+                } catch (balanceErr) {
+                    console.warn('⚠️ Не удалось синхронизировать баланс при обновлении транзакции:', balanceErr.message);
+                }
+            }
             
             return res.status(200).json({ 
                 success: true, 
