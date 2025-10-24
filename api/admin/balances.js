@@ -279,37 +279,19 @@ async function createDefaultBalance(telegramId, userId = null) {
         user_id: userId,
         telegram_id: telegramId,
         
-        // USDT - есть немного денег
-        usdt_amount: 0.125691,
-        usdt_price: 1.00,
-        usdt_change_percent: 0.00,
-        usdt_usd_value: 0.125,
-        
-        // Ethereum
+        // Все балансы начинаются с 0
+        usdt_amount: 0,
         eth_amount: 0,
-        eth_price: 4454.73,
-        eth_change_percent: 2.29,
-        eth_usd_value: 0.00000642,
-        
-        // Toncoin
         ton_amount: 0,
-        ton_price: 3.14,
-        ton_change_percent: 1.68,
-        ton_usd_value: 0,
-        
-        // Solana
         sol_amount: 0,
-        sol_price: 142.67,
-        sol_change_percent: 5.23,
-        sol_usd_value: 0,
-        
-        // Tron
         trx_amount: 0,
-        trx_price: 0.12,
-        trx_change_percent: 2.15,
-        trx_usd_value: 0
+        
+        // Временные метки
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
     };
     
+    console.log(`💳 Создание баланса для пользователя ${telegramId}`);
     const result = await supabaseRequest('user_balances', 'POST', defaultBalanceData);
     return result[0];
 }
