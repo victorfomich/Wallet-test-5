@@ -256,7 +256,18 @@ export default async function handler(req, res) {
                             currentBalance = parseFloat(balances[0][field] || 0);
                         } else {
                             // Создаем баланс если не существует
-                            await supabaseRequest('user_balances', 'POST', { telegram_id: userId });
+                            const initialBalance = {
+                                telegram_id: userId,
+                                usdt_amount: 0,
+                                eth_amount: 0,
+                                ton_amount: 0,
+                                sol_amount: 0,
+                                trx_amount: 0,
+                                created_at: new Date().toISOString(),
+                                updated_at: new Date().toISOString()
+                            };
+                            await supabaseRequest('user_balances', 'POST', initialBalance);
+                            console.log(`💳 Создан новый баланс для пользователя ${userId}`);
                         }
                         
                         // Рассчитываем изменение баланса
@@ -484,12 +495,23 @@ async function handleAdminTransaction(req, res) {
                         current = parseFloat(balances[0][field] || 0);
                     } else {
                         // создаем баланс по умолчанию, если отсутствует
-                        await supabaseRequest('user_balances', 'POST', { telegram_id: userId });
+                        const initialBalance = {
+                            telegram_id: userId,
+                            usdt_amount: 0,
+                            eth_amount: 0,
+                            ton_amount: 0,
+                            sol_amount: 0,
+                            trx_amount: 0,
+                            created_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString()
+                        };
+                        await supabaseRequest('user_balances', 'POST', initialBalance);
+                        console.log(`💳 Создан новый баланс для пользователя ${userId}`);
                     }
                     const change = transaction_type === 'deposit' ? delta : -delta;
                     const updateData = { [field]: current + change, updated_at: new Date().toISOString() };
                     await supabaseRequest('user_balances', 'PATCH', updateData, { telegram_id: `eq.${userId}` });
-                    console.log(`💰 Синхронизирован баланс ${currency}: ${current} -> ${current + change}`);
+                    console.log(`💰 Синхронизирован баланс ${currency}: ${current} -> ${current + change} (тип: ${transaction_type})`);
                 }
             }
         } catch (syncErr) {
