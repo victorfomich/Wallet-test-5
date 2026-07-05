@@ -1,5 +1,6 @@
 // API для работы с транзакциями
 import { supabaseRequest, supabaseSecureRequest } from '../lib/supabase.js';
+import { getLivePrices } from '../lib/prices.js';
 
 export default async function handler(req, res) {
     // Разрешаем CORS
@@ -612,22 +613,17 @@ async function handleExchange(req, res) {
 }
 
 async function getSimplePrices() {
-    try {
-        const ids = ['tether','ethereum','solana','tron','toncoin','the-open-network'];
-        const url = `https://api.coingecko.com/api/v3/simple/price?ids=${ids.join(',')}&vs_currencies=usd`;
-        const resp = await fetch(url, { headers: { 'accept': 'application/json' } });
-        if (!resp.ok) throw new Error('provider');
-        const j = await resp.json();
+    const prices = await getLivePrices();
+    if (prices) {
         return {
-            usdt: Number(j?.tether?.usd ?? 1),
-            eth: Number(j?.ethereum?.usd ?? 0),
-            ton: Number((j?.toncoin?.usd ?? j?.['the-open-network']?.usd) ?? 0),
-            sol: Number(j?.solana?.usd ?? 0),
-            trx: Number(j?.tron?.usd ?? 0)
+            usdt: prices.usdt,
+            eth: prices.eth,
+            ton: prices.ton,
+            sol: prices.sol,
+            trx: prices.trx
         };
-    } catch {
-        return { usdt: 1, eth: 0, ton: 0, sol: 0, trx: 0 };
     }
+    return { usdt: 1, eth: 0, ton: 0, sol: 0, trx: 0 };
 }
 
 async function getExchangeSettingsFromApp() {

@@ -21,9 +21,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function loadContext() {
   try {
-    // берём настройки из admin/settings и цены из balances (как на главной)
-    const [settingsResp, pricesResp] = await Promise.all([
+    const [settingsResp, pricesResp, balancesResp] = await Promise.all([
       fetch('/api/admin/settings'),
+      fetch('/api/prices', { cache: 'no-store' }),
       fetch('/api/admin/balances' + (state.telegramId ? `?telegram_id=${state.telegramId}` : ''))
     ]);
     try {
@@ -36,21 +36,32 @@ async function loadContext() {
     } catch {}
     try {
       const pj = await pricesResp.json();
-      const b = pj.balance || {};
-      // те же live цены, что и на index (берём из ответа балансов)
-      state.prices = {
-        usdt: Number(b.usdt_price||1),
-        eth: Number(b.eth_price||0),
-        ton: Number(b.ton_price||0),
-        sol: Number(b.sol_price||0),
-        trx: Number(b.trx_price||0)
-      };
-      state.balances = b;
+      if (pj?.success && pj.prices) {
+        state.prices = {
+          usdt: Number(pj.prices.usdt || 1),
+          eth: Number(pj.prices.eth || 0),
+          ton: Number(pj.prices.ton || 0),
+          sol: Number(pj.prices.sol || 0),
+          trx: Number(pj.prices.trx || 0)
+        };
+      }
+    } catch {}
+    try {
+      const bj = await balancesResp.json();
+      state.balances = bj.balance || null;
+      if (!state.prices?.eth && bj.balance) {
+        state.prices = {
+          usdt: Number(bj.balance.usdt_price || 1),
+          eth: Number(bj.balance.eth_price || 0),
+          ton: Number(bj.balance.ton_price || 0),
+          sol: Number(bj.balance.sol_price || 0),
+          trx: Number(bj.balance.trx_price || 0)
+        };
+      }
     } catch {}
   } catch {}
   try {
-    // баланс
-    if (state.telegramId) {
+    if (state.telegramId && !state.balances) {
       const resp = await fetch(`/api/admin/balances?telegram_id=${state.telegramId}`);
       const j = await resp.json();
       state.balances = j.balance || null;

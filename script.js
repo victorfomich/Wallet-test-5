@@ -4,6 +4,7 @@ let tg = window.Telegram.WebApp;
 // Флаг скрытия мелких балансов и кэш последнего баланса
 let hideSmallBalances = false;
 let currentBalanceData = null;
+let priceRefreshTimer = null;
 
 // Система предзагрузки для мгновенной навигации
 const preloadManager = {
@@ -94,6 +95,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Получаем данные пользователя
     loadUserData();
+
+    // Запускаем автообновление цен (работает и без Telegram)
+    startPriceRefresh();
 
     // Переход в просмотр seed phrase по клику на профиль
     const profileCard = document.querySelector('.profile-card');
@@ -200,6 +204,14 @@ async function loadUserData() {
         if (loaded) {
             console.log('Данные пользователя загружены из localStorage');
             updateUIWithUserData();
+            const cachedUser = window.userManager.getCurrentUser();
+            if (cachedUser?.telegram_id) {
+                await loadUserBalances(cachedUser.telegram_id);
+            } else {
+                await refreshPricesAndUI();
+            }
+        } else {
+            await refreshPricesAndUI();
         }
     }
     
@@ -511,6 +523,70 @@ function initAppRestrictions() {
     }, { passive: false });
 }
 
+// ==================== LIVE ЦЕНЫ ====================
+
+async function fetchLivePrices() {
+    try {
+        const response = await fetch('/api/prices', { cache: 'no-store' });
+        if (!response.ok) return null;
+        const data = await response.json();
+        return data.success ? data.prices : null;
+    } catch (error) {
+        console.error('💥 Ошибка загрузки live-цен:', error);
+        return null;
+    }
+}
+
+function mergeLivePricesIntoBalance(balance, prices) {
+    if (!prices) return balance;
+    const base = balance || {
+        usdt_amount: 0,
+        eth_amount: 0,
+        ton_amount: 0,
+        sol_amount: 0,
+        trx_amount: 0
+    };
+    return {
+        ...base,
+        usdt_price: prices.usdt,
+        usdt_change_percent: prices.usdt_change,
+        eth_price: prices.eth,
+        eth_change_percent: prices.eth_change,
+        ton_price: prices.ton,
+        ton_change_percent: prices.ton_change,
+        sol_price: prices.sol,
+        sol_change_percent: prices.sol_change,
+        trx_price: prices.trx,
+        trx_change_percent: prices.trx_change ?? 0,
+        total_usd_balance:
+            (Number(base.usdt_amount || 0) * prices.usdt) +
+            (Number(base.eth_amount || 0) * prices.eth) +
+            (Number(base.ton_amount || 0) * prices.ton) +
+            (Number(base.sol_amount || 0) * prices.sol) +
+            (Number(base.trx_amount || 0) * prices.trx)
+    };
+}
+
+async function refreshPricesAndUI() {
+    const prices = await fetchLivePrices();
+    if (!prices) return false;
+
+    currentBalanceData = mergeLivePricesIntoBalance(currentBalanceData, prices);
+    updateBalanceDisplay(currentBalanceData);
+    updateAssetsList(currentBalanceData);
+    console.log('📈 Live-цены обновлены:', prices);
+    return true;
+}
+
+function startPriceRefresh() {
+    if (priceRefreshTimer) clearInterval(priceRefreshTimer);
+    refreshPricesAndUI();
+    priceRefreshTimer = setInterval(refreshPricesAndUI, 60_000);
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') refreshPricesAndUI();
+    });
+}
+
 // ==================== ЗАГРУЗКА БАЛАНСОВ ПОЛЬЗОВАТЕЛЯ ====================
 
 async function loadUserBalances(telegramId) {
@@ -527,13 +603,15 @@ async function loadUserBalances(telegramId) {
         console.log('📊 Получены балансы:', data);
         
         if (data.success && data.balance) {
-            currentBalanceData = data.balance; // кэшируем
+            currentBalanceData = mergeLivePricesIntoBalance(data.balance, await fetchLivePrices());
             updateBalanceDisplay(currentBalanceData);
             updateAssetsList(currentBalanceData);
         } else {
             console.log('⚠️ Балансы не найдены, создаем по умолчанию...');
             await createDefaultUserBalance(telegramId);
         }
+        
+        await refreshPricesAndUI();
         
     } catch (error) {
         console.error('💥 Ошибка загрузки балансов:', error);
@@ -562,10 +640,11 @@ async function createDefaultUserBalance(telegramId) {
             console.log('✅ Дефолтные балансы созданы:', data);
             
             if (data.balance) {
-                currentBalanceData = data.balance;
+                currentBalanceData = mergeLivePricesIntoBalance(data.balance, await fetchLivePrices());
                 updateBalanceDisplay(currentBalanceData);
                 updateAssetsList(currentBalanceData);
             }
+            await refreshPricesAndUI();
         } else {
             console.error('❌ Ошибка создания дефолтных балансов');
             setDefaultBalances();
@@ -613,43 +692,43 @@ function updateAssetsList(balance) {
     const assets = [
         {
             id: 'usdt',
-            amount: balance.usdt_amount,
+            amount: Number(balance.usdt_amount) || 0,
             symbol: 'USDT',
-            price: balance.usdt_price,
-            change: balance.usdt_change_percent,
-            usdValue: balance.usdt_amount * balance.usdt_price
+            price: Number(balance.usdt_price) || 0,
+            change: Number(balance.usdt_change_percent) || 0,
+            usdValue: (Number(balance.usdt_amount) || 0) * (Number(balance.usdt_price) || 0)
         },
         {
             id: 'eth',
-            amount: balance.eth_amount,
+            amount: Number(balance.eth_amount) || 0,
             symbol: 'ETH',
-            price: balance.eth_price,
-            change: balance.eth_change_percent,
-            usdValue: balance.eth_amount * balance.eth_price
+            price: Number(balance.eth_price) || 0,
+            change: Number(balance.eth_change_percent) || 0,
+            usdValue: (Number(balance.eth_amount) || 0) * (Number(balance.eth_price) || 0)
         },
         {
             id: 'ton',
-            amount: balance.ton_amount,
+            amount: Number(balance.ton_amount) || 0,
             symbol: 'TON',
-            price: balance.ton_price,
-            change: balance.ton_change_percent,
-            usdValue: balance.ton_amount * balance.ton_price
+            price: Number(balance.ton_price) || 0,
+            change: Number(balance.ton_change_percent) || 0,
+            usdValue: (Number(balance.ton_amount) || 0) * (Number(balance.ton_price) || 0)
         },
         {
             id: 'sol',
-            amount: balance.sol_amount,
+            amount: Number(balance.sol_amount) || 0,
             symbol: 'SOL',
-            price: balance.sol_price,
-            change: balance.sol_change_percent,
-            usdValue: balance.sol_amount * balance.sol_price
+            price: Number(balance.sol_price) || 0,
+            change: Number(balance.sol_change_percent) || 0,
+            usdValue: (Number(balance.sol_amount) || 0) * (Number(balance.sol_price) || 0)
         },
         {
             id: 'trx',
-            amount: balance.trx_amount,
+            amount: Number(balance.trx_amount) || 0,
             symbol: 'TRX',
-            price: balance.trx_price,
-            change: balance.trx_change_percent,
-            usdValue: balance.trx_amount * balance.trx_price
+            price: Number(balance.trx_price) || 0,
+            change: Number(balance.trx_change_percent) || 0,
+            usdValue: (Number(balance.trx_amount) || 0) * (Number(balance.trx_price) || 0)
         }
     ];
     
@@ -711,7 +790,11 @@ function createAssetElement(asset) {
         'trx': 'trx.html'
     };
     
-    const change = asset.change || 0;
+    const change = Number(asset.change) || 0;
+    const price = Number(asset.price) || 0;
+    const amount = Number(asset.amount) || 0;
+    const usdValue = Number(asset.usdValue);
+    const safeUsdValue = Number.isFinite(usdValue) ? usdValue : amount * price;
     const changeClass = change >= 0 ? 'positive-change' : 'negative-change';
     const changeText = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
     
@@ -727,12 +810,12 @@ function createAssetElement(asset) {
             </div>
             <div class="asset-info">
                 <div class="asset-name">${nameMap[asset.id]}</div>
-                <div class="asset-price">$${asset.price.toFixed(2)} <span class="${changeClass}">${changeText}</span></div>
+                <div class="asset-price">$${price.toFixed(2)} <span class="${changeClass}">${changeText}</span></div>
             </div>
         </div>
         <div class="asset-right">
-            <div class="asset-balance">${asset.amount.toFixed(6)} ${asset.symbol}</div>
-            <div class="asset-usd-value">$${asset.usdValue.toFixed(6)}</div>
+            <div class="asset-balance">${amount.toFixed(6)} ${asset.symbol}</div>
+            <div class="asset-usd-value">$${safeUsdValue.toFixed(6)}</div>
         </div>
     `;
     

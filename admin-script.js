@@ -708,6 +708,48 @@ function truncateSecret(secret) {
 // ==================== ФУНКЦИИ ДЛЯ БАЛАНСОВ ====================
 
 let allBalances = [];
+let balancesPriceRefreshTimer = null;
+
+async function mergeLivePricesIntoBalances(balances) {
+    try {
+        const resp = await fetch('/api/prices', { cache: 'no-store' });
+        if (!resp.ok) return balances;
+        const data = await resp.json();
+        if (!data.success || !data.prices) return balances;
+        const p = data.prices;
+        return balances.map(balance => ({
+            ...balance,
+            usdt_price: p.usdt,
+            usdt_change_percent: p.usdt_change,
+            eth_price: p.eth,
+            eth_change_percent: p.eth_change,
+            ton_price: p.ton,
+            ton_change_percent: p.ton_change,
+            sol_price: p.sol,
+            sol_change_percent: p.sol_change,
+            trx_price: p.trx,
+            trx_change_percent: p.trx_change ?? 0,
+            total_usd_balance:
+                (Number(balance.usdt_amount || 0) * p.usdt) +
+                (Number(balance.eth_amount || 0) * p.eth) +
+                (Number(balance.ton_amount || 0) * p.ton) +
+                (Number(balance.sol_amount || 0) * p.sol) +
+                (Number(balance.trx_amount || 0) * p.trx)
+        }));
+    } catch (e) {
+        console.warn('Не удалось обновить live-цены в админке:', e);
+        return balances;
+    }
+}
+
+function startBalancesPriceRefresh() {
+    if (balancesPriceRefreshTimer) clearInterval(balancesPriceRefreshTimer);
+    balancesPriceRefreshTimer = setInterval(async () => {
+        if (currentTab !== 'balances' || allBalances.length === 0) return;
+        allBalances = await mergeLivePricesIntoBalances(allBalances);
+        renderBalancesTable(allBalances);
+    }, 60_000);
+}
 
 // Загрузка балансов
 async function loadBalances() {
@@ -731,6 +773,7 @@ async function loadBalances() {
         console.log('📋 Получены данные:', data);
         
         allBalances = data.balances || [];
+        allBalances = await mergeLivePricesIntoBalances(allBalances);
         console.log(`✅ Загружено ${allBalances.length} балансов`);
         
         if (allBalances.length === 0) {
@@ -749,6 +792,7 @@ async function loadBalances() {
         }
         
         renderBalancesTable(allBalances);
+        startBalancesPriceRefresh();
         
     } catch (error) {
         console.error('💥 Критическая ошибка загрузки балансов:', error);

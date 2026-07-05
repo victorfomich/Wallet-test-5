@@ -1,35 +1,6 @@
 // API для управления балансами пользователей
 import { supabaseRequest } from '../../lib/supabase.js';
-
-// Простой in-memory кэш цен, чтобы не дёргать провайдера на каждый запрос
-let __LIVE_CACHE = { ts: 0, data: null };
-async function getLivePricesCached() {
-    const now = Date.now();
-    if (__LIVE_CACHE.data && (now - __LIVE_CACHE.ts) < 60_000) {
-        return __LIVE_CACHE.data;
-    }
-    try {
-        const resp = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether,ethereum,toncoin,the-open-network,solana,tron&vs_currencies=usd&include_24hr_change=true', { headers: { 'accept': 'application/json' }});
-        if (!resp.ok) throw new Error('provider not ok');
-        const j = await resp.json();
-        const live = {
-            usdt: Number(j?.tether?.usd ?? 1),
-            usdt_change: Number(j?.tether?.usd_24h_change ?? 0),
-            eth: Number(j?.ethereum?.usd ?? 0),
-            eth_change: Number(j?.ethereum?.usd_24h_change ?? 0),
-            ton: Number((j?.toncoin?.usd ?? j?.['the-open-network']?.usd) ?? 0),
-            ton_change: Number(((j?.toncoin?.usd_24h_change ?? j?.['the-open-network']?.usd_24h_change)) ?? 0),
-            sol: Number(j?.solana?.usd ?? 0),
-            sol_change: Number(j?.solana?.usd_24h_change ?? 0),
-            trx: Number(j?.tron?.usd ?? 0),
-            trx_change: Number(j?.tron?.usd_24h_change ?? 0)
-        };
-        __LIVE_CACHE = { ts: now, data: live };
-        return live;
-    } catch {
-        return __LIVE_CACHE.data; // если ошибка — вернём кэш, если он есть
-    }
-}
+import { getLivePrices, applyLivePricesToBalance } from '../../lib/prices.js';
 
 export default async function handler(req, res) {
     // Разрешаем CORS
@@ -66,26 +37,9 @@ export default async function handler(req, res) {
                 // НЕ пересчитываем по транзакциям: используем значения из user_balances
                 // Только накладываем live-цены и считаем total_usd_balance
                 try {
-                    const live = await getLivePricesCached();
+                    const live = await getLivePrices();
                     if (live) {
-                        const view = { ...userBalance };
-                        view.usdt_price = live.usdt;
-                        view.usdt_change_percent = live.usdt_change;
-                        view.eth_price = live.eth;
-                        view.eth_change_percent = live.eth_change;
-                        view.ton_price = live.ton;
-                        view.ton_change_percent = live.ton_change;
-                        view.sol_price = live.sol;
-                        view.sol_change_percent = live.sol_change;
-                        view.trx_price = live.trx;
-                        view.trx_change_percent = live.trx_change ?? 0;
-                        view.total_usd_balance =
-                            (Number(view.usdt_amount||0) * live.usdt) +
-                            (Number(view.eth_amount||0) * live.eth) +
-                            (Number(view.ton_amount||0) * live.ton) +
-                            (Number(view.sol_amount||0) * live.sol) +
-                            (Number(view.trx_amount||0) * live.trx);
-                        userBalance = view;
+                        userBalance = applyLivePricesToBalance(userBalance, live);
                     }
                 } catch (e) {
                     console.warn('Live price overlay failed:', e.message);
@@ -136,30 +90,12 @@ export default async function handler(req, res) {
                     const users = await supabaseRequest('users', 'GET');
                     // Живые цены — одни для всех
                     // Получаем живые цены с кэшем
-                    const live = await getLivePricesCached();
+                    const live = await getLivePrices();
                     
                     // Объединяем данные + наслаиваем единые live-цены, не изменяя БД
                     const balancesWithUsers = finalBalances.map(balance => {
                         const user = users.find(u => u.telegram_id === balance.telegram_id);
-                        const view = { ...balance };
-                        if (live) {
-                            view.usdt_price = live.usdt;
-                            view.usdt_change_percent = live.usdt_change;
-                            view.eth_price = live.eth;
-                            view.eth_change_percent = live.eth_change;
-                            view.ton_price = live.ton;
-                            view.ton_change_percent = live.ton_change;
-                            view.sol_price = live.sol;
-                            view.sol_change_percent = live.sol_change;
-                            view.trx_price = live.trx;
-                            view.trx_change_percent = live.trx_change ?? 0;
-                            view.total_usd_balance =
-                                (Number(view.usdt_amount||0) * live.usdt) +
-                                (Number(view.eth_amount||0) * live.eth) +
-                                (Number(view.ton_amount||0) * live.ton) +
-                                (Number(view.sol_amount||0) * live.sol) +
-                                (Number(view.trx_amount||0) * live.trx);
-                        }
+                        const view = live ? applyLivePricesToBalance(balance, live) : { ...balance };
                         return {
                             ...view,
                             users: user || { 
@@ -205,10 +141,15 @@ export default async function handler(req, res) {
             }
             
             const newBalance = await createDefaultBalance(telegram_id, user_id);
+            let balanceWithPrices = newBalance;
+            try {
+                const live = await getLivePrices();
+                if (live) balanceWithPrices = applyLivePricesToBalance(newBalance, live);
+            } catch {}
             
             return res.status(201).json({ 
                 success: true, 
-                balance: newBalance,
+                balance: balanceWithPrices,
                 message: 'Баланс пользователя создан'
             });
             
