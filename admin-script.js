@@ -445,10 +445,7 @@ function previewImport() {
         html += `<div style="max-height: 240px; overflow-y: auto; border: 1px solid #444; padding: 10px; margin-top: 10px; border-radius: 8px;">`;
         parsed.forEach(item => {
             const nets = ['ton', 'tron', 'sol', 'eth', 'bnb'];
-            const status = nets.map(n => {
-                const ok = item.addresses[n] && item.secrets[n];
-                return `${n.toUpperCase()} ${ok ? '✓' : '✗'}`;
-            }).join(', ');
+            const status = nets.map(n => `${n.toUpperCase()} ${item.addresses[n] ? '✓' : '✗'}`).join(', ');
             html += `<div style="margin-bottom: 8px;"><strong>${item.name}</strong><br><small>${status}</small></div>`;
         });
         html += `</div>`;
@@ -524,52 +521,41 @@ function parseImportText(text) {
     return { parsed, errors };
 }
 
-// Парсинг строки импорта: user1, ton:[address]:[secret], tron:[address]:[secret], ...
+// Парсинг строки импорта: user1, ton:адрес, tron:адрес, sol:адрес, eth:адрес, bnb:адрес
 function parseImportLine(line) {
     const trimmed = (line || '').trim();
     if (!trimmed) return null;
 
-    const nameMatch = trimmed.match(/^([^,]+),\s*/);
-    if (!nameMatch) {
+    const parts = trimmed.split(',').map(p => p.trim()).filter(Boolean);
+    if (parts.length < 2) {
+        throw new Error('Недостаточно данных в строке');
+    }
+
+    const name = parts[0];
+    if (!name) {
         throw new Error('Отсутствует имя набора');
     }
 
-    const name = nameMatch[1].trim();
     const addresses = { ton: null, tron: null, sol: null, eth: null, bnb: null };
     const secrets = { ton: null, tron: null, sol: null, eth: null, bnb: null };
+    const networks = ['ton', 'tron', 'sol', 'eth', 'bnb'];
 
-    const bracketPattern = /(ton|tron|sol|eth|bnb):\[([^\]]+)\]:\[([^\]]+)\]/gi;
-    let match;
-    let foundBracket = false;
-
-    while ((match = bracketPattern.exec(trimmed)) !== null) {
-        foundBracket = true;
-        const network = match[1].toLowerCase();
-        addresses[network] = match[2].trim();
-        secrets[network] = match[3].trim();
-    }
-
-    if (foundBracket) {
-        const networks = ['ton', 'tron', 'sol', 'eth', 'bnb'];
-        const missing = networks.filter(n => !addresses[n] || !secrets[n]);
-        if (missing.length > 0) {
-            throw new Error(`Не заполнены: ${missing.join(', ').toUpperCase()}`);
-        }
-        return { name, addresses, secrets };
-    }
-
-    // Старый формат без секретов
-    const parts = trimmed.split(',').map(p => p.trim());
     for (let i = 1; i < parts.length; i++) {
         const part = parts[i];
         const colonIndex = part.indexOf(':');
-        if (colonIndex > 0) {
-            const network = part.substring(0, colonIndex).toLowerCase();
-            const address = part.substring(colonIndex + 1);
-            if (addresses.hasOwnProperty(network) && address) {
-                addresses[network] = address;
-            }
+        if (colonIndex <= 0) continue;
+
+        const network = part.substring(0, colonIndex).toLowerCase();
+        const address = part.substring(colonIndex + 1).trim();
+
+        if (addresses.hasOwnProperty(network) && address) {
+            addresses[network] = address;
         }
+    }
+
+    const missing = networks.filter(n => !addresses[n]);
+    if (missing.length > 0) {
+        throw new Error(`Отсутствуют адреса: ${missing.join(', ').toUpperCase()}`);
     }
 
     return { name, addresses, secrets };
