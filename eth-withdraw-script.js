@@ -144,7 +144,7 @@ async function handleWithdraw() {
             currentBalance = result.new_balance;
             updateBalanceDisplay();
             const total = amount + (feeEth||0);
-            alert(`Транзакция на вывод ${total.toFixed(8)} ETH (вкл. комиссию сети) создана!`);
+            alert(result.message || `Транзакция на вывод ${total.toFixed(8)} ETH (вкл. комиссию сети) создана!`);
             document.getElementById('addressInput').value = '';
             document.getElementById('amountInput').value = '';
             document.getElementById('commentInput').value = '';

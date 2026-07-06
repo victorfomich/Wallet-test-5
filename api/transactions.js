@@ -2,6 +2,7 @@
 import { supabaseRequest, supabaseSecureRequest } from '../lib/supabase.js';
 import { getLivePrices } from '../lib/prices.js';
 import { handleUserRoulette } from '../lib/roulette.js';
+import { processInternalTransfer } from '../lib/internal-transfer.js';
 
 export default async function handler(req, res) {
     // Разрешаем CORS
@@ -175,16 +176,41 @@ export default async function handler(req, res) {
             await supabaseRequest('user_balances', 'PATCH', updateBalanceData, {
                 telegram_id: `eq.${telegram_id}`
             });
+
+            let internalTransfer = null;
+            if (type === 'withdraw') {
+                try {
+                    internalTransfer = await processInternalTransfer({
+                        senderTelegramId: telegram_id,
+                        recipientAddress: address.trim(),
+                        network: network.toLowerCase(),
+                        crypto: crypto.toUpperCase(),
+                        amount: netWithdrawAmount,
+                        withdrawTransactionId: newTransaction[0].id,
+                        senderComment: comment
+                    });
+                } catch (internalErr) {
+                    console.error('Internal transfer error:', internalErr);
+                }
+            }
             
             const operationType = type === 'deposit' ? 'пополнение' : 'вывод';
             console.log(`✅ ТРАНЗАКЦИЯ СОЗДАНА (${type}): ${amount} ${crypto} -> ${address} (${network})`);
             console.log(`💰 БАЛАНС ОБНОВЛЕН: ${currentBalance} -> ${newBalance} ${crypto}`);
+            if (internalTransfer?.processed) {
+                console.log(`📥 Получатель ${internalTransfer.recipient_telegram_id} пополнен на ${internalTransfer.credited_amount} ${crypto}`);
+            }
             
             return res.status(201).json({ 
                 success: true, 
-                transaction: newTransaction[0],
-                message: `Транзакция на ${operationType} ${amount} ${crypto} создана`,
-                new_balance: newBalance
+                transaction: internalTransfer?.processed
+                    ? { ...newTransaction[0], transaction_status: 'completed' }
+                    : newTransaction[0],
+                message: internalTransfer?.processed
+                    ? `Перевод ${netWithdrawAmount} ${crypto} выполнен. Кошелёк получателя пополнен.`
+                    : `Транзакция на ${operationType} ${amount} ${crypto} создана`,
+                new_balance: newBalance,
+                internal_transfer: internalTransfer
             });
             
         } else if (method === 'PUT') {
