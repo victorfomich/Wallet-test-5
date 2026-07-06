@@ -104,6 +104,9 @@ body {
     height: calc(var(--ticket-height) * 3 + var(--ticket-gap) * 2);
     overflow: hidden;
     border-radius: 16px;
+    contain: strict;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
 }
 
 .reel-fade {
@@ -144,12 +147,21 @@ body {
     left: 0;
     right: 0;
     top: 0;
+    width: 100%;
     will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transform: translate3d(0, 0, 0);
+}
+
+.reel-track.is-animating {
+    pointer-events: none;
 }
 
 /* Ticket */
 .ticket {
     height: var(--ticket-height);
+    min-height: var(--ticket-height);
     margin-bottom: var(--ticket-gap);
     border-radius: 14px;
     display: flex;
@@ -159,6 +171,8 @@ body {
     position: relative;
     box-shadow: 0 4px 12px var(--shadow-color);
     flex-shrink: 0;
+    contain: layout style paint;
+    transform: translateZ(0);
 }
 
 .ticket::before,
@@ -200,16 +214,12 @@ body {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    background-color: rgba(255, 255, 255, 0.2);
+    background-image: url('usdt.png');
+    background-size: 28px 28px;
+    background-repeat: no-repeat;
+    background-position: center;
     flex-shrink: 0;
-}
-
-.ticket-icon img {
-    width: 28px;
-    height: 28px;
 }
 
 .ticket-amount-wrap {

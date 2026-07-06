@@ -1,16 +1,22 @@
 const PRIZES = [0.1, 0.5, 0.8, 1, 2, 5, 10, 100];
 const SPIN_COST = 1;
-const TICKET_HEIGHT = 88;
-const TICKET_GAP = 10;
-const TICKET_STEP = TICKET_HEIGHT + TICKET_GAP;
-const REPEAT_COUNT = 20;
+const REPEAT_COUNT = 12;
+const CYCLE_LEN = PRIZES.length;
 
 let tg = window.Telegram?.WebApp;
 let state = {
     telegramId: null,
     usdtBalance: 0,
     isSpinning: false,
-    currentSpinId: null
+    currentSpinId: null,
+    currentIndex: 0
+};
+
+let metrics = {
+    ticketHeight: 88,
+    ticketGap: 10,
+    ticketStep: 98,
+    viewportHeight: 284
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -20,16 +26,45 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     setupUI();
     buildReel();
+    await waitForLayout();
+    syncMetrics();
+    state.currentIndex = getMiddleIndex();
+    setTrackIndex(state.currentIndex, false);
     await loadBalance();
-    centerReelOnIndex(getMiddleIndex());
 });
 
 function setupUI() {
     document.getElementById('backBtn').addEventListener('click', () => {
         window.location.href = 'index.html';
     });
-
     document.getElementById('spinBtn').addEventListener('click', handleSpin);
+    window.addEventListener('resize', () => {
+        syncMetrics();
+        setTrackIndex(state.currentIndex, false);
+    });
+}
+
+function waitForLayout() {
+    return new Promise(resolve => {
+        requestAnimationFrame(() => {
+            requestAnimationFrame(resolve);
+        });
+    });
+}
+
+function syncMetrics() {
+    const viewport = document.querySelector('.reel-viewport');
+    const ticket = document.querySelector('#reelTrack .ticket');
+    if (!viewport || !ticket) return;
+
+    const ticketRect = ticket.getBoundingClientRect();
+    const ticketStyle = getComputedStyle(ticket);
+    const marginBottom = parseFloat(ticketStyle.marginBottom) || 0;
+
+    metrics.ticketHeight = ticketRect.height || 88;
+    metrics.ticketGap = marginBottom;
+    metrics.ticketStep = metrics.ticketHeight + metrics.ticketGap;
+    metrics.viewportHeight = viewport.getBoundingClientRect().height || 284;
 }
 
 function getTicketClass(amount) {
@@ -48,90 +83,134 @@ function formatAmount(amount) {
 
 function buildReel() {
     const track = document.getElementById('reelTrack');
-    track.innerHTML = '';
+    const fragment = document.createDocumentFragment();
+    const total = CYCLE_LEN * REPEAT_COUNT;
 
-    const items = [];
-    for (let r = 0; r < REPEAT_COUNT; r++) {
-        for (const prize of PRIZES) {
-            items.push(prize);
-        }
-    }
-
-    items.forEach(amount => {
+    for (let i = 0; i < total; i++) {
+        const amount = PRIZES[i % CYCLE_LEN];
         const ticket = document.createElement('div');
         ticket.className = `ticket ${getTicketClass(amount)}`;
-        ticket.dataset.amount = amount;
+        ticket.dataset.amount = String(amount);
         ticket.innerHTML = `
-            <div class="ticket-icon">
-                <img src="usdt.png" alt="USDT">
-            </div>
+            <div class="ticket-icon" aria-hidden="true"></div>
             <div class="ticket-amount-wrap">
                 <span class="ticket-amount">${formatAmount(amount)}</span>
                 <span class="ticket-label">Tether</span>
             </div>
         `;
-        track.appendChild(ticket);
-    });
+        fragment.appendChild(ticket);
+    }
+
+    track.replaceChildren(fragment);
 }
 
 function getMiddleIndex() {
-    const total = PRIZES.length * REPEAT_COUNT;
-    return Math.floor(total / 2);
+    return Math.floor(REPEAT_COUNT / 2) * CYCLE_LEN;
 }
 
-function getViewportCenter() {
-    return TICKET_STEP * 1.5;
+function indexToOffset(index) {
+    const centerY = metrics.viewportHeight / 2;
+    const ticketCenter = index * metrics.ticketStep + metrics.ticketHeight / 2;
+    return ticketCenter - centerY;
 }
 
-function centerReelOnIndex(index, animate = false) {
+function setTrackIndex(index, animate, duration = 3800) {
     const track = document.getElementById('reelTrack');
-    const offset = index * TICKET_STEP - getViewportCenter() + TICKET_HEIGHT / 2;
+    const offset = indexToOffset(index);
 
     if (animate) {
-        track.style.transition = 'none';
+        track.classList.add('is-animating');
+        track.style.transition = `transform ${duration}ms cubic-bezier(0.12, 0.8, 0.22, 1)`;
     } else {
+        track.classList.remove('is-animating');
         track.style.transition = 'none';
     }
-    track.style.transform = `translateY(${-offset}px)`;
-    return offset;
+
+    track.style.transform = `translate3d(0, ${-offset}px, 0)`;
+    state.currentIndex = index;
+}
+
+function getOffsetFromTransform() {
+    const track = document.getElementById('reelTrack');
+    const transform = track.style.transform || '';
+    const match = transform.match(/translate3d\([^,]+,\s*(-?\d+\.?\d*)px/);
+    if (!match) return indexToOffset(state.currentIndex);
+    const offset = Math.abs(parseFloat(match[1]));
+    const centerY = metrics.viewportHeight / 2;
+    const ticketCenter = offset + centerY;
+    return Math.round((ticketCenter - metrics.ticketHeight / 2) / metrics.ticketStep);
+}
+
+function normalizeIndex(index) {
+    const prizeInCycle = ((index % CYCLE_LEN) + CYCLE_LEN) % CYCLE_LEN;
+    const middleCycle = Math.floor(REPEAT_COUNT / 2);
+    return middleCycle * CYCLE_LEN + prizeInCycle;
+}
+
+function ensureSafeIndex(index) {
+    const minSafe = CYCLE_LEN * 2;
+    const maxSafe = CYCLE_LEN * (REPEAT_COUNT - 2);
+    if (index < minSafe || index > maxSafe) {
+        return normalizeIndex(index);
+    }
+    return index;
+}
+
+function prizeToIndex(amount) {
+    const n = parseFloat(amount);
+    return PRIZES.findIndex(p => Math.abs(p - n) < 0.001);
 }
 
 function findTargetIndex(prizeAmount, fromIndex) {
-    const tickets = document.querySelectorAll('#reelTrack .ticket');
-    const minIndex = fromIndex + PRIZES.length * 3;
-    const maxIndex = fromIndex + PRIZES.length * 8;
+    const prizeOffset = prizeToIndex(prizeAmount);
+    if (prizeOffset === -1) return fromIndex + CYCLE_LEN * 6;
 
-    const candidates = [];
-    tickets.forEach((t, i) => {
-        if (i >= minIndex && i <= maxIndex && parseFloat(t.dataset.amount) === prizeAmount) {
-            candidates.push(i);
-        }
-    });
-
-    if (candidates.length === 0) {
-        for (let i = minIndex; i < tickets.length; i++) {
-            if (parseFloat(tickets[i].dataset.amount) === prizeAmount) {
-                return i;
-            }
-        }
-        return minIndex;
+    const safeFrom = ensureSafeIndex(fromIndex);
+    if (safeFrom !== fromIndex) {
+        setTrackIndex(safeFrom, false);
+        fromIndex = safeFrom;
     }
 
-    return candidates[Math.floor(Math.random() * candidates.length)];
+    const rotations = 5 + Math.floor(Math.random() * 3);
+    const currentInCycle = ((fromIndex % CYCLE_LEN) + CYCLE_LEN) % CYCLE_LEN;
+    let delta = prizeOffset - currentInCycle;
+    if (delta <= 0) delta += CYCLE_LEN;
+
+    const target = fromIndex + rotations * CYCLE_LEN + delta;
+    const maxIndex = CYCLE_LEN * REPEAT_COUNT - 1;
+    return Math.min(target, maxIndex - CYCLE_LEN);
 }
 
-function animateToIndex(targetIndex, duration = 4000) {
+function animateToIndex(targetIndex, duration = 3800) {
     return new Promise(resolve => {
         const track = document.getElementById('reelTrack');
-        const offset = targetIndex * TICKET_STEP - getViewportCenter() + TICKET_HEIGHT / 2;
 
-        track.style.transition = `transform ${duration}ms cubic-bezier(0.15, 0.85, 0.25, 1)`;
-        track.style.transform = `translateY(${-offset}px)`;
+        const onEnd = (e) => {
+            if (e.propertyName !== 'transform') return;
+            track.removeEventListener('transitionend', onEnd);
+            track.classList.remove('is-animating');
+            track.style.transition = 'none';
+
+            const normalized = normalizeIndex(targetIndex);
+            if (normalized !== targetIndex) {
+                setTrackIndex(normalized, false);
+            } else {
+                state.currentIndex = targetIndex;
+            }
+            resolve();
+        };
+
+        track.addEventListener('transitionend', onEnd);
+        setTrackIndex(targetIndex, true, duration);
 
         setTimeout(() => {
+            track.removeEventListener('transitionend', onEnd);
+            track.classList.remove('is-animating');
             track.style.transition = 'none';
+            const normalized = normalizeIndex(targetIndex);
+            setTrackIndex(normalized, false);
             resolve();
-        }, duration + 50);
+        }, duration + 120);
     });
 }
 
@@ -156,8 +235,7 @@ async function loadBalance() {
 function updateBalanceUI(balance) {
     const el = document.getElementById('usdtBalance');
     const btn = document.getElementById('spinBtn');
-    const formatted = formatBalance(balance);
-    el.textContent = `${formatted} USDT`;
+    el.textContent = `${formatBalance(balance)} USDT`;
     btn.disabled = balance < SPIN_COST || state.isSpinning;
 }
 
@@ -180,7 +258,10 @@ async function handleSpin() {
     btn.textContent = 'Крутим...';
     resultBanner.style.display = 'none';
 
-    let spinId, prizeAmount;
+    syncMetrics();
+
+    let spinId;
+    let prizeAmount;
 
     try {
         const startResp = await fetch('/api/transactions?roulette=1', {
@@ -203,11 +284,11 @@ async function handleSpin() {
         state.usdtBalance = startData.usdt_balance;
         updateBalanceUI(state.usdtBalance);
 
-        const currentOffset = getCurrentTrackOffset();
-        const currentIndex = Math.round((currentOffset + getViewportCenter() - TICKET_HEIGHT / 2) / TICKET_STEP);
+        const currentIndex = ensureSafeIndex(getOffsetFromTransform());
+        setTrackIndex(currentIndex, false);
         const targetIndex = findTargetIndex(prizeAmount, currentIndex);
 
-        await animateToIndex(targetIndex, 3800);
+        await animateToIndex(targetIndex, 3600);
 
         const completeResp = await fetch('/api/transactions?roulette=1', {
             method: 'POST',
@@ -223,10 +304,8 @@ async function handleSpin() {
         if (completeData.success) {
             state.usdtBalance = completeData.usdt_balance;
             updateBalanceUI(state.usdtBalance);
-
             document.getElementById('resultPrize').textContent = formatAmount(prizeAmount);
             resultBanner.style.display = 'block';
-
             if (tg?.HapticFeedback) {
                 tg.HapticFeedback.notificationOccurred('success');
             }
@@ -246,11 +325,4 @@ async function handleSpin() {
         btn.textContent = 'Крутить за $1';
         updateBalanceUI(state.usdtBalance);
     }
-}
-
-function getCurrentTrackOffset() {
-    const track = document.getElementById('reelTrack');
-    const transform = track.style.transform || '';
-    const match = transform.match(/translateY\((-?\d+\.?\d*)px\)/);
-    return match ? Math.abs(parseFloat(match[1])) : 0;
 }
