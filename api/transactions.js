@@ -327,30 +327,6 @@ export default async function handler(req, res) {
                 
             } else {
                 // Получить все транзакции для админки
-                try {
-                    // Пытаемся получить транзакции с данными пользователей
-                    const response = await fetch(
-                        `https://qvinjcaarnmafqdtfzrf.supabase.co/rest/v1/wallet_transactions?select=*,users!inner(telegram_id,first_name,last_name,username)&order=created_timestamp.desc&limit=${limit}`,
-                        {
-                            headers: {
-                                'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2aW5qY2Fhcm5tYWZxZHRmenJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2NDkyNzQsImV4cCI6MjA3MjIyNTI3NH0.n5yfMg4yrjYUNZ2-J2rJzLT-6qF4hOnS7U0L9qgf3Yo',
-                                'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2aW5qY2Fhcm5tYWZxZHRmenJmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NjY0OTI3NCwiZXhwIjoyMDcyMjI1Mjc0fQ.zL83Oek15xysWDm52AnDVwNQfz8cqX4dA0SyHOwTVAE`
-                            }
-                        }
-                    );
-                    
-                    if (response.ok) {
-                        const transactions = await response.json();
-                        return res.status(200).json({ 
-                            success: true, 
-                            transactions: transactions || [] 
-                        });
-                    }
-                } catch (error) {
-                    console.error('Ошибка получения транзакций с пользователями:', error);
-                }
-                
-                // Fallback - получаем простой список транзакций
                 const transactions = await supabaseRequest('wallet_transactions', 'GET', null, {
                     order: 'created_timestamp.desc',
                     limit: limit
