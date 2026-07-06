@@ -1,0 +1,346 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #2d2d2d;
+    --bg-card: #2d2d2d;
+    --text-primary: #ffffff;
+    --text-secondary: #e0e0e0;
+    --text-tertiary: #b0b0b0;
+    --accent-color: #2196f3;
+    --accent-secondary: #2381cc;
+    --border-color: #404040;
+    --shadow-color: rgba(0, 0, 0, 0.3);
+    --overlay-color: rgba(0, 0, 0, 0.7);
+    --ticket-height: 88px;
+    --ticket-gap: 10px;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 100vh;
+    background-image:
+        radial-gradient(circle at 20% 30%, rgba(33, 150, 243, 0.04) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(33, 150, 243, 0.04) 0%, transparent 50%);
+}
+
+.container {
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 16px 16px 100px;
+    min-height: 100vh;
+    position: relative;
+}
+
+.back-btn {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.back-arrow {
+    margin-top: -2px;
+}
+
+.page-title {
+    text-align: center;
+    font-size: 22px;
+    font-weight: 700;
+    margin-top: 8px;
+    color: var(--text-primary);
+}
+
+.page-subtitle {
+    text-align: center;
+    font-size: 14px;
+    color: var(--text-tertiary);
+    margin-bottom: 24px;
+}
+
+/* Reel */
+.reel-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    margin: 0 auto 24px;
+    position: relative;
+}
+
+.reel-arrow {
+    color: var(--accent-color);
+    font-size: 14px;
+    flex-shrink: 0;
+    opacity: 0.9;
+    z-index: 5;
+}
+
+.reel-viewport {
+    position: relative;
+    width: 280px;
+    height: calc(var(--ticket-height) * 3 + var(--ticket-gap) * 2);
+    overflow: hidden;
+    border-radius: 16px;
+}
+
+.reel-fade {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 60px;
+    z-index: 3;
+    pointer-events: none;
+}
+
+.reel-fade-top {
+    top: 0;
+    background: linear-gradient(to bottom, var(--bg-primary) 0%, transparent 100%);
+}
+
+.reel-fade-bottom {
+    bottom: 0;
+    background: linear-gradient(to top, var(--bg-primary) 0%, transparent 100%);
+}
+
+.reel-highlight {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: var(--ticket-height);
+    transform: translateY(-50%);
+    border: 2px solid var(--accent-color);
+    border-radius: 14px;
+    z-index: 2;
+    pointer-events: none;
+    box-shadow: 0 0 20px rgba(33, 150, 243, 0.15);
+}
+
+.reel-track {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    will-change: transform;
+}
+
+/* Ticket */
+.ticket {
+    height: var(--ticket-height);
+    margin-bottom: var(--ticket-gap);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    position: relative;
+    box-shadow: 0 4px 12px var(--shadow-color);
+    flex-shrink: 0;
+}
+
+.ticket::before,
+.ticket::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 16px;
+    background: var(--bg-primary);
+    border-radius: 50%;
+}
+
+.ticket::before { left: -4px; }
+.ticket::after { right: -4px; }
+
+.ticket-gold {
+    background: linear-gradient(135deg, #f5c842 0%, #e6a817 50%, #d4940f 100%);
+    color: #1a1a1a;
+}
+
+.ticket-blue {
+    background: linear-gradient(135deg, #4a9eff 0%, #2196f3 50%, #1976d2 100%);
+    color: #fff;
+}
+
+.ticket-teal {
+    background: linear-gradient(135deg, #26c6a0 0%, #1aab8a 50%, #148f74 100%);
+    color: #fff;
+}
+
+.ticket-green {
+    background: linear-gradient(135deg, #5cb85c 0%, #4caf50 50%, #388e3c 100%);
+    color: #fff;
+}
+
+.ticket-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.ticket-icon img {
+    width: 28px;
+    height: 28px;
+}
+
+.ticket-amount-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.ticket-amount {
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.ticket-label {
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0.85;
+    margin-top: 2px;
+}
+
+/* Result banner */
+.result-banner {
+    text-align: center;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    background: rgba(33, 150, 243, 0.15);
+    border: 1px solid rgba(33, 150, 243, 0.3);
+    border-radius: 12px;
+    animation: fadeIn 0.4s ease;
+}
+
+.result-text {
+    font-size: 16px;
+    color: var(--text-primary);
+}
+
+.result-text strong {
+    color: var(--accent-color);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Balance bar */
+.balance-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+}
+
+.balance-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.balance-coin-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+}
+
+.balance-coin-name {
+    display: block;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.balance-coin-ticker {
+    display: block;
+    font-size: 12px;
+    color: var(--text-tertiary);
+}
+
+.balance-bar-right {
+    text-align: right;
+}
+
+.balance-value {
+    display: block;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.balance-label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-tertiary);
+}
+
+/* Spin button */
+.spin-btn {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 32px);
+    max-width: 368px;
+    background: var(--accent-color);
+    border: none;
+    color: #fff;
+    padding: 16px;
+    border-radius: 14px;
+    font-weight: 700;
+    font-size: 17px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    z-index: 20;
+}
+
+.spin-btn:active:not(:disabled) {
+    transform: translateX(-50%) scale(0.98);
+}
+
+.spin-btn:disabled {
+    background: var(--border-color);
+    color: var(--text-tertiary);
+    cursor: not-allowed;
+}
+
+.spin-btn.spinning {
+    background: var(--accent-secondary);
+    pointer-events: none;
+}

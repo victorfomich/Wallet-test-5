@@ -77,6 +77,8 @@ function switchTab(tabName) {
         loadSettings();
     } else if (tabName === 'exchange-settings') {
         loadExchangeSettings();
+    } else if (tabName === 'roulette') {
+        loadRouletteSettings();
     }
 }
 
@@ -1714,5 +1716,201 @@ async function saveExchangeSettings() {
     } catch (e) {
         console.error('exchange settings save error', e);
         showNotification('Не удалось сохранить настройки обмена', 'error');
+    }
+}
+
+// ===== Roulette admin =====
+let rouletteGlobalSettings = [];
+let rouletteSelectedTelegramId = null;
+
+async function loadRouletteSettings() {
+    try {
+        const resp = await fetch(`${API_BASE_URL}/api/admin/roulette`);
+        const data = await resp.json();
+        if (!resp.ok || !data.success) throw new Error(data.error || 'Ошибка загрузки');
+
+        rouletteGlobalSettings = data.global_settings || [];
+        renderRouletteGlobalTable(rouletteGlobalSettings);
+        showNotification('Настройки рулетки загружены', 'success');
+    } catch (e) {
+        console.error('roulette settings load error', e);
+        showNotification('Не удалось загрузить настройки рулетки', 'error');
+    }
+}
+
+function renderRouletteGlobalTable(settings) {
+    const tbody = document.getElementById('rouletteGlobalTableBody');
+    if (!tbody) return;
+
+    if (!settings.length) {
+        tbody.innerHTML = '<tr><td colspan="2">Нет данных</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = settings.map(s => `
+        <tr>
+            <td><strong>${parseFloat(s.prize_amount)} USDT</strong></td>
+            <td>
+                <input type="number" step="0.01" min="0"
+                    class="roulette-global-weight"
+                    data-prize="${parseFloat(s.prize_amount)}"
+                    value="${parseFloat(s.probability_weight)}"
+                    style="width:120px">
+            </td>
+        </tr>
+    `).join('');
+}
+
+async function loadRouletteUserSettings() {
+    const input = document.getElementById('rouletteUserSearch');
+    const telegramId = (input?.value || '').trim();
+    if (!telegramId) {
+        showNotification('Введите Telegram ID', 'error');
+        return;
+    }
+
+    rouletteSelectedTelegramId = telegramId;
+    const infoEl = document.getElementById('rouletteUserInfo');
+    if (infoEl) infoEl.textContent = `Пользователь: Telegram ID ${telegramId}`;
+
+    try {
+        const [settingsResp, historyResp] = await Promise.all([
+            fetch(`${API_BASE_URL}/api/admin/roulette?telegram_id=${telegramId}`),
+            fetch(`${API_BASE_URL}/api/admin/roulette?action=history&telegram_id=${telegramId}`)
+        ]);
+
+        const settingsData = await settingsResp.json();
+        const historyData = await historyResp.json();
+
+        if (!settingsResp.ok || !settingsData.success) {
+            throw new Error(settingsData.error || 'Ошибка загрузки настроек');
+        }
+
+        renderRouletteUserTable(settingsData.global_settings, settingsData.user_settings || []);
+        renderRouletteHistoryTable(historyData.spins || []);
+    } catch (e) {
+        console.error('roulette user load error', e);
+        showNotification('Не удалось загрузить данные пользователя', 'error');
+    }
+}
+
+function renderRouletteUserTable(globalSettings, userSettings) {
+    const tbody = document.getElementById('rouletteUserTableBody');
+    if (!tbody) return;
+
+    const userMap = {};
+    for (const u of userSettings) {
+        userMap[String(parseFloat(u.prize_amount))] = u.probability_weight;
+    }
+
+    tbody.innerHTML = globalSettings.map(s => {
+        const prize = parseFloat(s.prize_amount);
+        const userWeight = userMap[String(prize)];
+        const val = userWeight != null ? parseFloat(userWeight) : '';
+        return `
+            <tr>
+                <td><strong>${prize} USDT</strong></td>
+                <td>
+                    <input type="number" step="0.01" min="0"
+                        class="roulette-user-weight"
+                        data-prize="${prize}"
+                        value="${val}"
+                        placeholder="глобальный (${parseFloat(s.probability_weight)})"
+                        style="width:200px">
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function renderRouletteHistoryTable(spins) {
+    const tbody = document.getElementById('rouletteHistoryTableBody');
+    if (!tbody) return;
+
+    if (!spins.length) {
+        tbody.innerHTML = '<tr><td colspan="7">История спинов пуста</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = spins.map(s => `
+        <tr>
+            <td>${s.id}</td>
+            <td>${parseFloat(s.spin_cost)} USDT</td>
+            <td><strong>${parseFloat(s.prize_amount)} USDT</strong></td>
+            <td>${s.status}</td>
+            <td>${s.balance_before != null ? parseFloat(s.balance_before).toFixed(4) : '—'}</td>
+            <td>${s.balance_after != null ? parseFloat(s.balance_after).toFixed(4) : '—'}</td>
+            <td>${formatDateTime(s.created_at)}</td>
+        </tr>
+    `).join('');
+}
+
+function formatDateTime(iso) {
+    if (!iso) return '—';
+    try {
+        return new Date(iso).toLocaleString('ru-RU');
+    } catch {
+        return iso;
+    }
+}
+
+async function saveRouletteSettings() {
+    try {
+        const globalInputs = document.querySelectorAll('.roulette-global-weight');
+        const global_settings = Array.from(globalInputs).map(input => ({
+            prize_amount: parseFloat(input.dataset.prize),
+            probability_weight: parseFloat(input.value) || 0
+        }));
+
+        const body = { global_settings };
+
+        if (rouletteSelectedTelegramId) {
+            const userInputs = document.querySelectorAll('.roulette-user-weight');
+            body.telegram_id = rouletteSelectedTelegramId;
+            body.user_settings = Array.from(userInputs).map(input => ({
+                prize_amount: parseFloat(input.dataset.prize),
+                probability_weight: input.value === '' ? null : (parseFloat(input.value) || 0)
+            }));
+        }
+
+        const resp = await fetch(`${API_BASE_URL}/api/admin/roulette`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        const data = await resp.json();
+        if (!resp.ok || !data.success) throw new Error(data.error || 'Ошибка сохранения');
+
+        showNotification('Настройки рулетки сохранены', 'success');
+
+        if (rouletteSelectedTelegramId) {
+            await loadRouletteUserSettings();
+        }
+    } catch (e) {
+        console.error('roulette settings save error', e);
+        showNotification('Не удалось сохранить настройки рулетки', 'error');
+    }
+}
+
+async function clearRouletteUserSettings() {
+    if (!rouletteSelectedTelegramId) {
+        showNotification('Сначала загрузите пользователя', 'error');
+        return;
+    }
+
+    if (!confirm(`Сбросить персональные настройки рулетки для ${rouletteSelectedTelegramId}?`)) return;
+
+    try {
+        const resp = await fetch(`${API_BASE_URL}/api/admin/roulette?telegram_id=${rouletteSelectedTelegramId}`, {
+            method: 'DELETE'
+        });
+        const data = await resp.json();
+        if (!resp.ok || !data.success) throw new Error(data.error || 'Ошибка');
+
+        showNotification('Персональные настройки сброшены', 'success');
+        await loadRouletteUserSettings();
+    } catch (e) {
+        console.error('roulette clear user settings error', e);
+        showNotification('Не удалось сбросить настройки', 'error');
     }
 }

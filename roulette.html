@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>Рулетка - DreamWallet</title>
+    <link rel="stylesheet" href="roulette-styles.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="user-manager.js"></script>
+</head>
+<body>
+    <div class="container">
+        <button class="back-btn" id="backBtn" aria-label="Назад">
+            <span class="back-arrow">‹</span>
+        </button>
+
+        <h1 class="page-title">Рулетка</h1>
+        <p class="page-subtitle">Крутите и выигрывайте USDT</p>
+
+        <div class="reel-wrapper">
+            <div class="reel-arrow reel-arrow-left">◀</div>
+            <div class="reel-viewport">
+                <div class="reel-fade reel-fade-top"></div>
+                <div class="reel-fade reel-fade-bottom"></div>
+                <div class="reel-highlight"></div>
+                <div class="reel-track" id="reelTrack"></div>
+            </div>
+            <div class="reel-arrow reel-arrow-right">▶</div>
+        </div>
+
+        <div class="result-banner" id="resultBanner" style="display:none;">
+            <span class="result-text">Вы выиграли <strong id="resultPrize">0</strong> USDT!</span>
+        </div>
+
+        <div class="balance-bar">
+            <div class="balance-bar-left">
+                <img src="usdt.png" alt="USDT" class="balance-coin-icon">
+                <div class="balance-bar-info">
+                    <span class="balance-coin-name">Tether</span>
+                    <span class="balance-coin-ticker">USDT</span>
+                </div>
+            </div>
+            <div class="balance-bar-right">
+                <span class="balance-value" id="usdtBalance">0 USDT</span>
+                <span class="balance-label">ваш баланс</span>
+            </div>
+        </div>
+
+        <button id="spinBtn" class="spin-btn" disabled>Крутить за $1</button>
+    </div>
+
+    <script src="roulette-script.js"></script>
+</body>
+</html>

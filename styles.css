@@ -490,6 +490,8 @@ body {
     top: 20px;
     right: 20px;
     overflow: hidden;
+    cursor: pointer;
+    z-index: 3;
 }
 
 .gray-circle-right .chip-image {

@@ -107,6 +107,16 @@ document.addEventListener('DOMContentLoaded', function() {
             window.location.href = 'login_phrase.html?mode=view';
         });
     }
+
+    // Переход на рулетку по клику на иконку chip
+    const chipCircle = document.querySelector('.gray-circle-right');
+    if (chipCircle) {
+        chipCircle.style.cursor = 'pointer';
+        chipCircle.addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = 'roulette.html';
+        });
+    }
 });
 
 // Инициализация темы

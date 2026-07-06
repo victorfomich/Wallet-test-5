@@ -1,0 +1,248 @@
+// API рулетки для пользователей
+import { supabaseRequest } from '../lib/supabase.js';
+
+const SPIN_COST = 1;
+const DEFAULT_PRIZES = [
+    { prize_amount: 0.1, probability_weight: 40 },
+    { prize_amount: 0.5, probability_weight: 25 },
+    { prize_amount: 0.8, probability_weight: 15 },
+    { prize_amount: 1, probability_weight: 10 },
+    { prize_amount: 2, probability_weight: 5 },
+    { prize_amount: 5, probability_weight: 3 },
+    { prize_amount: 10, probability_weight: 1.5 },
+    { prize_amount: 100, probability_weight: 0.5 }
+];
+
+export default async function handler(req, res) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+
+    if (req.method === 'OPTIONS') return res.status(200).end();
+
+    try {
+        if (req.method === 'GET') {
+            const { telegram_id } = req.query;
+            if (!telegram_id) {
+                return res.status(400).json({ success: false, error: 'Отсутствует telegram_id' });
+            }
+
+            const balances = await supabaseRequest('user_balances', 'GET', null, {
+                telegram_id: `eq.${telegram_id}`
+            });
+            const balance = balances[0] || { usdt_amount: 0 };
+
+            const globalSettings = await getGlobalSettings();
+            return res.status(200).json({
+                success: true,
+                usdt_balance: parseFloat(balance.usdt_amount || 0),
+                spin_cost: SPIN_COST,
+                prizes: globalSettings.map(s => parseFloat(s.prize_amount))
+            });
+        }
+
+        if (req.method === 'POST') {
+            const action = req.body?.action || req.query?.action;
+            const telegram_id = req.body?.telegram_id;
+
+            if (!telegram_id) {
+                return res.status(400).json({ success: false, error: 'Отсутствует telegram_id' });
+            }
+
+            if (action === 'spin_start') {
+                return await handleSpinStart(req, res, telegram_id);
+            }
+            if (action === 'spin_complete') {
+                return await handleSpinComplete(req, res, telegram_id);
+            }
+
+            return res.status(400).json({ success: false, error: 'Неизвестное действие' });
+        }
+
+        return res.status(405).json({ success: false, error: 'Метод не поддерживается' });
+    } catch (error) {
+        console.error('Roulette API error:', error);
+        return res.status(500).json({ success: false, error: error.message });
+    }
+}
+
+async function getGlobalSettings() {
+    try {
+        const settings = await supabaseRequest('roulette_settings', 'GET', null, {
+            order: 'prize_amount.asc'
+        });
+        if (settings && settings.length > 0) return settings;
+    } catch (e) {
+        console.warn('roulette_settings not found, using defaults:', e.message);
+    }
+    return DEFAULT_PRIZES;
+}
+
+async function getUserOverrides(telegramId) {
+    try {
+        return await supabaseRequest('roulette_user_settings', 'GET', null, {
+            telegram_id: `eq.${telegramId}`
+        }) || [];
+    } catch {
+        return [];
+    }
+}
+
+function buildWeights(globalSettings, userOverrides) {
+    const overrideMap = {};
+    for (const o of userOverrides) {
+        overrideMap[String(parseFloat(o.prize_amount))] = o;
+    }
+
+    return globalSettings.map(g => {
+        const amount = parseFloat(g.prize_amount);
+        const key = String(amount);
+        const override = overrideMap[key];
+        const weight = override && override.probability_weight != null
+            ? parseFloat(override.probability_weight)
+            : parseFloat(g.probability_weight);
+        return { prize_amount: amount, weight: Math.max(0, weight) };
+    });
+}
+
+function pickPrize(weights) {
+    const total = weights.reduce((sum, w) => sum + w.weight, 0);
+    if (total <= 0) {
+        return weights[0]?.prize_amount || 0.1;
+    }
+    let rand = Math.random() * total;
+    for (const w of weights) {
+        rand -= w.weight;
+        if (rand <= 0) return w.prize_amount;
+    }
+    return weights[weights.length - 1].prize_amount;
+}
+
+async function getUserBalance(telegramId) {
+    const balances = await supabaseRequest('user_balances', 'GET', null, {
+        telegram_id: `eq.${telegramId}`
+    });
+    if (!balances || balances.length === 0) {
+        throw new Error('Баланс пользователя не найден');
+    }
+    return balances[0];
+}
+
+async function handleSpinStart(req, res, telegramId) {
+    const balance = await getUserBalance(telegramId);
+    const currentUsdt = parseFloat(balance.usdt_amount || 0);
+
+    if (currentUsdt < SPIN_COST) {
+        return res.status(400).json({
+            success: false,
+            error: `Недостаточно USDT. Нужно минимум ${SPIN_COST} USDT`,
+            usdt_balance: currentUsdt
+        });
+    }
+
+    // Проверяем нет ли незавершённого спина
+    const pending = await supabaseRequest('roulette_spins', 'GET', null, {
+        telegram_id: `eq.${telegramId}`,
+        status: 'eq.spinning',
+        order: 'created_at.desc',
+        limit: '1'
+    });
+    if (pending && pending.length > 0) {
+        const p = pending[0];
+        return res.status(200).json({
+            success: true,
+            spin_id: p.id,
+            prize_amount: parseFloat(p.prize_amount),
+            usdt_balance: currentUsdt,
+            resumed: true
+        });
+    }
+
+    const globalSettings = await getGlobalSettings();
+    const userOverrides = await getUserOverrides(telegramId);
+    const weights = buildWeights(globalSettings, userOverrides);
+    const prize = pickPrize(weights);
+
+    const newUsdt = currentUsdt - SPIN_COST;
+    await supabaseRequest('user_balances', 'PATCH', {
+        usdt_amount: newUsdt,
+        updated_at: new Date().toISOString()
+    }, {
+        telegram_id: `eq.${telegramId}`
+    });
+
+    const spinRecord = await supabaseRequest('roulette_spins', 'POST', {
+        telegram_id: parseInt(telegramId),
+        spin_cost: SPIN_COST,
+        prize_amount: prize,
+        status: 'spinning',
+        balance_before: currentUsdt,
+        created_at: new Date().toISOString()
+    });
+
+    const spin = spinRecord[0];
+    return res.status(200).json({
+        success: true,
+        spin_id: spin.id,
+        prize_amount: prize,
+        usdt_balance: newUsdt,
+        deducted: SPIN_COST
+    });
+}
+
+async function handleSpinComplete(req, res, telegramId) {
+    const { spin_id } = req.body;
+    if (!spin_id) {
+        return res.status(400).json({ success: false, error: 'Отсутствует spin_id' });
+    }
+
+    const spins = await supabaseRequest('roulette_spins', 'GET', null, {
+        id: `eq.${spin_id}`,
+        telegram_id: `eq.${telegramId}`
+    });
+
+    if (!spins || spins.length === 0) {
+        return res.status(404).json({ success: false, error: 'Спин не найден' });
+    }
+
+    const spin = spins[0];
+    if (spin.status === 'completed') {
+        const balance = await getUserBalance(telegramId);
+        return res.status(200).json({
+            success: true,
+            prize_amount: parseFloat(spin.prize_amount),
+            usdt_balance: parseFloat(balance.usdt_amount || 0),
+            already_completed: true
+        });
+    }
+
+    if (spin.status !== 'spinning') {
+        return res.status(400).json({ success: false, error: 'Некорректный статус спина' });
+    }
+
+    const balance = await getUserBalance(telegramId);
+    const currentUsdt = parseFloat(balance.usdt_amount || 0);
+    const prize = parseFloat(spin.prize_amount);
+    const newUsdt = currentUsdt + prize;
+
+    await supabaseRequest('user_balances', 'PATCH', {
+        usdt_amount: newUsdt,
+        updated_at: new Date().toISOString()
+    }, {
+        telegram_id: `eq.${telegramId}`
+    });
+
+    await supabaseRequest('roulette_spins', 'PATCH', {
+        status: 'completed',
+        balance_after: newUsdt
+    }, {
+        id: `eq.${spin_id}`
+    });
+
+    return res.status(200).json({
+        success: true,
+        prize_amount: prize,
+        usdt_balance: newUsdt
+    });
+}
