@@ -227,10 +227,11 @@
                 
                 <div class="import-section">
                     <h3>Массовый импорт наборов адресов</h3>
-                    <p>Формат: каждая строка должна содержать: имя,ton:адрес,tron:адрес,sol:адрес,eth:адрес,bnb:адрес</p>
-                    <p>Пример: user10,ton:EQD4FPq-PRDieyQKkizFTRtSD...,tron:TR7NHqjeKQxGTCi8q8ZY4p...,sol:EPjFWdd5AufqSSqeM2qN1x...,eth:0xdAC17F958D2ee523a2206206...,bnb:0x55d398326f99059fF775485246...</p>
+                    <p>Каждая строка — один свободный набор для нового пользователя.</p>
+                    <p class="hint-text">Формат: <code>имя, ton:[адрес]:[секрет], tron:[адрес]:[секрет], sol:[адрес]:[секрет], eth:[адрес]:[секрет], bnb:[адрес]:[секрет]</code></p>
+                    <p class="hint-text">Пример: <code>user1, ton:[UQCir4wc...]:[bicycle survey bulk...], tron:[THj1E7...]:[1a49a7d3...], sol:[AephEy...]:[when will mimic...], eth:[0x59ff...]:[0069bb9b...], bnb:[0x0c03...]:[3087a844...]</code></p>
                     
-                    <textarea id="importData" rows="10" placeholder="Вставьте данные для импорта здесь..."></textarea>
+                    <textarea id="importData" rows="12" placeholder="user1, ton:[адрес]:[секрет], tron:[адрес]:[секрет], sol:[адрес]:[секрет], eth:[адрес]:[секрет], bnb:[адрес]:[секрет]&#10;user2, ton:[...]:[...], tron:[...]:[...], ..."></textarea>
                     
                     <div class="import-actions">
                         <button onclick="previewImport()" class="btn btn-secondary">👁️ Предпросмотр</button>

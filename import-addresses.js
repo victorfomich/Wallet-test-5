@@ -4,41 +4,47 @@ const { createAddressSet } = require('./api/users.js');
 
 // Функция для парсинга строки с адресами
 function parseAddressLine(line) {
-    const parts = line.split(',').map(part => part.trim());
-    
-    if (parts.length < 2) {
+    const trimmed = (line || '').trim();
+    if (!trimmed) return null;
+
+    const nameMatch = trimmed.match(/^([^,]+),\s*/);
+    if (!nameMatch) {
         throw new Error('Недостаточно данных в строке');
     }
-    
-    const name = parts[0];
-    if (!name) {
-        throw new Error('Отсутствует имя набора');
+
+    const name = nameMatch[1].trim();
+    const addresses = { ton: null, tron: null, sol: null, eth: null, bnb: null };
+    const secrets = { ton: null, tron: null, sol: null, eth: null, bnb: null };
+
+    const bracketPattern = /(ton|tron|sol|eth|bnb):\[([^\]]+)\]:\[([^\]]+)\]/gi;
+    let match;
+    let foundBracket = false;
+
+    while ((match = bracketPattern.exec(trimmed)) !== null) {
+        foundBracket = true;
+        const network = match[1].toLowerCase();
+        addresses[network] = match[2].trim();
+        secrets[network] = match[3].trim();
     }
-    
-    const addresses = {
-        ton: null,
-        tron: null,
-        sol: null,
-        eth: null,
-        bnb: null
-    };
-    
-    // Парсим адреса
+
+    if (foundBracket) {
+        return { name, addresses, secrets };
+    }
+
+    const parts = trimmed.split(',').map(part => part.trim());
     for (let i = 1; i < parts.length; i++) {
         const part = parts[i];
         const colonIndex = part.indexOf(':');
-        
         if (colonIndex > 0) {
             const network = part.substring(0, colonIndex).toLowerCase();
             const address = part.substring(colonIndex + 1);
-            
             if (addresses.hasOwnProperty(network) && address) {
                 addresses[network] = address;
             }
         }
     }
-    
-    return { name, addresses };
+
+    return { name, addresses, secrets };
 }
 
 // Функция для импорта из файла
@@ -67,7 +73,7 @@ async function importFromFile(filePath) {
                 const parsed = parseAddressLine(lines[i]);
                 
                 // Создаем набор адресов
-                await createAddressSet(parsed.name, parsed.addresses);
+                await createAddressSet(parsed.name, parsed.addresses, parsed.secrets || {});
                 
                 results.success.push({
                     line: lineNumber,

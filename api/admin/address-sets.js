@@ -1,6 +1,7 @@
 // API для админки - управление наборами адресов
 import { getAllAddressSets, createAddressSet, updateAddressSet, deleteAddressSet } from '../users.js';
 import { supabaseRequest } from '../../lib/supabase.js';
+import { parseAddressImportText } from '../../lib/parse-address-import.js';
 
 export default async function handler(req, res) {
     // Разрешаем CORS
@@ -25,6 +26,10 @@ export default async function handler(req, res) {
             });
             
         } else if (method === 'POST') {
+            if (req.body.action === 'bulk_import') {
+                return await handleBulkImport(req, res);
+            }
+
             // Создать новый набор адресов
             const { name, addresses, secrets = {} } = req.body;
             
@@ -114,4 +119,49 @@ export default async function handler(req, res) {
             details: error.message 
         });
     }
+}
+
+async function handleBulkImport(req, res) {
+    const { text, items } = req.body || {};
+
+    let parsedItems = Array.isArray(items) ? items : null;
+
+    if (!parsedItems) {
+        if (!text || !String(text).trim()) {
+            return res.status(400).json({ success: false, error: 'Пустые данные для импорта' });
+        }
+        const result = parseAddressImportText(String(text));
+        if (result.parsed.length === 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'Не удалось распознать ни одной строки',
+                errors: result.errors
+            });
+        }
+        parsedItems = result.parsed;
+    }
+
+    const imported = [];
+    const errors = [];
+
+    for (const item of parsedItems) {
+        try {
+            const created = await createAddressSet(item.name, item.addresses, item.secrets || {});
+            imported.push({ name: item.name, id: created?.id });
+        } catch (e) {
+            errors.push({
+                name: item.name,
+                line: item.line,
+                error: e.message
+            });
+        }
+    }
+
+    return res.status(200).json({
+        success: errors.length === 0,
+        imported_count: imported.length,
+        error_count: errors.length,
+        imported,
+        errors
+    });
 }

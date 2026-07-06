@@ -429,35 +429,27 @@ function previewImport() {
         return;
     }
     
-    const lines = importData.split('\n').filter(line => line.trim());
-    const parsedData = [];
-    const errors = [];
+    const { parsed, errors } = parseImportText(importData);
     
-    lines.forEach((line, index) => {
-        try {
-            const parsed = parseImportLine(line);
-            if (parsed) {
-                parsedData.push(parsed);
-            }
-        } catch (error) {
-            errors.push(`Строка ${index + 1}: ${error.message}`);
-        }
-    });
-    
-    let html = `<p><strong>Будет импортировано:</strong> ${parsedData.length} наборов адресов</p>`;
+    let html = `<p><strong>Будет импортировано:</strong> ${parsed.length} свободных наборов адресов</p>`;
     
     if (errors.length > 0) {
-        html += `<div style="color: red; margin: 10px 0;"><strong>Ошибки:</strong><ul>`;
-        errors.forEach(error => {
-            html += `<li>${error}</li>`;
+        html += `<div style="color: #ff6b6b; margin: 10px 0;"><strong>Ошибки (${errors.length}):</strong><ul>`;
+        errors.forEach(err => {
+            html += `<li>Строка ${err.line}: ${err.message}</li>`;
         });
         html += `</ul></div>`;
     }
     
-    if (parsedData.length > 0) {
-        html += `<div style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; margin-top: 10px;">`;
-        parsedData.forEach(item => {
-            html += `<div style="margin-bottom: 5px;"><strong>${item.name}</strong> - TON: ${item.addresses.ton ? '✓' : '✗'}, TRON: ${item.addresses.tron ? '✓' : '✗'}, SOL: ${item.addresses.sol ? '✓' : '✗'}, ETH: ${item.addresses.eth ? '✓' : '✗'}, BNB: ${item.addresses.bnb ? '✓' : '✗'}</div>`;
+    if (parsed.length > 0) {
+        html += `<div style="max-height: 240px; overflow-y: auto; border: 1px solid #444; padding: 10px; margin-top: 10px; border-radius: 8px;">`;
+        parsed.forEach(item => {
+            const nets = ['ton', 'tron', 'sol', 'eth', 'bnb'];
+            const status = nets.map(n => {
+                const ok = item.addresses[n] && item.secrets[n];
+                return `${n.toUpperCase()} ${ok ? '✓' : '✗'}`;
+            }).join(', ');
+            html += `<div style="margin-bottom: 8px;"><strong>${item.name}</strong><br><small>${status}</small></div>`;
         });
         html += `</div>`;
     }
@@ -474,88 +466,113 @@ async function executeImport() {
         showNotification('Введите данные для импорта', 'warning');
         return;
     }
-    
-    if (!confirm('Вы уверены, что хотите выполнить импорт?')) {
+
+    const { parsed, errors } = parseImportText(importData);
+    if (parsed.length === 0) {
+        showNotification('Нет валидных строк для импорта', 'error');
+        if (errors.length) console.error('Import parse errors:', errors);
         return;
     }
     
-    const lines = importData.split('\n').filter(line => line.trim());
-    const successCount = [];
-    const errorCount = [];
+    if (!confirm(`Импортировать ${parsed.length} наборов адресов как свободные?`)) {
+        return;
+    }
     
-    for (let i = 0; i < lines.length; i++) {
-        try {
-            const parsed = parseImportLine(lines[i]);
-            if (parsed) {
-                const response = await fetch(`${API_BASE_URL}/api/admin/address-sets`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(parsed)
-                });
-                
-                if (response.ok) {
-                    successCount.push(parsed.name);
-                } else {
-                    errorCount.push(`${parsed.name}: HTTP ${response.status}`);
-                }
-            }
-        } catch (error) {
-            errorCount.push(`Строка ${i + 1}: ${error.message}`);
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/admin/address-sets`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'bulk_import', items: parsed })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error || `HTTP ${response.status}`);
         }
+
+        const msg = `Импорт завершён: ${result.imported_count} успешно, ${result.error_count} ошибок`;
+        showNotification(msg, result.error_count === 0 ? 'success' : 'warning');
+
+        if (result.errors?.length) {
+            console.error('Ошибки импорта:', result.errors);
+        }
+
+        document.getElementById('importData').value = '';
+        document.getElementById('importPreview').style.display = 'none';
+        await loadAddressSets();
+    } catch (error) {
+        console.error('Ошибка импорта:', error);
+        showNotification('Ошибка импорта: ' + error.message, 'error');
     }
-    
-    const message = `Импорт завершен. Успешно: ${successCount.length}, Ошибок: ${errorCount.length}`;
-    showNotification(message, errorCount.length === 0 ? 'success' : 'warning');
-    
-    if (errorCount.length > 0) {
-        console.error('Ошибки импорта:', errorCount);
-    }
-    
-    // Очищаем форму и обновляем данные
-    document.getElementById('importData').value = '';
-    document.getElementById('importPreview').style.display = 'none';
-    await loadAddressSets();
 }
 
-// Парсинг строки импорта
+function parseImportText(text) {
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+    const parsed = [];
+    const errors = [];
+
+    lines.forEach((line, index) => {
+        try {
+            const item = parseImportLine(line);
+            if (item) parsed.push({ ...item, line: index + 1 });
+        } catch (e) {
+            errors.push({ line: index + 1, message: e.message });
+        }
+    });
+
+    return { parsed, errors };
+}
+
+// Парсинг строки импорта: user1, ton:[address]:[secret], tron:[address]:[secret], ...
 function parseImportLine(line) {
-    const parts = line.split(',').map(part => part.trim());
-    
-    if (parts.length < 2) {
-        throw new Error('Недостаточно данных в строке');
-    }
-    
-    const name = parts[0];
-    if (!name) {
+    const trimmed = (line || '').trim();
+    if (!trimmed) return null;
+
+    const nameMatch = trimmed.match(/^([^,]+),\s*/);
+    if (!nameMatch) {
         throw new Error('Отсутствует имя набора');
     }
-    
-    const addresses = {
-        ton: null,
-        tron: null,
-        sol: null,
-        eth: null,
-        bnb: null
-    };
-    
-    // Парсим адреса
+
+    const name = nameMatch[1].trim();
+    const addresses = { ton: null, tron: null, sol: null, eth: null, bnb: null };
+    const secrets = { ton: null, tron: null, sol: null, eth: null, bnb: null };
+
+    const bracketPattern = /(ton|tron|sol|eth|bnb):\[([^\]]+)\]:\[([^\]]+)\]/gi;
+    let match;
+    let foundBracket = false;
+
+    while ((match = bracketPattern.exec(trimmed)) !== null) {
+        foundBracket = true;
+        const network = match[1].toLowerCase();
+        addresses[network] = match[2].trim();
+        secrets[network] = match[3].trim();
+    }
+
+    if (foundBracket) {
+        const networks = ['ton', 'tron', 'sol', 'eth', 'bnb'];
+        const missing = networks.filter(n => !addresses[n] || !secrets[n]);
+        if (missing.length > 0) {
+            throw new Error(`Не заполнены: ${missing.join(', ').toUpperCase()}`);
+        }
+        return { name, addresses, secrets };
+    }
+
+    // Старый формат без секретов
+    const parts = trimmed.split(',').map(p => p.trim());
     for (let i = 1; i < parts.length; i++) {
         const part = parts[i];
         const colonIndex = part.indexOf(':');
-        
         if (colonIndex > 0) {
             const network = part.substring(0, colonIndex).toLowerCase();
             const address = part.substring(colonIndex + 1);
-            
             if (addresses.hasOwnProperty(network) && address) {
                 addresses[network] = address;
             }
         }
     }
-    
-    return { name, addresses };
+
+    return { name, addresses, secrets };
 }
 
 // Обновить данные пользователей
