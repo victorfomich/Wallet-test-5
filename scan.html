@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Scan QR Code - DreamWallet</title>
+    <link rel="stylesheet" href="scan-styles.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+    <div class="scan-page">
+        <video id="cameraVideo" class="camera-feed" autoplay playsinline muted></video>
+        <div class="camera-fallback" id="cameraFallback" aria-hidden="true"></div>
+
+        <div class="scan-ui">
+            <button class="back-btn" id="backBtn" aria-label="Назад">
+                <span class="back-arrow">‹</span>
+            </button>
+
+            <h1 class="scan-title">Scan QR Code</h1>
+
+            <div class="scan-frame-wrap">
+                <div class="scan-frame">
+                    <span class="corner corner-tl"></span>
+                    <span class="corner corner-tr"></span>
+                    <span class="corner corner-bl"></span>
+                    <span class="corner corner-br"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="scan-script.js"></script>
+</body>
+</html>

@@ -117,6 +117,16 @@ document.addEventListener('DOMContentLoaded', function() {
             window.location.href = 'roulette.html';
         });
     }
+
+    // Переход на сканер QR по клику на иконку scan
+    const scanCircle = document.querySelector('.gray-circle');
+    if (scanCircle) {
+        scanCircle.style.cursor = 'pointer';
+        scanCircle.addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = 'scan.html';
+        });
+    }
 });
 
 // Инициализация темы
