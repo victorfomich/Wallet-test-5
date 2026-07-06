@@ -1,6 +1,7 @@
 // API для работы с транзакциями
 import { supabaseRequest, supabaseSecureRequest } from '../lib/supabase.js';
 import { getLivePrices } from '../lib/prices.js';
+import { handleUserRoulette } from '../lib/roulette.js';
 
 export default async function handler(req, res) {
     // Разрешаем CORS
@@ -10,6 +11,16 @@ export default async function handler(req, res) {
     
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
+    }
+
+    // Рулетка объединена сюда, чтобы не превышать лимит serverless-функций Vercel
+    if (req.query.roulette === '1' || req.body?.action === 'spin_start' || req.body?.action === 'spin_complete') {
+        try {
+            return await handleUserRoulette(req, res);
+        } catch (error) {
+            console.error('Roulette API error:', error);
+            return res.status(500).json({ success: false, error: error.message });
+        }
     }
     
     try {

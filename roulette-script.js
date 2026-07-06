@@ -142,7 +142,7 @@ async function loadBalance() {
     }
 
     try {
-        const resp = await fetch(`/api/roulette?telegram_id=${state.telegramId}`);
+        const resp = await fetch(`/api/transactions?roulette=1&telegram_id=${state.telegramId}`);
         const data = await resp.json();
         if (data.success) {
             state.usdtBalance = data.usdt_balance;
@@ -183,7 +183,7 @@ async function handleSpin() {
     let spinId, prizeAmount;
 
     try {
-        const startResp = await fetch('/api/roulette', {
+        const startResp = await fetch('/api/transactions?roulette=1', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -209,7 +209,7 @@ async function handleSpin() {
 
         await animateToIndex(targetIndex, 3800);
 
-        const completeResp = await fetch('/api/roulette', {
+        const completeResp = await fetch('/api/transactions?roulette=1', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

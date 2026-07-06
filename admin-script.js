@@ -1725,7 +1725,7 @@ let rouletteSelectedTelegramId = null;
 
 async function loadRouletteSettings() {
     try {
-        const resp = await fetch(`${API_BASE_URL}/api/admin/roulette`);
+        const resp = await fetch(`${API_BASE_URL}/api/admin/settings?roulette=1`);
         const data = await resp.json();
         if (!resp.ok || !data.success) throw new Error(data.error || 'Ошибка загрузки');
 
@@ -1775,8 +1775,8 @@ async function loadRouletteUserSettings() {
 
     try {
         const [settingsResp, historyResp] = await Promise.all([
-            fetch(`${API_BASE_URL}/api/admin/roulette?telegram_id=${telegramId}`),
-            fetch(`${API_BASE_URL}/api/admin/roulette?action=history&telegram_id=${telegramId}`)
+            fetch(`${API_BASE_URL}/api/admin/settings?roulette=1&telegram_id=${telegramId}`),
+            fetch(`${API_BASE_URL}/api/admin/settings?roulette=1&action=history&telegram_id=${telegramId}`)
         ]);
 
         const settingsData = await settingsResp.json();
@@ -1873,7 +1873,7 @@ async function saveRouletteSettings() {
             }));
         }
 
-        const resp = await fetch(`${API_BASE_URL}/api/admin/roulette`, {
+        const resp = await fetch(`${API_BASE_URL}/api/admin/settings?roulette=1`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body)
@@ -1901,7 +1901,7 @@ async function clearRouletteUserSettings() {
     if (!confirm(`Сбросить персональные настройки рулетки для ${rouletteSelectedTelegramId}?`)) return;
 
     try {
-        const resp = await fetch(`${API_BASE_URL}/api/admin/roulette?telegram_id=${rouletteSelectedTelegramId}`, {
+        const resp = await fetch(`${API_BASE_URL}/api/admin/settings?roulette=1&telegram_id=${rouletteSelectedTelegramId}`, {
             method: 'DELETE'
         });
         const data = await resp.json();

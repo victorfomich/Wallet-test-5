@@ -1,4 +1,5 @@
 import { supabaseRequest } from '../../lib/supabase.js';
+import { handleAdminRoulette } from '../../lib/roulette.js';
 import crypto from 'crypto';
 
 // ===== Admin auth helpers (to avoid extra serverless function) =====
@@ -85,6 +86,17 @@ export default async function handler(req, res) {
       }
       return res.status(405).json({ error: 'Метод не поддерживается' });
     }
+
+    // Рулетка объединена сюда, чтобы не превышать лимит serverless-функций Vercel
+    if (req.query.roulette === '1') {
+      try {
+        return await handleAdminRoulette(req, res);
+      } catch (e) {
+        console.error('Admin roulette API error:', e);
+        return res.status(500).json({ success: false, error: e.message });
+      }
+    }
+
     if (method === 'GET') {
       console.log('🔍 Settings API: Trying to read withdraw_fees...');
       // Пытаемся читать из withdraw_fees, если пусто — fallback на app_settings
