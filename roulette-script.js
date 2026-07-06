@@ -1,7 +1,8 @@
 const PRIZES = [0.1, 0.5, 0.8, 1, 2, 5, 10, 100];
 const SPIN_COST = 1;
-const REPEAT_COUNT = 12;
+const REPEAT_COUNT = 24;
 const CYCLE_LEN = PRIZES.length;
+const MIDDLE_CYCLE = Math.floor(REPEAT_COUNT / 2);
 
 let tg = window.Telegram?.WebApp;
 let state = {
@@ -9,7 +10,7 @@ let state = {
     usdtBalance: 0,
     isSpinning: false,
     currentSpinId: null,
-    currentIndex: 0
+    currentIndex: MIDDLE_CYCLE * CYCLE_LEN
 };
 
 let metrics = {
@@ -28,7 +29,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     buildReel();
     await waitForLayout();
     syncMetrics();
-    state.currentIndex = getMiddleIndex();
     setTrackIndex(state.currentIndex, false);
     await loadBalance();
 });
@@ -38,33 +38,20 @@ function setupUI() {
         window.location.href = 'index.html';
     });
     document.getElementById('spinBtn').addEventListener('click', handleSpin);
-    window.addEventListener('resize', () => {
-        syncMetrics();
-        setTrackIndex(state.currentIndex, false);
-    });
 }
 
 function waitForLayout() {
     return new Promise(resolve => {
-        requestAnimationFrame(() => {
-            requestAnimationFrame(resolve);
-        });
+        requestAnimationFrame(() => requestAnimationFrame(resolve));
     });
 }
 
 function syncMetrics() {
-    const viewport = document.querySelector('.reel-viewport');
-    const ticket = document.querySelector('#reelTrack .ticket');
-    if (!viewport || !ticket) return;
-
-    const ticketRect = ticket.getBoundingClientRect();
-    const ticketStyle = getComputedStyle(ticket);
-    const marginBottom = parseFloat(ticketStyle.marginBottom) || 0;
-
-    metrics.ticketHeight = ticketRect.height || 88;
-    metrics.ticketGap = marginBottom;
+    const rootStyle = getComputedStyle(document.documentElement);
+    metrics.ticketHeight = parseFloat(rootStyle.getPropertyValue('--ticket-height')) || 88;
+    metrics.ticketGap = parseFloat(rootStyle.getPropertyValue('--ticket-gap')) || 10;
     metrics.ticketStep = metrics.ticketHeight + metrics.ticketGap;
-    metrics.viewportHeight = viewport.getBoundingClientRect().height || 284;
+    metrics.viewportHeight = metrics.ticketHeight * 3 + metrics.ticketGap * 2;
 }
 
 function getTicketClass(amount) {
@@ -75,10 +62,11 @@ function getTicketClass(amount) {
 }
 
 function formatAmount(amount) {
-    if (amount >= 100) return '100';
-    if (amount >= 10) return String(amount);
-    if (Number.isInteger(amount)) return String(amount);
-    return String(amount);
+    const n = parseFloat(amount);
+    if (n >= 100) return '100';
+    if (n >= 10) return String(n);
+    if (Number.isInteger(n)) return String(n);
+    return String(n);
 }
 
 function buildReel() {
@@ -104,8 +92,15 @@ function buildReel() {
     track.replaceChildren(fragment);
 }
 
-function getMiddleIndex() {
-    return Math.floor(REPEAT_COUNT / 2) * CYCLE_LEN;
+function prizeToOffset(amount) {
+    const n = parseFloat(amount);
+    const idx = PRIZES.findIndex(p => Math.abs(p - n) < 0.001);
+    return idx === -1 ? 0 : idx;
+}
+
+function indexToPrize(index) {
+    const i = ((index % CYCLE_LEN) + CYCLE_LEN) % CYCLE_LEN;
+    return PRIZES[i];
 }
 
 function indexToOffset(index) {
@@ -114,9 +109,10 @@ function indexToOffset(index) {
     return ticketCenter - centerY;
 }
 
-function setTrackIndex(index, animate, duration = 3800) {
+function setTrackIndex(index, animate, duration = 3600) {
     const track = document.getElementById('reelTrack');
-    const offset = indexToOffset(index);
+    const clamped = Math.max(0, Math.min(index, CYCLE_LEN * REPEAT_COUNT - 1));
+    const offset = indexToOffset(clamped);
 
     if (animate) {
         track.classList.add('is-animating');
@@ -124,93 +120,68 @@ function setTrackIndex(index, animate, duration = 3800) {
     } else {
         track.classList.remove('is-animating');
         track.style.transition = 'none';
+        void track.offsetHeight;
     }
 
     track.style.transform = `translate3d(0, ${-offset}px, 0)`;
-    state.currentIndex = index;
+    state.currentIndex = clamped;
 }
 
-function getOffsetFromTransform() {
-    const track = document.getElementById('reelTrack');
-    const transform = track.style.transform || '';
-    const match = transform.match(/translate3d\([^,]+,\s*(-?\d+\.?\d*)px/);
-    if (!match) return indexToOffset(state.currentIndex);
-    const offset = Math.abs(parseFloat(match[1]));
-    const centerY = metrics.viewportHeight / 2;
-    const ticketCenter = offset + centerY;
-    return Math.round((ticketCenter - metrics.ticketHeight / 2) / metrics.ticketStep);
-}
-
-function normalizeIndex(index) {
-    const prizeInCycle = ((index % CYCLE_LEN) + CYCLE_LEN) % CYCLE_LEN;
-    const middleCycle = Math.floor(REPEAT_COUNT / 2);
-    return middleCycle * CYCLE_LEN + prizeInCycle;
-}
-
-function ensureSafeIndex(index) {
-    const minSafe = CYCLE_LEN * 2;
-    const maxSafe = CYCLE_LEN * (REPEAT_COUNT - 2);
-    if (index < minSafe || index > maxSafe) {
-        return normalizeIndex(index);
-    }
+function snapToPrize(prizeAmount) {
+    const prizeOffset = prizeToOffset(prizeAmount);
+    const index = MIDDLE_CYCLE * CYCLE_LEN + prizeOffset;
+    setTrackIndex(index, false);
     return index;
 }
 
-function prizeToIndex(amount) {
-    const n = parseFloat(amount);
-    return PRIZES.findIndex(p => Math.abs(p - n) < 0.001);
-}
-
 function findTargetIndex(prizeAmount, fromIndex) {
-    const prizeOffset = prizeToIndex(prizeAmount);
-    if (prizeOffset === -1) return fromIndex + CYCLE_LEN * 6;
-
-    const safeFrom = ensureSafeIndex(fromIndex);
-    if (safeFrom !== fromIndex) {
-        setTrackIndex(safeFrom, false);
-        fromIndex = safeFrom;
-    }
-
-    const rotations = 5 + Math.floor(Math.random() * 3);
+    const prizeOffset = prizeToOffset(prizeAmount);
+    const rotations = 4 + Math.floor(Math.random() * 3);
     const currentInCycle = ((fromIndex % CYCLE_LEN) + CYCLE_LEN) % CYCLE_LEN;
+
     let delta = prizeOffset - currentInCycle;
     if (delta <= 0) delta += CYCLE_LEN;
 
-    const target = fromIndex + rotations * CYCLE_LEN + delta;
+    let target = fromIndex + rotations * CYCLE_LEN + delta;
+
     const maxIndex = CYCLE_LEN * REPEAT_COUNT - 1;
-    return Math.min(target, maxIndex - CYCLE_LEN);
+    const maxSafe = CYCLE_LEN * (REPEAT_COUNT - 2);
+    if (target > maxSafe) {
+        fromIndex = MIDDLE_CYCLE * CYCLE_LEN + currentInCycle;
+        setTrackIndex(fromIndex, false);
+        target = fromIndex + rotations * CYCLE_LEN + delta;
+    }
+
+    target = Math.min(target, maxIndex);
+
+    if (Math.abs(indexToPrize(target) - parseFloat(prizeAmount)) > 0.001) {
+        target = MIDDLE_CYCLE * CYCLE_LEN + prizeOffset + rotations * CYCLE_LEN;
+    }
+
+    return target;
 }
 
-function animateToIndex(targetIndex, duration = 3800) {
+function animateToIndex(targetIndex, prizeAmount, duration = 3600) {
     return new Promise(resolve => {
         const track = document.getElementById('reelTrack');
+        let finished = false;
+
+        const finish = () => {
+            if (finished) return;
+            finished = true;
+            track.removeEventListener('transitionend', onEnd);
+            snapToPrize(prizeAmount);
+            resolve();
+        };
 
         const onEnd = (e) => {
-            if (e.propertyName !== 'transform') return;
-            track.removeEventListener('transitionend', onEnd);
-            track.classList.remove('is-animating');
-            track.style.transition = 'none';
-
-            const normalized = normalizeIndex(targetIndex);
-            if (normalized !== targetIndex) {
-                setTrackIndex(normalized, false);
-            } else {
-                state.currentIndex = targetIndex;
-            }
-            resolve();
+            if (e.target !== track || e.propertyName !== 'transform') return;
+            finish();
         };
 
         track.addEventListener('transitionend', onEnd);
         setTrackIndex(targetIndex, true, duration);
-
-        setTimeout(() => {
-            track.removeEventListener('transitionend', onEnd);
-            track.classList.remove('is-animating');
-            track.style.transition = 'none';
-            const normalized = normalizeIndex(targetIndex);
-            setTrackIndex(normalized, false);
-            resolve();
-        }, duration + 120);
+        setTimeout(finish, duration + 200);
     });
 }
 
@@ -279,16 +250,15 @@ async function handleSpin() {
         }
 
         spinId = startData.spin_id;
-        prizeAmount = startData.prize_amount;
+        prizeAmount = parseFloat(startData.prize_amount);
         state.currentSpinId = spinId;
         state.usdtBalance = startData.usdt_balance;
         updateBalanceUI(state.usdtBalance);
 
-        const currentIndex = ensureSafeIndex(getOffsetFromTransform());
-        setTrackIndex(currentIndex, false);
-        const targetIndex = findTargetIndex(prizeAmount, currentIndex);
+        const fromIndex = state.currentIndex;
+        const targetIndex = findTargetIndex(prizeAmount, fromIndex);
 
-        await animateToIndex(targetIndex, 3600);
+        await animateToIndex(targetIndex, prizeAmount, 3600);
 
         const completeResp = await fetch('/api/transactions?roulette=1', {
             method: 'POST',

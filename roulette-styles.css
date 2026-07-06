@@ -104,9 +104,6 @@ body {
     height: calc(var(--ticket-height) * 3 + var(--ticket-gap) * 2);
     overflow: hidden;
     border-radius: 16px;
-    contain: strict;
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
 }
 
 .reel-fade {
@@ -171,8 +168,6 @@ body {
     position: relative;
     box-shadow: 0 4px 12px var(--shadow-color);
     flex-shrink: 0;
-    contain: layout style paint;
-    transform: translateZ(0);
 }
 
 .ticket::before,
