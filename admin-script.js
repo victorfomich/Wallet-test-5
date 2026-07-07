@@ -1810,8 +1810,8 @@ function renderForcedRule(rule) {
     const every = rule?.every_n_spins || '';
     const prize = rule?.forced_prize_amount != null ? String(rule.forced_prize_amount) : '';
     const progress = rule?.enabled && rule?.every_n_spins
-        ? `Прогресс: ${rule.spins_since_forced || 0}/${rule.every_n_spins}`
-        : 'Правило отключено';
+        ? `До приза: ${(rule.every_n_spins - (rule.spins_since_forced || 0)) > 0 ? (rule.every_n_spins - (rule.spins_since_forced || 0)) : 0} прокрутов (${rule.spins_since_forced || 0}/${rule.every_n_spins})`
+        : 'Отложенный приз не активен';
 
     const enabledEl = document.getElementById('rouletteForcedEnabled');
     const everyEl = document.getElementById('rouletteForcedEvery');

@@ -305,13 +305,13 @@
                     </table>
                 </div>
 
-                <h3 class="subsection-title">Гарантированный приз</h3>
-                <p class="hint-text">Можно включить правило: например, раз в 3 спина выдавать 100 USDT.</p>
+                <h3 class="subsection-title">Отложенный приз (один раз)</h3>
+                <p class="hint-text">После установки правило сработает один раз: через N прокрутов выпадет выбранный приз и правило выключится автоматически.</p>
                 <div class="search-container" style="margin-bottom: 16px; gap: 8px;">
                     <label style="display:flex; align-items:center; gap:6px;">
                         <input type="checkbox" id="rouletteForcedEnabled"> Включить
                     </label>
-                    <input type="number" min="1" step="1" id="rouletteForcedEvery" class="search-input" style="max-width: 160px;" placeholder="Каждые N спинов">
+                    <input type="number" min="1" step="1" id="rouletteForcedEvery" class="search-input" style="max-width: 220px;" placeholder="Через N прокрутов (один раз)">
                     <select id="rouletteForcedPrize" class="search-input" style="max-width: 180px;">
                         <option value="">Приз</option>
                         <option value="0.1">0.1 USDT</option>
