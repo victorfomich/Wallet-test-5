@@ -1724,21 +1724,46 @@ async function saveExchangeSettings() {
 
 // ===== Roulette admin =====
 let rouletteGlobalSettings = [];
+let rouletteUsers = [];
 let rouletteSelectedTelegramId = null;
+let rouletteCurrentForcedRule = null;
 
 async function loadRouletteSettings() {
     try {
-        const resp = await fetch(`${API_BASE_URL}/api/admin/settings?roulette=1`);
-        const data = await resp.json();
-        if (!resp.ok || !data.success) throw new Error(data.error || 'Ошибка загрузки');
+        const [settingsResp, usersResp] = await Promise.all([
+            fetch(`${API_BASE_URL}/api/admin/settings?roulette=1`),
+            fetch(`${API_BASE_URL}/api/admin/settings?roulette=1&action=users`)
+        ]);
+        const settingsData = await settingsResp.json();
+        const usersData = await usersResp.json();
 
-        rouletteGlobalSettings = data.global_settings || [];
+        if (!settingsResp.ok || !settingsData.success) throw new Error(settingsData.error || 'Ошибка загрузки');
+        if (!usersResp.ok || !usersData.success) throw new Error(usersData.error || 'Ошибка списка пользователей');
+
+        rouletteGlobalSettings = settingsData.global_settings || [];
+        rouletteUsers = usersData.users || [];
         renderRouletteGlobalTable(rouletteGlobalSettings);
+        renderRouletteUsersList(rouletteUsers);
         showNotification('Настройки рулетки загружены', 'success');
     } catch (e) {
         console.error('roulette settings load error', e);
         showNotification('Не удалось загрузить настройки рулетки', 'error');
     }
+}
+
+function renderRouletteUsersList(users) {
+    const select = document.getElementById('rouletteUserSelect');
+    if (!select) return;
+
+    const current = rouletteSelectedTelegramId || '';
+    const options = ['<option value="">Выберите пользователя...</option>'];
+    users.forEach(u => {
+        const name = `${u.first_name || ''} ${u.last_name || ''}`.trim() || 'Без имени';
+        const label = `${name} (${u.telegram_id}) - спинов: ${u.spins_count || 0}`;
+        options.push(`<option value="${u.telegram_id}">${label}</option>`);
+    });
+    select.innerHTML = options.join('');
+    if (current) select.value = String(current);
 }
 
 function renderRouletteGlobalTable(settings) {
@@ -1764,17 +1789,56 @@ function renderRouletteGlobalTable(settings) {
     `).join('');
 }
 
+function renderRouletteStats(user, spins) {
+    const row = document.getElementById('rouletteUserStatsRow');
+    if (!row) return;
+    const spinCount = spins?.length || user?.spins_count || 0;
+    const spent = Number(user?.total_spent || 0);
+    const won = Number(user?.total_won || 0);
+    const net = Number(user?.net_result || (won - spent));
+    row.innerHTML = `
+        <td>${spinCount}</td>
+        <td>${spent.toFixed(4)}</td>
+        <td>${won.toFixed(4)}</td>
+        <td style="color:${net >= 0 ? '#33cc66' : '#ff6b6b'};">${net.toFixed(4)}</td>
+    `;
+}
+
+function renderForcedRule(rule) {
+    rouletteCurrentForcedRule = rule || null;
+    const enabled = !!rule?.enabled;
+    const every = rule?.every_n_spins || '';
+    const prize = rule?.forced_prize_amount != null ? String(rule.forced_prize_amount) : '';
+    const progress = rule?.enabled && rule?.every_n_spins
+        ? `Прогресс: ${rule.spins_since_forced || 0}/${rule.every_n_spins}`
+        : 'Правило отключено';
+
+    const enabledEl = document.getElementById('rouletteForcedEnabled');
+    const everyEl = document.getElementById('rouletteForcedEvery');
+    const prizeEl = document.getElementById('rouletteForcedPrize');
+    const progressEl = document.getElementById('rouletteForcedProgress');
+
+    if (enabledEl) enabledEl.checked = enabled;
+    if (everyEl) everyEl.value = every;
+    if (prizeEl) prizeEl.value = prize;
+    if (progressEl) progressEl.textContent = progress;
+}
+
 async function loadRouletteUserSettings() {
-    const input = document.getElementById('rouletteUserSearch');
-    const telegramId = (input?.value || '').trim();
+    const select = document.getElementById('rouletteUserSelect');
+    const telegramId = (select?.value || '').trim();
     if (!telegramId) {
-        showNotification('Введите Telegram ID', 'error');
+        showNotification('Выберите пользователя из списка', 'error');
         return;
     }
 
     rouletteSelectedTelegramId = telegramId;
+    const selectedUser = rouletteUsers.find(u => String(u.telegram_id) === String(telegramId));
     const infoEl = document.getElementById('rouletteUserInfo');
-    if (infoEl) infoEl.textContent = `Пользователь: Telegram ID ${telegramId}`;
+    if (infoEl) {
+        const name = selectedUser ? `${selectedUser.first_name || ''} ${selectedUser.last_name || ''}`.trim() : '';
+        infoEl.textContent = `Пользователь: ${name || '—'} (Telegram ID ${telegramId})`;
+    }
 
     try {
         const [settingsResp, historyResp] = await Promise.all([
@@ -1789,8 +1853,11 @@ async function loadRouletteUserSettings() {
             throw new Error(settingsData.error || 'Ошибка загрузки настроек');
         }
 
+        const spins = historyData.spins || [];
         renderRouletteUserTable(settingsData.global_settings, settingsData.user_settings || []);
-        renderRouletteHistoryTable(historyData.spins || []);
+        renderRouletteHistoryTable(spins);
+        renderRouletteStats(selectedUser, spins);
+        renderForcedRule(settingsData.forced_rule || null);
     } catch (e) {
         console.error('roulette user load error', e);
         showNotification('Не удалось загрузить данные пользователя', 'error');
@@ -1874,6 +1941,12 @@ async function saveRouletteSettings() {
                 prize_amount: parseFloat(input.dataset.prize),
                 probability_weight: input.value === '' ? null : (parseFloat(input.value) || 0)
             }));
+
+            body.forced_rule = {
+                enabled: !!document.getElementById('rouletteForcedEnabled')?.checked,
+                every_n_spins: parseInt(document.getElementById('rouletteForcedEvery')?.value || '0', 10) || null,
+                forced_prize_amount: document.getElementById('rouletteForcedPrize')?.value || null
+            };
         }
 
         const resp = await fetch(`${API_BASE_URL}/api/admin/settings?roulette=1`, {
@@ -1888,6 +1961,8 @@ async function saveRouletteSettings() {
 
         if (rouletteSelectedTelegramId) {
             await loadRouletteUserSettings();
+        } else {
+            await loadRouletteSettings();
         }
     } catch (e) {
         console.error('roulette settings save error', e);
@@ -1897,7 +1972,7 @@ async function saveRouletteSettings() {
 
 async function clearRouletteUserSettings() {
     if (!rouletteSelectedTelegramId) {
-        showNotification('Сначала загрузите пользователя', 'error');
+        showNotification('Сначала выберите пользователя', 'error');
         return;
     }
 
