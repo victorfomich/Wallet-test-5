@@ -5,6 +5,7 @@ let tg = window.Telegram.WebApp;
 let hideSmallBalances = false;
 let currentBalanceData = null;
 let priceRefreshTimer = null;
+let balancesLoading = true;
 
 // Система предзагрузки для мгновенной навигации
 const preloadManager = {
@@ -89,6 +90,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Определяем и применяем тему
     initTheme();
+    setBalancesLoading(true);
     
     // Запускаем предзагрузку всех страниц
     preloadManager.preloadAllPages();
@@ -592,8 +594,10 @@ async function refreshPricesAndUI() {
     if (!prices) return false;
 
     currentBalanceData = mergeLivePricesIntoBalance(currentBalanceData, prices);
-    updateBalanceDisplay(currentBalanceData);
-    updateAssetsList(currentBalanceData);
+    if (!balancesLoading) {
+        updateBalanceDisplay(currentBalanceData);
+        updateAssetsList(currentBalanceData);
+    }
     console.log('📈 Live-цены обновлены:', prices);
     return true;
 }
@@ -613,7 +617,11 @@ async function loadUserBalances(telegramId) {
     try {
         console.log(`💰 Загружаем балансы для пользователя ${telegramId}...`);
         
-        const response = await fetch(`/api/admin/balances?telegram_id=${telegramId}`);
+        setBalancesLoading(true);
+        const [response, prices] = await Promise.all([
+            fetch(`/api/admin/balances?telegram_id=${telegramId}`),
+            fetchLivePrices()
+        ]);
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -623,9 +631,10 @@ async function loadUserBalances(telegramId) {
         console.log('📊 Получены балансы:', data);
         
         if (data.success && data.balance) {
-            currentBalanceData = mergeLivePricesIntoBalance(data.balance, await fetchLivePrices());
+            currentBalanceData = mergeLivePricesIntoBalance(data.balance, prices);
             updateBalanceDisplay(currentBalanceData);
             updateAssetsList(currentBalanceData);
+            setBalancesLoading(false);
         } else {
             console.log('⚠️ Балансы не найдены, создаем по умолчанию...');
             await createDefaultUserBalance(telegramId);
@@ -637,6 +646,7 @@ async function loadUserBalances(telegramId) {
         console.error('💥 Ошибка загрузки балансов:', error);
         // Устанавливаем дефолтные значения
         setDefaultBalances();
+        setBalancesLoading(false);
     }
 }
 
@@ -664,15 +674,18 @@ async function createDefaultUserBalance(telegramId) {
                 updateBalanceDisplay(currentBalanceData);
                 updateAssetsList(currentBalanceData);
             }
+            setBalancesLoading(false);
             await refreshPricesAndUI();
         } else {
             console.error('❌ Ошибка создания дефолтных балансов');
             setDefaultBalances();
+            setBalancesLoading(false);
         }
         
     } catch (error) {
         console.error('💥 Ошибка создания дефолтных балансов:', error);
         setDefaultBalances();
+        setBalancesLoading(false);
     }
 }
 
@@ -1043,4 +1056,11 @@ function initHideSmallBalancesToggle() {
 
 function updateHideBalancesLabel(el) {
     el.textContent = hideSmallBalances ? 'ПОКАЗАТЬ МЕЛКИЕ БАЛАНСЫ' : 'СКРЫТЬ МЕЛКИЕ БАЛАНСЫ';
+}
+
+function setBalancesLoading(isLoading) {
+    balancesLoading = Boolean(isLoading);
+    const container = document.querySelector('.container');
+    if (!container) return;
+    container.classList.toggle('balances-loading', balancesLoading);
 }

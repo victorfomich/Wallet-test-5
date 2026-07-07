@@ -145,6 +145,19 @@ body {
     line-height: 1;
 }
 
+.balances-loading .balance-amount {
+    min-width: 130px;
+    color: transparent;
+    border-radius: 10px;
+    background: linear-gradient(90deg, rgba(64,64,64,0.45) 0%, rgba(85,85,85,0.7) 50%, rgba(64,64,64,0.45) 100%);
+    background-size: 220% 100%;
+    animation: balance-shimmer 1.2s ease-in-out infinite;
+}
+
+.balances-loading .dollar-symbol {
+    opacity: 0.5;
+}
+
 .balance-amount.hidden {
     color: var(--text-primary);
 }
@@ -406,6 +419,31 @@ body {
     color: var(--text-secondary);
 }
 
+.balances-loading .asset-balance,
+.balances-loading .asset-usd-value,
+.balances-loading .asset-price {
+    color: transparent !important;
+    border-radius: 6px;
+    background: linear-gradient(90deg, rgba(64,64,64,0.4) 0%, rgba(95,95,95,0.7) 50%, rgba(64,64,64,0.4) 100%);
+    background-size: 220% 100%;
+    animation: balance-shimmer 1.2s ease-in-out infinite;
+}
+
+.balances-loading .asset-price {
+    min-width: 95px;
+    min-height: 16px;
+}
+
+.balances-loading .asset-balance {
+    min-width: 105px;
+    min-height: 18px;
+}
+
+.balances-loading .asset-usd-value {
+    min-width: 90px;
+    min-height: 16px;
+}
+
 .nav-text {
     font-size: 12px;
     font-weight: 500;
@@ -554,4 +592,13 @@ body {
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+@keyframes balance-shimmer {
+    0% {
+        background-position: 100% 0;
+    }
+    100% {
+        background-position: -100% 0;
+    }
 }
