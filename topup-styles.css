@@ -212,6 +212,15 @@ h1.page-title {
     background-color: #000000;
 }
 
+.sol-icon img {
+    width: 70% !important;
+    height: 70% !important;
+    display: block;
+    margin: 0 auto;
+    object-fit: contain;
+    object-position: center;
+}
+
 .trx-icon {
     background-color: #FF0000;
 }
