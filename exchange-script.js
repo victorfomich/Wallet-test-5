@@ -1,4 +1,5 @@
 let tg = window.Telegram.WebApp;
+let exchangeSubmitting = false;
 let state = {
   telegramId: null,
   from: 'TON',
@@ -192,7 +193,7 @@ function recalc() {
   // Баланс и валидация
   const canSpend = getBalance(state.from);
   const enough = canSpend >= input && input > 0 && minOk;
-  if (btn) btn.disabled = !(ok && enough);
+  if (btn) btn.disabled = exchangeSubmitting || !(ok && enough);
 }
 
 function updateMinHint() {
@@ -404,29 +405,39 @@ function renderBalancesInfo() {
 }
 
 async function submitExchange() {
+  if (exchangeSubmitting) return;
+
+  const btn = document.getElementById('exchangeBtn');
   const amt = Number(document.getElementById('fromAmount').value || 0);
   if (!state.telegramId) return alert('Пользователь не определён');
   if (amt <= 0) return alert('Введите сумму для обмена');
-  
+
+  exchangeSubmitting = true;
+  const originalBtnText = btn?.textContent || '';
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Обмен...';
+  }
+
   const body = { telegram_id: state.telegramId, from: state.from, to: state.to, amount: amt };
   console.log('Submitting exchange:', body);
-  
+
   try {
-    const resp = await fetch('/api/transactions?action=exchange', { 
-      method: 'POST', 
-      headers: { 'Content-Type': 'application/json' }, 
-      body: JSON.stringify(body) 
+    const resp = await fetch('/api/transactions?action=exchange', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
     });
-    
+
     const j = await resp.json();
     console.log('Exchange response:', j);
-    
+
     if (!resp.ok || !j.success) {
       throw new Error(j.error || 'Ошибка обмена');
     }
-    
+
     alert(`Успешно обменяно!\nПолучено: ${j.result.amount_out} ${state.to}\nКомиссия: ${j.result.fee_amount || 0} ${state.to}`);
-    
+
     // Обновляем локальные данные
     if (state.balances && j.new_balances) {
       const fromField = `${state.from.toLowerCase()}_amount`;
@@ -434,15 +445,19 @@ async function submitExchange() {
       state.balances[fromField] = j.new_balances[fromField];
       state.balances[toField] = j.new_balances[toField];
       updateBalanceDisplay();
-      
+
       // Очищаем поле ввода
       document.getElementById('fromAmount').value = '';
       recalc();
     }
-    
+
   } catch (e) {
     console.error('Exchange error:', e);
     alert(`Ошибка обмена: ${e.message}`);
+  } finally {
+    exchangeSubmitting = false;
+    if (btn) btn.textContent = originalBtnText;
+    recalc();
   }
 }
 
