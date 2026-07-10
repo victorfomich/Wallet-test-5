@@ -8,49 +8,120 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>P2P - DreamWallet</title>
     <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="p2p-styles.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="user-manager.js"></script>
+    <!-- Lottie + pako for Telegram .tgs (gzipped Lottie JSON) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"></script>
+    <style>
+        .page-inner {
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 16px;
+            padding-bottom: 100px;
+        }
+        .emoji-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 24px 0 12px 0;
+        }
+        .emoji-box {
+            width: 200px;
+            height: 200px;
+            max-width: 60vw;
+            max-height: 60vw;
+        }
+        @media (max-width: 480px) {
+            .page-inner { padding: 16px; }
+            .emoji-box { width: 170px; height: 170px; }
+        }
+        .p2p-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 8px 0 8px 0;
+            text-align: left;
+        }
+        .p2p-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        .p2p-list {
+            padding-left: 18px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .continue-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 32px);
+            max-width: 368px;
+            background: var(--accent-color);
+            border: none;
+            color: #fff;
+            padding: 14px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 17px;
+            cursor: pointer;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const container = document.getElementById('emojiPlayer');
+            try {
+                const res = await fetch('emoji-1.tgs');
+                if (!res.ok) throw new Error('Не удалось загрузить emoji-1.tgs');
+                const buf = await res.arrayBuffer();
+                const ungzipped = window.pako.ungzip(new Uint8Array(buf));
+                const jsonStr = new TextDecoder('utf-8').decode(ungzipped);
+                const animationData = JSON.parse(jsonStr);
+
+                window.lottie.loadAnimation({
+                    container,
+                    renderer: 'svg',
+                    loop: true,
+                    autoplay: true,
+                    animationData
+                });
+            } catch (e) {
+                container.innerHTML = '<div style="color: var(--text-secondary); text-align:center;">Не удалось отобразить эмодзи</div>';
+                // eslint-disable-next-line no-console
+                console.error(e);
+            }
+
+            const backBtn = document.getElementById('backBtn');
+            if (backBtn) {
+                backBtn.addEventListener('click', () => {
+                    window.location.replace('index.html');
+                });
+            }
+        });
+    </script>
 </head>
 <body>
     <div class="container">
-        <div class="p2p-page">
-            <div class="p2p-header">
-                <button class="p2p-back-btn" id="backBtn" aria-label="Назад">‹</button>
-                <h1 class="p2p-page-title">P2P</h1>
+        <div class="page-inner">
+            <div class="emoji-section">
+                <div class="emoji-box" id="emojiPlayer"></div>
             </div>
-
-            <div class="p2p-min-banner" id="p2pMinBanner">Минимальная сумма сделки: $300</div>
-
-            <div class="p2p-tabs">
-                <button class="p2p-tab active" data-type="sell">Купить USDT</button>
-                <button class="p2p-tab" data-type="buy">Продать USDT</button>
-            </div>
-
-            <div class="p2p-list" id="p2pList">
-                <div class="p2p-loading">Загрузка предложений...</div>
-            </div>
+            <h1 class="p2p-title">Как пользоваться P2P</h1>
+            <p class="p2p-text">Быстрый способ обмена с другими пользователями прямо в Telegram.</p>
+            <ul class="p2p-list">
+                <li>Откройте чат с нашим ботом и нажмите «P2P».</li>
+                <li>Или просто отправьте команду <b>/p2p</b> в чате.</li>
+                <li>Создайте своё предложение или выберите из списка доступных.</li>
+                <li>Следуйте подсказкам бота: оплата, подтверждение и завершение сделки.</li>
+            </ul>
         </div>
+        <button id="backBtn" class="continue-btn">Назад</button>
     </div>
-
-    <div class="p2p-overlay" id="p2pOverlay">
-        <div class="p2p-sheet">
-            <h2 id="p2pSheetTitle">Мерчант</h2>
-            <div class="p2p-sheet-row"><span>Тип</span><span id="p2pSheetType">—</span></div>
-            <div class="p2p-sheet-row"><span>Цена</span><span id="p2pSheetPrice">—</span></div>
-            <div class="p2p-sheet-row"><span>Лимиты</span><span id="p2pSheetLimits">—</span></div>
-            <div class="p2p-sheet-row"><span>Сделок</span><span id="p2pSheetDeals">—</span></div>
-            <div class="p2p-sheet-row"><span>Оплата</span><span id="p2pSheetPayments">—</span></div>
-            <div class="p2p-sheet-row"><span>Завершено</span><span id="p2pSheetCompletion">—</span></div>
-            <div class="p2p-sheet-row"><span>Ответ</span><span id="p2pSheetResponse">—</span></div>
-            <p class="p2p-sheet-note" id="p2pSheetNote"></p>
-            <div class="p2p-sheet-actions">
-                <button class="p2p-sheet-btn secondary" id="p2pSheetClose">Закрыть</button>
-                <button class="p2p-sheet-btn primary" id="p2pStartDealBtn">Начать сделку</button>
-            </div>
-        </div>
-    </div>
-
-    <script src="p2p-script.js"></script>
 </body>
 </html>
+

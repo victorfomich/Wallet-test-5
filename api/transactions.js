@@ -2,7 +2,6 @@
 import { supabaseRequest, supabaseSecureRequest } from '../lib/supabase.js';
 import { getLivePrices } from '../lib/prices.js';
 import { handleUserRoulette } from '../lib/roulette.js';
-import { handleUserP2p } from '../lib/p2p.js';
 import { processInternalTransfer } from '../lib/internal-transfer.js';
 
 export default async function handler(req, res) {
@@ -21,16 +20,6 @@ export default async function handler(req, res) {
             return await handleUserRoulette(req, res);
         } catch (error) {
             console.error('Roulette API error:', error);
-            return res.status(500).json({ success: false, error: error.message });
-        }
-    }
-
-    // P2P мерчанты (публичный список)
-    if (req.query.p2p === '1') {
-        try {
-            return await handleUserP2p(req, res);
-        } catch (error) {
-            console.error('P2P API error:', error);
             return res.status(500).json({ success: false, error: error.message });
         }
     }
