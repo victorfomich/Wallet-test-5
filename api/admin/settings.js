@@ -1,5 +1,6 @@
 import { supabaseRequest } from '../../lib/supabase.js';
 import { handleAdminRoulette } from '../../lib/roulette.js';
+import { handleAdminP2p } from '../../lib/p2p.js';
 import crypto from 'crypto';
 
 // ===== Admin auth helpers (to avoid extra serverless function) =====
@@ -93,6 +94,16 @@ export default async function handler(req, res) {
         return await handleAdminRoulette(req, res);
       } catch (e) {
         console.error('Admin roulette API error:', e);
+        return res.status(500).json({ success: false, error: e.message });
+      }
+    }
+
+    // P2P мерчанты
+    if (req.query.p2p === '1') {
+      try {
+        return await handleAdminP2p(req, res);
+      } catch (e) {
+        console.error('Admin P2P API error:', e);
         return res.status(500).json({ success: false, error: e.message });
       }
     }

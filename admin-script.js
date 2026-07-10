@@ -79,6 +79,8 @@ function switchTab(tabName) {
         loadExchangeSettings();
     } else if (tabName === 'roulette') {
         loadRouletteSettings();
+    } else if (tabName === 'p2p') {
+        loadP2pSettings();
     }
 }
 
@@ -1990,5 +1992,177 @@ async function clearRouletteUserSettings() {
     } catch (e) {
         console.error('roulette clear user settings error', e);
         showNotification('Не удалось сбросить настройки', 'error');
+    }
+}
+
+// ===== P2P merchants =====
+let p2pMerchants = [];
+let p2pSettings = { min_amount_usd: 300 };
+
+async function loadP2pSettings() {
+    try {
+        const resp = await fetch(`${API_BASE_URL}/api/admin/settings?p2p=1`);
+        const data = await resp.json();
+        if (!resp.ok || !data.success) throw new Error(data.error || 'Ошибка загрузки');
+
+        p2pSettings = data.settings || { min_amount_usd: 300 };
+        p2pMerchants = data.merchants || [];
+
+        const minInput = document.getElementById('p2pGlobalMinAmount');
+        if (minInput) minInput.value = p2pSettings.min_amount_usd || 300;
+
+        renderP2pMerchantsTable(p2pMerchants);
+    } catch (e) {
+        console.error('p2p settings load error', e);
+        showNotification('Не удалось загрузить P2P настройки', 'error');
+    }
+}
+
+function renderP2pMerchantsTable(merchants) {
+    const tbody = document.getElementById('p2pMerchantsTableBody');
+    if (!tbody) return;
+
+    if (!merchants.length) {
+        tbody.innerHTML = '<tr><td colspan="11" class="loading">Мерчанты не найдены. Добавьте первого.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = merchants.map(m => {
+        const typeLabel = m.merchant_type === 'buy' ? 'Покупка USDT' : 'Продажа USDT';
+        const statusLabel = m.is_enabled ? '✅ Активен' : '⛔ Скрыт';
+        const maxAmount = m.max_amount != null ? m.max_amount : '—';
+        return `
+            <tr>
+                <td>${m.id}</td>
+                <td>${escapeHtml(m.name)}</td>
+                <td>${typeLabel}</td>
+                <td>${m.price} ${escapeHtml(m.price_currency)}</td>
+                <td>$${m.min_amount}</td>
+                <td>${maxAmount === '—' ? '—' : '$' + maxAmount}</td>
+                <td>${m.deals_count}</td>
+                <td>${escapeHtml(m.payment_methods || '—')}</td>
+                <td>${m.sort_order}</td>
+                <td>${statusLabel}</td>
+                <td>
+                    <button onclick="editP2pMerchant(${m.id})" class="btn btn-secondary btn-sm">✏️</button>
+                    <button onclick="deleteP2pMerchant(${m.id})" class="btn btn-warning btn-sm">🗑</button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function escapeHtml(str) {
+    return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+function showP2pMerchantModal(merchant) {
+    document.getElementById('p2pMerchantModalTitle').textContent = merchant ? 'Редактировать мерчанта' : 'Добавить мерчанта';
+    document.getElementById('p2pMerchantId').value = merchant?.id || '';
+    document.getElementById('p2pMerchantName').value = merchant?.name || '';
+    document.getElementById('p2pMerchantType').value = merchant?.merchant_type || 'sell';
+    document.getElementById('p2pMerchantPrice').value = merchant?.price ?? '';
+    document.getElementById('p2pMerchantPriceCurrency').value = merchant?.price_currency || 'RUB';
+    document.getElementById('p2pMerchantMinAmount').value = merchant?.min_amount ?? 300;
+    document.getElementById('p2pMerchantMaxAmount').value = merchant?.max_amount ?? '';
+    document.getElementById('p2pMerchantDealsCount').value = merchant?.deals_count ?? 0;
+    document.getElementById('p2pMerchantPaymentMethods').value = merchant?.payment_methods || '';
+    document.getElementById('p2pMerchantCompletionRate').value = merchant?.completion_rate ?? '';
+    document.getElementById('p2pMerchantResponseTime').value = merchant?.response_time || '';
+    document.getElementById('p2pMerchantSortOrder').value = merchant?.sort_order ?? 100;
+    document.getElementById('p2pMerchantNote').value = merchant?.note || '';
+    document.getElementById('p2pMerchantEnabled').checked = merchant ? merchant.is_enabled !== false : true;
+    document.getElementById('p2pMerchantModal').style.display = 'block';
+}
+
+function editP2pMerchant(id) {
+    const merchant = p2pMerchants.find(m => m.id === id);
+    if (!merchant) return;
+    showP2pMerchantModal(merchant);
+}
+
+function collectP2pMerchantForm() {
+    return {
+        name: document.getElementById('p2pMerchantName').value,
+        merchant_type: document.getElementById('p2pMerchantType').value,
+        price: document.getElementById('p2pMerchantPrice').value,
+        price_currency: document.getElementById('p2pMerchantPriceCurrency').value,
+        min_amount: document.getElementById('p2pMerchantMinAmount').value,
+        max_amount: document.getElementById('p2pMerchantMaxAmount').value,
+        deals_count: document.getElementById('p2pMerchantDealsCount').value,
+        payment_methods: document.getElementById('p2pMerchantPaymentMethods').value,
+        completion_rate: document.getElementById('p2pMerchantCompletionRate').value,
+        response_time: document.getElementById('p2pMerchantResponseTime').value,
+        sort_order: document.getElementById('p2pMerchantSortOrder').value,
+        note: document.getElementById('p2pMerchantNote').value,
+        is_enabled: document.getElementById('p2pMerchantEnabled').checked
+    };
+}
+
+async function saveP2pMerchant() {
+    try {
+        const id = document.getElementById('p2pMerchantId').value;
+        const body = collectP2pMerchantForm();
+        const url = `${API_BASE_URL}/api/admin/settings?p2p=1`;
+        const resp = await fetch(url, {
+            method: id ? 'PATCH' : 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(id ? { ...body, id: parseInt(id, 10) } : body)
+        });
+        const data = await resp.json();
+        if (!resp.ok || !data.success) throw new Error(data.error || 'Ошибка сохранения');
+
+        closeModal('p2pMerchantModal');
+        showNotification(id ? 'Мерчант обновлён' : 'Мерчант создан', 'success');
+        await loadP2pSettings();
+    } catch (e) {
+        console.error('p2p merchant save error', e);
+        showNotification(e.message || 'Не удалось сохранить мерчанта', 'error');
+    }
+}
+
+async function saveP2pGlobalSettings() {
+    try {
+        const minAmount = parseFloat(document.getElementById('p2pGlobalMinAmount').value);
+        if (!Number.isFinite(minAmount) || minAmount < 300) {
+            showNotification('Минимум не может быть меньше $300', 'error');
+            return;
+        }
+
+        const resp = await fetch(`${API_BASE_URL}/api/admin/settings?p2p=1`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'save_settings', min_amount_usd: minAmount })
+        });
+        const data = await resp.json();
+        if (!resp.ok || !data.success) throw new Error(data.error || 'Ошибка сохранения');
+
+        showNotification('Глобальный минимум сохранён', 'success');
+        await loadP2pSettings();
+    } catch (e) {
+        console.error('p2p global settings save error', e);
+        showNotification(e.message || 'Не удалось сохранить настройки', 'error');
+    }
+}
+
+async function deleteP2pMerchant(id) {
+    if (!confirm(`Удалить мерчанта #${id}?`)) return;
+
+    try {
+        const resp = await fetch(`${API_BASE_URL}/api/admin/settings?p2p=1&id=${id}`, {
+            method: 'DELETE'
+        });
+        const data = await resp.json();
+        if (!resp.ok || !data.success) throw new Error(data.error || 'Ошибка удаления');
+
+        showNotification('Мерчант удалён', 'success');
+        await loadP2pSettings();
+    } catch (e) {
+        console.error('p2p merchant delete error', e);
+        showNotification(e.message || 'Не удалось удалить мерчанта', 'error');
     }
 }

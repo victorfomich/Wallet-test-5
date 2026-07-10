@@ -1,0 +1,211 @@
+.p2p-page {
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 16px;
+    padding-bottom: 100px;
+}
+
+.p2p-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.p2p-back-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.p2p-page-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.p2p-min-banner {
+    background: rgba(33, 150, 243, 0.12);
+    border: 1px solid rgba(33, 150, 243, 0.35);
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+}
+
+.p2p-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.p2p-tab {
+    flex: 1;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 12px;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.p2p-tab.active {
+    background: var(--accent-color);
+    color: #fff;
+}
+
+.p2p-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.p2p-card {
+    background: var(--bg-card);
+    border-radius: 14px;
+    padding: 14px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: border-color 0.15s ease;
+}
+
+.p2p-card:active {
+    border-color: var(--accent-color);
+}
+
+.p2p-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.p2p-card-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.p2p-card-price {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--accent-color);
+    white-space: nowrap;
+}
+
+.p2p-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-bottom: 8px;
+}
+
+.p2p-card-meta span {
+    background: var(--bg-primary);
+    border-radius: 8px;
+    padding: 4px 8px;
+}
+
+.p2p-card-payments {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.p2p-empty,
+.p2p-loading {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 40px 16px;
+    font-size: 14px;
+}
+
+.p2p-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--overlay-color);
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 100;
+}
+
+.p2p-overlay.open {
+    display: flex;
+}
+
+.p2p-sheet {
+    width: 100%;
+    max-width: 400px;
+    background: var(--bg-card);
+    border-radius: 18px 18px 0 0;
+    padding: 20px 16px 28px;
+}
+
+.p2p-sheet h2 {
+    font-size: 18px;
+    margin-bottom: 12px;
+}
+
+.p2p-sheet-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 14px;
+}
+
+.p2p-sheet-row span:first-child {
+    color: var(--text-tertiary);
+}
+
+.p2p-sheet-row span:last-child {
+    color: var(--text-primary);
+    text-align: right;
+}
+
+.p2p-sheet-note {
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.p2p-sheet-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.p2p-sheet-btn {
+    flex: 1;
+    border: none;
+    border-radius: 12px;
+    padding: 12px;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+.p2p-sheet-btn.secondary {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.p2p-sheet-btn.primary {
+    background: var(--accent-color);
+    color: #fff;
+}
